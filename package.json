@@ -58,7 +58,9 @@
     "@babel/core": "^7.25.2",
     "@types/react": "~19.0.10",
     "@types/react-native": "^0.72.8",
+    "autoprefixer": "^10.4.23",
     "cross-env": "^10.0.0",
+    "postcss": "^8.5.6",
     "serve": "^14.2.5",
     "typescript": "~5.8.3"
   },

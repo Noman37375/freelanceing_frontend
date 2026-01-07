@@ -7,13 +7,17 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
+  ImageBackground,
+  Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Eye, EyeOff, User, Mail, Lock, Briefcase, UserCircle } from "lucide-react-native";
+import { Eye, EyeOff, User, Mail, Lock, Briefcase, UserCircle, ArrowLeft, X, Check } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "@/contexts/AuthContext";
+
+const { width, height } = Dimensions.get("window");
 
 const Signup = () => {
   const [userName, setUserName] = useState("");
@@ -26,9 +30,26 @@ const Signup = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [passwordCriteria, setPasswordCriteria] = useState({
+    minLength: false,
+    hasUppercase: false,
+    hasNumber: false,
+  });
 
   const router = useRouter();
   const { signup } = useAuth();
+
+  const handlePasswordChange = (text: string) => {
+    setPassword(text);
+    setErrorMessage("");
+    
+    // Check password criteria
+    setPasswordCriteria({
+      minLength: text.length >= 6,
+      hasUppercase: /[A-Z]/.test(text),
+      hasNumber: /[0-9]/.test(text),
+    });
+  };
 
   const handleSignup = async () => {
     setErrorMessage("");
@@ -98,420 +119,666 @@ const Signup = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <ImageBackground
+      source={{ uri: "https://images.unsplash.com/photo-1556761175-b413da4baf72?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2074&q=80" }}
       style={styles.container}
+      blurRadius={10}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <LinearGradient
+        colors={['rgba(0, 0, 0, 0.7)', 'rgba(0, 0, 0, 0.5)', 'rgba(0, 0, 0, 0.8)']}
+        style={styles.backgroundGradient}
+      />
+      
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
       >
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-      <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join us and start your journey</Text>
-          </View>
-
-          {/* Error Message */}
-      {errorMessage ? (
-            <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{errorMessage}</Text>
-            </View>
-      ) : null}
-
-          {/* Username Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              <User size={16} color="#6B7280" /> Username
-            </Text>
-            <View style={[
-              styles.inputWrapper,
-              focusedInput === 'userName' && styles.inputWrapperFocused,
-              errorMessage && styles.inputWrapperError
-            ]}>
-      <TextInput
-        style={styles.input}
-                placeholder="Choose a username"
-                placeholderTextColor="#9CA3AF"
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={userName}
-                onChangeText={(text) => {
-                  setUserName(text);
-                  setErrorMessage("");
-                }}
-                onFocus={() => setFocusedInput('userName')}
-                onBlur={() => setFocusedInput(null)}
-                editable={!isLoading}
-      />
-            </View>
-          </View>
-
-          {/* Email Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              <Mail size={16} color="#6B7280" /> Email Address
-            </Text>
-            <View style={[
-              styles.inputWrapper,
-              focusedInput === 'email' && styles.inputWrapperFocused,
-              errorMessage && styles.inputWrapperError
-            ]}>
-      <TextInput
-        style={styles.input}
-                placeholder="Enter your email"
-                placeholderTextColor="#9CA3AF"
-        keyboardType="email-address"
-        autoCapitalize="none"
-                autoCorrect={false}
-        value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  setErrorMessage("");
-                }}
-                onFocus={() => setFocusedInput('email')}
-                onBlur={() => setFocusedInput(null)}
-                editable={!isLoading}
-      />
-            </View>
-          </View>
-
-          {/* Password Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              <Lock size={16} color="#6B7280" /> Password
-            </Text>
-            <View style={[
-              styles.inputWrapper,
-              focusedInput === 'password' && styles.inputWrapperFocused,
-              errorMessage && styles.inputWrapperError
-            ]}>
-      <TextInput
-                style={styles.passwordInput}
-                placeholder="Create a password (min 6 characters)"
-                placeholderTextColor="#9CA3AF"
-                secureTextEntry={!showPassword}
-        value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  setErrorMessage("");
-                }}
-                onFocus={() => setFocusedInput('password')}
-                onBlur={() => setFocusedInput(null)}
-                editable={!isLoading}
-      />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeButton}
-                disabled={isLoading}
-              >
-                {showPassword ? (
-                  <EyeOff size={22} color="#6B7280" />
-                ) : (
-                  <Eye size={22} color="#6B7280" />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Confirm Password Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              <Lock size={16} color="#6B7280" /> Confirm Password
-            </Text>
-            <View style={[
-              styles.inputWrapper,
-              focusedInput === 'confirmPassword' && styles.inputWrapperFocused,
-              errorMessage && styles.inputWrapperError
-            ]}>
-      <TextInput
-                style={styles.passwordInput}
-                placeholder="Confirm your password"
-                placeholderTextColor="#9CA3AF"
-                secureTextEntry={!showConfirmPassword}
-                value={confirmPassword}
-                onChangeText={(text) => {
-                  setConfirmPassword(text);
-                  setErrorMessage("");
-                }}
-                onFocus={() => setFocusedInput('confirmPassword')}
-                onBlur={() => setFocusedInput(null)}
-                editable={!isLoading}
-              />
-              <TouchableOpacity
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={styles.eyeButton}
-                disabled={isLoading}
-              >
-                {showConfirmPassword ? (
-                  <EyeOff size={22} color="#6B7280" />
-                ) : (
-                  <Eye size={22} color="#6B7280" />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Role Selection */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              <UserCircle size={16} color="#6B7280" /> Account Type
-            </Text>
-      <View style={styles.roleContainer}>
-        <TouchableOpacity
-                style={[
-                  styles.roleButton,
-                  role === 'Freelancer' && styles.roleButtonActive
-                ]}
-                onPress={() => setRole('Freelancer')}
-                disabled={isLoading}
-                activeOpacity={0.7}
-              >
-                <Briefcase size={20} color={role === 'Freelancer' ? "#3B82F6" : "#6B7280"} />
-                <Text style={[
-                  styles.roleButtonText,
-                  role === 'Freelancer' && styles.roleButtonTextActive
-                ]}>
-                  Freelancer
-                </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-                style={[
-                  styles.roleButton,
-                  role === 'Client' && styles.roleButtonActive
-                ]}
-                onPress={() => setRole('Client')}
-                disabled={isLoading}
-                activeOpacity={0.7}
-              >
-                <UserCircle size={20} color={role === 'Client' ? "#3B82F6" : "#6B7280"} />
-                <Text style={[
-                  styles.roleButtonText,
-                  role === 'Client' && styles.roleButtonTextActive
-                ]}>
-                  Client
-                </Text>
-        </TouchableOpacity>
-            </View>
-      </View>
-
-          {/* Sign Up Button */}
-          <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
-            onPress={handleSignup}
-            disabled={isLoading}
-            activeOpacity={0.8}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.buttonText}>Create Account</Text>
-            )}
-      </TouchableOpacity>
-
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Login Link */}
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Already have an account? </Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.content}>
+            {/* Back Button */}
             <TouchableOpacity
-              onPress={() => router.push("/login" as any)}
-              disabled={isLoading}
+              onPress={() => router.back()}
+              style={styles.backButton}
             >
-              <Text style={styles.loginLink}>Sign In</Text>
-      </TouchableOpacity>
+              <ArrowLeft size={20} color="#fff" />
+            </TouchableOpacity>
+
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.brandContainer}>
+                <View style={styles.logoContainer}>
+                  <Briefcase size={28} color="#A855F7" />
+                </View>
+                <Text style={styles.brandText}>
+                  Join <Text style={styles.brandHighlight}>FreelancePro</Text>
+                </Text>
+              </View>
+              <Text style={styles.welcomeText}>
+                Start Your Journey
+              </Text>
+              <Text style={styles.subtitle}>
+                Create an account and unlock opportunities in the freelance world
+              </Text>
+            </View>
+
+            {/* Signup Card */}
+            <View style={styles.signupCard}>
+              {/* Error Message */}
+              {errorMessage ? (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{errorMessage}</Text>
+                </View>
+              ) : null}
+
+              {/* Username Input */}
+              <View style={styles.inputGroup}>
+                <View style={styles.labelContainer}>
+                  <User size={18} color="#A855F7" />
+                  <Text style={styles.inputLabel}>Username</Text>
+                </View>
+                <View style={[
+                  styles.inputWrapper,
+                  focusedInput === 'userName' && styles.inputWrapperFocused
+                ]}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="john_doe"
+                    placeholderTextColor="#94A3B8"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    value={userName}
+                    onChangeText={(text) => {
+                      setUserName(text);
+                      setErrorMessage("");
+                    }}
+                    onFocus={() => setFocusedInput('userName')}
+                    onBlur={() => setFocusedInput(null)}
+                    editable={!isLoading}
+                  />
+                  {userName && (
+                    <TouchableOpacity 
+                      onPress={() => setUserName("")} 
+                      style={styles.clearButton}
+                    >
+                      <View style={styles.clearButtonInner}>
+                        <X size={12} color="#FFFFFF" />
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+
+              {/* Email Input */}
+              <View style={styles.inputGroup}>
+                <View style={styles.labelContainer}>
+                  <Mail size={18} color="#A855F7" />
+                  <Text style={styles.inputLabel}>Email Address</Text>
+                </View>
+                <View style={[
+                  styles.inputWrapper,
+                  focusedInput === 'email' && styles.inputWrapperFocused
+                ]}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="you@example.com"
+                    placeholderTextColor="#94A3B8"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    value={email}
+                    onChangeText={(text) => {
+                      setEmail(text);
+                      setErrorMessage("");
+                    }}
+                    onFocus={() => setFocusedInput('email')}
+                    onBlur={() => setFocusedInput(null)}
+                    editable={!isLoading}
+                  />
+                  {email && (
+                    <TouchableOpacity 
+                      onPress={() => setEmail("")} 
+                      style={styles.clearButton}
+                    >
+                      <View style={styles.clearButtonInner}>
+                        <X size={12} color="#FFFFFF" />
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+
+              {/* Password Input */}
+              <View style={styles.inputGroup}>
+                <View style={styles.labelContainer}>
+                  <Lock size={18} color="#A855F7" />
+                  <Text style={styles.inputLabel}>Password</Text>
+                </View>
+                <View style={[
+                  styles.inputWrapper,
+                  focusedInput === 'password' && styles.inputWrapperFocused
+                ]}>
+                  <TextInput
+                    style={[styles.textInput, { flex: 1 }]}
+                    placeholder="••••••••"
+                    placeholderTextColor="#94A3B8"
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={handlePasswordChange}
+                    onFocus={() => setFocusedInput('password')}
+                    onBlur={() => setFocusedInput(null)}
+                    editable={!isLoading}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeButton}
+                    disabled={isLoading}
+                  >
+                    {showPassword ? (
+                      <EyeOff size={22} color="#A855F7" />
+                    ) : (
+                      <Eye size={22} color="#A855F7" />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                
+                {/* Password Criteria */}
+                {password.length > 0 && (
+                  <View style={styles.criteriaContainer}>
+                    <View style={styles.criteriaItem}>
+                      <View style={[
+                        styles.criteriaIcon,
+                        passwordCriteria.minLength && styles.criteriaIconActive
+                      ]}>
+                        {passwordCriteria.minLength ? (
+                          <Check size={10} color="#FFFFFF" />
+                        ) : null}
+                      </View>
+                      <Text style={[
+                        styles.criteriaText,
+                        passwordCriteria.minLength && styles.criteriaTextActive
+                      ]}>
+                        At least 6 characters
+                      </Text>
+                    </View>
+                    <View style={styles.criteriaItem}>
+                      <View style={[
+                        styles.criteriaIcon,
+                        passwordCriteria.hasUppercase && styles.criteriaIconActive
+                      ]}>
+                        {passwordCriteria.hasUppercase ? (
+                          <Check size={10} color="#FFFFFF" />
+                        ) : null}
+                      </View>
+                      <Text style={[
+                        styles.criteriaText,
+                        passwordCriteria.hasUppercase && styles.criteriaTextActive
+                      ]}>
+                        One uppercase letter
+                      </Text>
+                    </View>
+                    <View style={styles.criteriaItem}>
+                      <View style={[
+                        styles.criteriaIcon,
+                        passwordCriteria.hasNumber && styles.criteriaIconActive
+                      ]}>
+                        {passwordCriteria.hasNumber ? (
+                          <Check size={10} color="#FFFFFF" />
+                        ) : null}
+                      </View>
+                      <Text style={[
+                        styles.criteriaText,
+                        passwordCriteria.hasNumber && styles.criteriaTextActive
+                      ]}>
+                        One number
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+
+              {/* Confirm Password Input */}
+              <View style={styles.inputGroup}>
+                <View style={styles.labelContainer}>
+                  <Lock size={18} color="#A855F7" />
+                  <Text style={styles.inputLabel}>Confirm Password</Text>
+                </View>
+                <View style={[
+                  styles.inputWrapper,
+                  focusedInput === 'confirmPassword' && styles.inputWrapperFocused
+                ]}>
+                  <TextInput
+                    style={[styles.textInput, { flex: 1 }]}
+                    placeholder="••••••••"
+                    placeholderTextColor="#94A3B8"
+                    secureTextEntry={!showConfirmPassword}
+                    value={confirmPassword}
+                    onChangeText={(text) => {
+                      setConfirmPassword(text);
+                      setErrorMessage("");
+                    }}
+                    onFocus={() => setFocusedInput('confirmPassword')}
+                    onBlur={() => setFocusedInput(null)}
+                    editable={!isLoading}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={styles.eyeButton}
+                    disabled={isLoading}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff size={22} color="#A855F7" />
+                    ) : (
+                      <Eye size={22} color="#A855F7" />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Role Selection */}
+              <View style={styles.inputGroup}>
+                <View style={styles.labelContainer}>
+                  <UserCircle size={18} color="#A855F7" />
+                  <Text style={styles.inputLabel}>Account Type</Text>
+                </View>
+                <View style={styles.roleContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.roleButton,
+                      role === 'Freelancer' && styles.roleButtonActive
+                    ]}
+                    onPress={() => setRole('Freelancer')}
+                    disabled={isLoading}
+                    activeOpacity={0.7}
+                  >
+                    <Briefcase size={20} color={role === 'Freelancer' ? "#FFFFFF" : "#94A3B8"} />
+                    <Text style={[
+                      styles.roleButtonText,
+                      role === 'Freelancer' && styles.roleButtonTextActive
+                    ]}>
+                      Freelancer
+                    </Text>
+                    {role === 'Freelancer' && (
+                      <View style={styles.selectedIndicator}>
+                        <Check size={12} color="#FFFFFF" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.roleButton,
+                      role === 'Client' && styles.roleButtonActive
+                    ]}
+                    onPress={() => setRole('Client')}
+                    disabled={isLoading}
+                    activeOpacity={0.7}
+                  >
+                    <UserCircle size={20} color={role === 'Client' ? "#FFFFFF" : "#94A3B8"} />
+                    <Text style={[
+                      styles.roleButtonText,
+                      role === 'Client' && styles.roleButtonTextActive
+                    ]}>
+                      Client
+                    </Text>
+                    {role === 'Client' && (
+                      <View style={styles.selectedIndicator}>
+                        <Check size={12} color="#FFFFFF" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.roleDescription}>
+                  {role === 'Freelancer' 
+                    ? "Offer your skills and services to clients worldwide"
+                    : "Find talented freelancers for your projects"
+                  }
+                </Text>
+              </View>
+
+              {/* Sign Up Button */}
+              <TouchableOpacity
+                onPress={handleSignup}
+                disabled={isLoading}
+                style={styles.signupButtonContainer}
+              >
+                <LinearGradient
+                  colors={['#A855F7', '#7C3AED']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.signupButton}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.buttonText}>Create Account</Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Terms & Privacy */}
+              <Text style={styles.termsText}>
+                By creating an account, you agree to our 
+                <Text style={styles.termsLink}> Terms of Service </Text>
+                and 
+                <Text style={styles.termsLink}> Privacy Policy</Text>
+              </Text>
+            </View>
+
+            {/* Login Link */}
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>Already have an account? </Text>
+              <TouchableOpacity
+                onPress={() => router.push("/login" as any)}
+                disabled={isLoading}
+              >
+                <Text style={styles.loginLink}>Sign In</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Bottom Info */}
+            <View style={styles.bottomInfoContainer}>
+              <Text style={styles.bottomInfoText}>
+                Trusted by 50,000+ professionals worldwide
+              </Text>
+            </View>
           </View>
-        </View>
-    </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+
+        {/* Bottom Gradient */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0, 0, 0, 0.8)']}
+          style={styles.bottomGradient}
+          pointerEvents="none"
+        />
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#000",
+  },
+  backgroundGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  keyboardView: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
   },
   content: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 24,
     paddingTop: 60,
+    paddingBottom: 40,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 30,
   },
   header: {
-    marginBottom: 32,
-    alignItems: "center",
+    marginBottom: 30,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 8,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6B7280",
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  errorContainer: {
-    backgroundColor: "#FEF2F2",
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-  errorText: {
-    color: "#DC2626",
-    fontSize: 14,
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  inputContainer: {
+  brandContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 20,
   },
-  label: {
+  logoContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  brandText: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+  brandHighlight: {
+    color: '#A855F7',
+  },
+  welcomeText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 12,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#E2E8F0',
+    lineHeight: 22,
+  },
+  signupCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginBottom: 24,
+  },
+  errorContainer: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  errorText: {
+    color: '#FECACA',
     fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  labelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 8,
   },
   inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    backgroundColor: "#F9FAFB",
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     paddingHorizontal: 16,
-    minHeight: 56,
+    height: 56,
   },
   inputWrapperFocused: {
-    borderColor: "#3B82F6",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#3B82F6",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
+    borderColor: '#A855F7',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  inputWrapperError: {
-    borderColor: "#EF4444",
-    backgroundColor: "#FFFFFF",
-  },
-  input: {
-    flex: 1,
+  textInput: {
     fontSize: 16,
-    color: "#111827",
+    color: '#FFFFFF',
     paddingVertical: 0,
-  },
-  passwordInput: {
     flex: 1,
-    fontSize: 16,
-    color: "#111827",
-    paddingVertical: 0,
+  },
+  clearButton: {
+    padding: 4,
+  },
+  clearButtonInner: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   eyeButton: {
     padding: 8,
     marginLeft: 8,
   },
+  criteriaContainer: {
+    marginTop: 12,
+    gap: 8,
+  },
+  criteriaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  criteriaIcon: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  criteriaIconActive: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
+  },
+  criteriaText: {
+    fontSize: 12,
+    color: '#94A3B8',
+  },
+  criteriaTextActive: {
+    color: '#10B981',
+    fontWeight: '500',
+  },
   roleContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 12,
   },
   roleButton: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
     padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#F9FAFB",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    position: 'relative',
   },
   roleButtonActive: {
-    borderColor: "#3B82F6",
-    backgroundColor: "#EFF6FF",
+    borderColor: '#A855F7',
+    backgroundColor: 'rgba(168, 85, 247, 0.2)',
   },
   roleButtonText: {
-    fontSize: 15,
-    color: "#6B7280",
-    fontWeight: "500",
+    fontSize: 14,
+    color: '#94A3B8',
+    fontWeight: '600',
   },
   roleButtonTextActive: {
-    color: "#3B82F6",
-    fontWeight: "600",
+    color: '#FFFFFF',
   },
-  button: {
-    backgroundColor: "#3B82F6",
-    padding: 18,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#3B82F6",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+  selectedIndicator: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  roleDescription: {
+    fontSize: 12,
+    color: '#94A3B8',
     marginTop: 8,
-    marginBottom: 24,
+    textAlign: 'center',
   },
-  buttonDisabled: {
-    opacity: 0.7,
+  signupButtonContainer: {
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  signupButton: {
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
   buttonText: {
-    color: "#FFFFFF",
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: "600",
-    letterSpacing: 0.5,
+    fontWeight: '600',
   },
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 24,
+  termsText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    textAlign: 'center',
+    lineHeight: 18,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E5E7EB",
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: "#9CA3AF",
-    fontSize: 14,
-    fontWeight: "500",
+  termsLink: {
+    color: '#D8B4FE',
+    fontWeight: '600',
   },
   loginContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 24,
   },
   loginText: {
-    color: "#6B7280",
+    color: '#94A3B8',
     fontSize: 15,
   },
   loginLink: {
-    color: "#3B82F6",
+    color: '#D8B4FE',
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: '600',
     marginLeft: 4,
+  },
+  bottomInfoContainer: {
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  bottomInfoText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  bottomGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    pointerEvents: 'none',
   },
 });
 

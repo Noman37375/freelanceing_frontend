@@ -17,11 +17,10 @@ const getApiUrl = () => {
   
   // Priority 3: Production - Check if deployed (not localhost)
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    // In production, backend should be deployed separately
-    // Set EXPO_PUBLIC_API_URL environment variable in Vercel
-    // Example: https://your-backend.railway.app or https://api.yourdomain.com
-    console.warn('[Config] Production mode detected but EXPO_PUBLIC_API_URL not set. Please set it in Vercel environment variables.');
-    return "http://localhost:3000"; // Fallback - update this with your production backend URL
+    // In production, use backend Vercel URL as fallback
+    // Best practice: Set EXPO_PUBLIC_API_URL in Vercel environment variables
+    console.warn('[Config] Production mode detected but EXPO_PUBLIC_API_URL not set. Using fallback backend URL.');
+    return "https://backend-brown-theta-94.vercel.app"; // Production backend URL
   }
   
   // Priority 4: Default to localhost (works for most development scenarios)

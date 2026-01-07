@@ -1,0 +1,26 @@
+[
+    {
+      "id": "1",
+      "date": "2025-09-28",
+      "description": "Payment received for Food Delivery App milestone",
+      "amount": 800,
+      "type": "credit",
+      "status": "Completed"
+    },
+    {
+      "id": "2",
+      "date": "2025-09-30",
+      "description": "Withdrawal to JazzCash",
+      "amount": 300,
+      "type": "debit",
+      "status": "Withdrawn"
+    },
+    {
+      "id": "3",
+      "date": "2025-10-01",
+      "description": "Payment received for UI Design project",
+      "amount": 250,
+      "type": "credit",
+      "status": "Pending"
+    }
+  ]

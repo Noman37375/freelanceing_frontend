@@ -1,0 +1,49 @@
+to run 
+step 1: open package.json terminal 
+step 2 : if running for the first time type npm install
+npm run dev
+or else 
+npm run dev
+
+Option 1: Kill the process using the port
+
+Open Command Prompt or PowerShell.
+
+Find the process using 8081:
+
+netstat -a -n -o | findstr :8081
+
+
+You’ll see a line like:
+
+TCP    0.0.0.0:8081    0.0.0.0:0    LISTENING    1234
+
+
+Here, 1234 is the PID (process ID).
+
+Kill that process:
+
+taskkill /PID 1234 /F
+to kill already running process: taskkill /PID 12600 /F
+
+taskkill /PID 19272 /F
+
+you also have to start the database everytime you run the app 
+
+step 1 : in cmd 
+cd C:\Users\Aksystems\OneDrive\Desktop\freelancing
+
+step 2 : now run 
+npx json-server --watch db.json --port 3000
+
+node server.js
+
+alishba@gmail.com
+alishba123
+
+fatima.dev@example.com
+FatimaDemo123!
+
+laiba@gmail.com
+laiba123
+

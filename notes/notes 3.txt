@@ -1,0 +1,84 @@
+
+## **1. UI Components**
+
+* `StatsCard.tsx` → Card showing stats (earnings, rating, etc.)
+* `ProjectCard.tsx` → Displays project info for freelancers/clients
+* `WorkCard.tsx` → Shows active/completed/proposal projects with status and actions
+
+---
+
+## **2. Authentication**
+
+* `AuthContext.tsx` → `AuthProvider` and `useAuth` hook
+* `LoginScreen.tsx` → Login form
+* `RegisterScreen.tsx` → Registration form
+* `ProfileScreen.tsx` → Shows user profile, editable
+
+---
+
+## **3. Wallet & Payments**
+
+* `WalletContext.tsx` → `WalletProvider` and `useWallet` hook
+* `WalletScreen.tsx` → Shows balance, fund wallet, withdraw
+* `TransactionHistory.tsx` → Displays past transactions
+* `PaymentMethods.tsx` → Manage credit/debit cards, PayPal, bank accounts
+* `AutoReplenishSettings.tsx` → Configure auto funding
+* `EscrowScreen.tsx` → Displays escrow accounts and status
+
+---
+
+## **4. Projects & Proposals**
+
+* `ProjectTypes.ts` → Interfaces: `Project`, `Milestone`, `Attachment`, `Proposal`, `ProposalMilestone`, `ProjectContract`
+* `ProjectsScreen.tsx` → Shows list of projects (active, recommended, etc.)
+* `ProjectDetails.tsx` → Detailed view of a project
+* `ProposalForm.tsx` → Submit a proposal
+* `ContractDetails.tsx` → Shows contract, milestones, terms
+
+---
+
+## **5. Users & Profiles**
+
+* `UserTypes.ts` → Interfaces: `User`, `FreelancerProfile`, `ClientProfile`, `PortfolioItem`, `Certification`, `Education`, `WorkExperience`
+* `FreelancerProfileScreen.tsx` → Freelancer’s profile page
+* `ClientProfileScreen.tsx` → Client’s profile page
+* `PortfolioScreen.tsx` → Shows freelancer portfolio
+* `CertificationsScreen.tsx` → Freelancer certifications
+
+---
+
+## **6. Messaging & Notifications**
+
+* `MessageTypes.ts` → Interfaces: `Conversation`, `Message`, `MessageAttachment`, `SystemMessage`, `NotificationSettings`
+* `ChatScreen.tsx` → Chat UI for project/client communication
+* `NotificationsScreen.tsx` → Shows notifications, toggles settings
+
+---
+
+## **7. Disputes**
+
+* `DisputeTypes.ts` → Interfaces: `Dispute`, `DisputeMessage`, `DisputeResolution`, `DisputeTimelineEvent`, `DisputeStatistics`
+* `DisputeScreen.tsx` → Displays open disputes
+* `DisputeDetailScreen.tsx` → Shows messages, evidence, timeline, resolution
+
+---
+
+## **8. Hooks / Utilities**
+
+* `useFrameworkReady.ts` → Calls framework ready function
+* `apiService.ts` → Placeholder for all API calls
+* `helpers.ts` → Any utility functions for formatting, dates, etc.
+
+---
+
+### ✅ **Summary**
+
+1. UI components → `StatsCard.tsx`, `ProjectCard.tsx`, `WorkCard.tsx`
+2. Auth → `AuthContext.tsx`, `LoginScreen.tsx`, `RegisterScreen.tsx`, `ProfileScreen.tsx`
+3. Wallet → `WalletContext.tsx`, `WalletScreen.tsx`, `TransactionHistory.tsx`, etc.
+4. Projects → `ProjectTypes.ts`, `ProjectsScreen.tsx`, `ProjectDetails.tsx`, `ProposalForm.tsx`
+5. Users → `UserTypes.ts`, `FreelancerProfileScreen.tsx`, `ClientProfileScreen.tsx`
+6. Messaging → `MessageTypes.ts`, `ChatScreen.tsx`, `NotificationsScreen.tsx`
+7. Disputes → `DisputeTypes.ts`, `DisputeScreen.tsx`, `DisputeDetailScreen.tsx`
+8. Utilities → `useFrameworkReady.ts`, `apiService.ts`, `helpers.ts`
+

@@ -1,0 +1,142 @@
+
+
+## **1. ProjectCard & StatsCard (React Native UI Components)**
+
+**Classes/Components:** `ProjectCard`, `StatsCard`
+**Purpose:** Display projects and statistics in the UI.
+**Features:**
+
+* `ProjectCard`: Shows project title, client, budget, deadline, skills, and action buttons (Apply/Save).
+* `StatsCard`: Displays numeric info like earnings or ratings with an icon and title.
+  **What to focus on:** Frontend design, data binding, conditional rendering (showDetails, progress, rating).
+
+---
+
+## **2. WorkCard**
+
+**Class/Component:** `WorkCard`
+**Purpose:** Display details of a project a user is working on, completed projects, or proposals.
+**Features:**
+
+* Shows title, client, status badge, budget, deadline, milestones, progress bar, rating.
+* Different actions based on `type` (active/completed/proposal).
+  **Focus:** Conditional UI rendering based on type, milestone display, progress updates.
+
+---
+
+## **3. AuthProvider (User Authentication)**
+
+**Class/Context:** `AuthProvider` with `useAuth` hook
+**Purpose:** Manage user authentication and profile.
+**Features:**
+
+* Login, register, logout, update profile.
+* Provides `user` info including role (`freelancer` or `client`).
+  **Focus:** Understand user flow: role determines what UI and data user sees.
+
+---
+
+## **4. WalletProvider**
+
+**Class/Context:** `WalletProvider` with `useWallet` hook
+**Purpose:** Manage in-app money, transactions, and auto-replenish.
+**Features:**
+
+* Balance tracking, transaction history.
+* Fund wallet, withdraw funds.
+* Auto-replenish settings.
+  **Focus:** Wallet logic and transaction simulation before connecting to real backend.
+
+---
+
+## **5. useFrameworkReady**
+
+**Hook:** `useFrameworkReady`
+**Purpose:** Calls a function when the framework (app environment) is ready.
+**Features:**
+
+* Executes `window.frameworkReady()` on component mount.
+  **Focus:** Hook usage, side effects (`useEffect`).
+
+---
+
+## **6. Dispute System**
+
+**Interfaces:** `Dispute`, `DisputeEvidence`, `DisputeMessage`, `DisputeResolution`, `DisputeTimelineEvent`, `DisputeStatistics`
+**Purpose:** Model disputes between freelancers and clients.
+**Features:**
+
+* Tracks who opened dispute, reason, evidence, messages.
+* Tracks status, priority, mediator assignment, and resolution.
+* Timeline events to follow progress.
+  **Focus:** Data modeling and workflows for disputes.
+
+---
+
+## **7. Messaging & Notifications**
+
+**Interfaces:** `Conversation`, `Message`, `MessageAttachment`, `SystemMessage`, `NotificationSettings`
+**Purpose:** Chat system and notification settings.
+**Features:**
+
+* Supports messages, attachments, system messages.
+* Tracks read/unread, edited messages.
+* Notification preferences (email, push, in-app).
+  **Focus:** Chat functionality, unread counts, push notifications.
+
+---
+
+## **8. Project Management**
+
+**Interfaces:** `Project`, `Milestone`, `Attachment`, `Proposal`, `ProposalMilestone`, `ProjectContract`
+**Purpose:** Structure for projects, proposals, and contracts.
+**Features:**
+
+* Projects: budget, deadline, skills, client info, status.
+* Milestones: track progress and payments.
+* Contracts: link project & proposal, track budget and milestones.
+  **Focus:** Data structure for project workflows, proposal submission, milestone tracking.
+
+---
+
+## **9. User & Profiles**
+
+**Interfaces:** `User`, `FreelancerProfile`, `ClientProfile`, `PortfolioItem`, `Certification`, `Education`, `WorkExperience`
+**Purpose:** Model user accounts and profiles.
+**Features:**
+
+* Users: basic info, role (freelancer/client).
+* Freelancer: skills, bio, portfolio, earnings, rating.
+* Client: company info, projects posted, total spent.
+  **Focus:** Role-based rendering and profile display.
+
+---
+
+## **10. Wallet & Payments**
+
+**Interfaces:** `Wallet`, `Transaction`, `PaymentMethod`, `BankAccount`, `EscrowAccount`, `AutoReplenishSettings`, `WithdrawalRequest`
+**Purpose:** Model all financial transactions in the app.
+**Features:**
+
+* Wallet: balance, status.
+* Transaction: credits/debits with categories.
+* Escrow: holds funds for projects/milestones.
+* Auto-replenish: automatic funding when low balance.
+* Withdrawal: requests to move money out.
+  **Focus:** Money flow, transaction logging, escrow logic.
+
+---
+
+## **Summary / Roadmap**
+
+1. **Frontend (UI Components)**: `ProjectCard`, `WorkCard`, `StatsCard`. Build UI first with mock data.
+2. **Authentication**: `AuthProvider`. Determine role (`freelancer/client`) and render proper profile.
+3. **Project & Proposal Management**: `Project`, `Milestone`, `Proposal`, `ProjectContract`. Handle project creation, proposal submission, milestones.
+4. **Wallet & Payments**: `WalletProvider`, `Transaction`, `EscrowAccount`, `WithdrawalRequest`. Simulate fund transfer, escrow, auto-replenish.
+5. **Messaging & Notifications**: `Conversation`, `Message`. Add chat functionality with attachments and system messages.
+6. **Disputes**: `Dispute`, `DisputeResolution`. Add dispute management if client/freelancer reports issues.
+7. **User Profiles**: `FreelancerProfile`, `ClientProfile`. Show role-specific dashboards, portfolio, earnings, projects.
+
+**Tip:** Start with **UI + Auth + Project Display** → then **Wallet & Payments** → then **Messaging & Disputes**.
+
+

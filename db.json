@@ -1,0 +1,652 @@
+{
+  "projects": [
+    {
+      "id": "1",
+      "title": "Mobile App UI Design",
+      "status": "available",
+      "category": [
+        "UI/UX Design",
+        "Mobile App"
+      ],
+      "budget": "$500 - $1000",
+      "deadline": "5 days",
+      "skills": [
+        "UI/UX",
+        "Figma",
+        "Mobile Design"
+      ],
+      "client": "TechCorp Inc.",
+      "description": "Looking for a talented designer to create a modern mobile app UI that is clean, user-friendly, and optimized for Android and iOS.",
+      "location": "Remote",
+      "postedTime": "2025-10-18T11:00:00Z",
+      "proposals": 12,
+      "milestones": [
+        {
+          "title": "Research & Wireframing",
+          "duration": "2 days",
+          "details": "Understand client requirements, conduct competitor analysis, and create low-fidelity wireframes for key screens.",
+          "pricePKR": "Rs. 25,000",
+          "priceUSD": "$250",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "UI Design & Prototyping",
+          "duration": "2 days",
+          "details": "Design all app screens in Figma using modern UI principles and brand color guidelines.",
+          "pricePKR": "Rs. 35,000",
+          "priceUSD": "$350",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "Client Review & Revisions",
+          "duration": "1 day",
+          "details": "Collect feedback, apply requested changes, and prepare final deliverables.",
+          "pricePKR": "Rs. 20,000",
+          "priceUSD": "$200",
+          "approvalStatus": "pending"
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "title": "React Native Development",
+      "status": "inProgress",
+      "category": [
+        "Mobile App"
+      ],
+      "budget": "$2000 - $3000",
+      "deadline": "2 weeks",
+      "skills": [
+        "React Native",
+        "JavaScript",
+        "API Integration"
+      ],
+      "client": "StartupXYZ",
+      "description": "Need an experienced React Native developer for a cross-platform app with strong UI and performance.",
+      "location": "Karachi, Pakistan",
+      "postedTime": "2025-10-17T15:00:00Z",
+      "proposals": 20,
+      "milestones": [
+        {
+          "title": "Project Setup & Architecture",
+          "duration": "2 days",
+          "details": "Setup RN environment, navigation, and structure.",
+          "pricePKR": "Rs. 40,000",
+          "priceUSD": "$400",
+          "approvalStatus": "approved"
+        },
+        {
+          "title": "UI Development",
+          "duration": "5 days",
+          "details": "Implement reusable UI components and responsive layouts.",
+          "pricePKR": "Rs. 70,000",
+          "priceUSD": "$700",
+          "approvalStatus": "inReview"
+        },
+        {
+          "title": "API Integration",
+          "duration": "4 days",
+          "details": "Integrate backend APIs and manage state.",
+          "pricePKR": "Rs. 80,000",
+          "priceUSD": "$800",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "Testing & Deployment",
+          "duration": "3 days",
+          "details": "Perform QA testing, fix bugs, and prepare for app store submission.",
+          "pricePKR": "Rs. 60,000",
+          "priceUSD": "$600",
+          "approvalStatus": "pending"
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "title": "Food Delivery App for Pakistan",
+      "status": "completed",
+      "category": [
+        "Mobile App"
+      ],
+      "budget": "$4000",
+      "deadline": "4 weeks",
+      "skills": [
+        "React Native",
+        "Node.js",
+        "PostgreSQL",
+        "Payment Integration",
+        "Google Maps API"
+      ],
+      "client": "PakEats Technologies",
+      "description": "We need a modern food delivery app similar to Foodpanda for the Pakistani market.",
+      "location": "Lahore, Pakistan",
+      "postedTime": "2025-10-10T09:00:00Z",
+      "proposals": 32,
+      "milestones": [
+        {
+          "title": "UI/UX Design & Wireframes",
+          "duration": "2 weeks",
+          "details": "Complete app design and user flows.",
+          "pricePKR": "Rs. 80,000",
+          "priceUSD": "$800",
+          "approvalStatus": "approved"
+        },
+        {
+          "title": "Backend API Development",
+          "duration": "3 weeks",
+          "details": "Database design and admin panel.",
+          "pricePKR": "Rs. 120,000",
+          "priceUSD": "$1200",
+          "approvalStatus": "approved"
+        },
+        {
+          "title": "Mobile App Development",
+          "duration": "4 weeks",
+          "details": "Develop RN app with core features.",
+          "pricePKR": "Rs. 150,000",
+          "priceUSD": "$1500",
+          "approvalStatus": "approved"
+        },
+        {
+          "title": "Payment Integration & Testing",
+          "duration": "1 week",
+          "details": "Integrate JazzCash and Easypaisa.",
+          "pricePKR": "Rs. 50,000",
+          "priceUSD": "$500",
+          "approvalStatus": "approved"
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "title": "Portfolio Website Redesign",
+      "status": "available",
+      "category": [
+        "Web Development"
+      ],
+      "budget": "$800 - $1200",
+      "deadline": "1 week",
+      "skills": [
+        "HTML",
+        "CSS",
+        "React",
+        "UI Design"
+      ],
+      "client": "FreelancerHub",
+      "description": "Redesign our portfolio website to be cleaner, faster, and responsive for all devices.",
+      "location": "Remote",
+      "postedTime": "2025-10-19T05:30:00Z",
+      "proposals": 6,
+      "milestones": [
+        {
+          "title": "Wireframe & Layout Design",
+          "duration": "2 days",
+          "details": "Plan new layout and UX flow.",
+          "pricePKR": "Rs. 20,000",
+          "priceUSD": "$200",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "Frontend Development",
+          "duration": "3 days",
+          "details": "Code responsive pages using React and Tailwind CSS.",
+          "pricePKR": "Rs. 40,000",
+          "priceUSD": "$400",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "Testing & Launch",
+          "duration": "2 days",
+          "details": "Cross-browser testing and deployment.",
+          "pricePKR": "Rs. 30,000",
+          "priceUSD": "$300",
+          "approvalStatus": "pending"
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "title": "E-commerce Website Development",
+      "status": "available",
+      "category": [
+        "Web Development",
+        "E-commerce"
+      ],
+      "budget": "$3000 - $5000",
+      "deadline": "3 weeks",
+      "skills": [
+        "React",
+        "Node.js",
+        "MongoDB",
+        "Stripe"
+      ],
+      "client": "RetailCorp",
+      "description": "Looking for a full-stack developer to build a modern e-commerce platform with payment integration and admin panel.",
+      "location": "Remote",
+      "postedTime": "2025-10-15T10:00:00Z",
+      "proposals": 14,
+      "milestones": [
+        {
+          "title": "Architecture & Setup",
+          "duration": "3 days",
+          "details": "Setup project structure, database, and CI/CD.",
+          "pricePKR": "Rs. 60,000",
+          "priceUSD": "$600",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "Product Catalog & Cart",
+          "duration": "5 days",
+          "details": "Implement product pages, search, filters, and cart functionality.",
+          "pricePKR": "Rs. 100,000",
+          "priceUSD": "$1000",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "Payment Integration",
+          "duration": "3 days",
+          "details": "Integrate Stripe/JazzCash and implement order flow.",
+          "pricePKR": "Rs. 60,000",
+          "priceUSD": "$600",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "Admin Panel & Testing",
+          "duration": "4 days",
+          "details": "Build admin dashboard and perform QA.",
+          "pricePKR": "Rs. 80,000",
+          "priceUSD": "$800",
+          "approvalStatus": "pending"
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "title": "Node.js API Development for Mobile App",
+      "status": "available",
+      "category": [
+        "Backend",
+        "Mobile App"
+      ],
+      "budget": "$1500 - $2500",
+      "deadline": "3 weeks",
+      "skills": [
+        "Node.js",
+        "Express",
+        "MongoDB",
+        "API Integration"
+      ],
+      "client": "DataFlow Ltd.",
+      "description": "Build secure and scalable backend APIs to power a React Native mobile application.",
+      "location": "Islamabad, Pakistan",
+      "postedTime": "2025-10-16T13:00:00Z",
+      "proposals": 15,
+      "milestones": [
+        {
+          "title": "Database & API Setup",
+          "duration": "1 week",
+          "details": "Design MongoDB schema and setup REST APIs with Express.",
+          "pricePKR": "Rs. 60,000",
+          "priceUSD": "$600",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "Authentication & User Management",
+          "duration": "5 days",
+          "details": "Implement JWT authentication and user roles.",
+          "pricePKR": "Rs. 50,000",
+          "priceUSD": "$500",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "Testing & Deployment",
+          "duration": "6 days",
+          "details": "Write unit tests and deploy to production server.",
+          "pricePKR": "Rs. 40,000",
+          "priceUSD": "$400",
+          "approvalStatus": "pending"
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "title": "React Native Fitness Tracker App",
+      "status": "completed",
+      "category": [
+        "Mobile App"
+      ],
+      "budget": "$1800 - $2500",
+      "deadline": "3 weeks",
+      "skills": [
+        "React Native",
+        "UI/UX",
+        "Firebase"
+      ],
+      "client": "FitNation",
+      "description": "Build a cross-platform fitness tracking app with workout history, custom plans, and progress charts.",
+      "location": "Remote",
+      "postedTime": "2025-10-08T08:00:00Z",
+      "proposals": 18,
+      "milestones": [
+        {
+          "title": "UI/UX Design & Prototyping",
+          "duration": "5 days",
+          "details": "Design user-friendly interfaces with focus on performance and usability.",
+          "pricePKR": "Rs. 55,000",
+          "priceUSD": "$550",
+          "approvalStatus": "approved"
+        },
+        {
+          "title": "Core App Development",
+          "duration": "10 days",
+          "details": "Implement Firebase integration and activity tracking.",
+          "pricePKR": "Rs. 90,000",
+          "priceUSD": "$900",
+          "approvalStatus": "approved"
+        },
+        {
+          "title": "Testing & Launch",
+          "duration": "6 days",
+          "details": "Perform app QA and deploy to Play Store.",
+          "pricePKR": "Rs. 55,000",
+          "priceUSD": "$550",
+          "approvalStatus": "approved"
+        }
+      ]
+    },
+    {
+      "id": "8",
+      "title": "Real Estate Finder App",
+      "status": "proposal",
+      "category": [
+        "Mobile App",
+        "Real Estate"
+      ],
+      "budget": "$3000",
+      "deadline": "3 weeks",
+      "skills": [
+        "React Native",
+        "Firebase",
+        "Google Maps API",
+        "Push Notifications"
+      ],
+      "client": "Skyline Properties",
+      "description": "Proposal for a cross-platform mobile app that helps users find properties for sale or rent with location-based search and real-time updates.",
+      "location": "Islamabad, Pakistan",
+      "postedTime": "2025-10-25T15:00:00Z",
+      "proposals": 12,
+      "proposalStatus": "pending",
+      "milestones": [
+        {
+          "title": "App Wireframes & Design",
+          "duration": "1 week",
+          "details": "Create UI/UX mockups and user flow diagrams.",
+          "pricePKR": "Rs. 60,000",
+          "priceUSD": "$600",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "Property Listing & Map Integration",
+          "duration": "1.5 weeks",
+          "details": "Develop property listing interface and integrate Google Maps API.",
+          "pricePKR": "Rs. 100,000",
+          "priceUSD": "$1000",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "User Authentication & Notifications",
+          "duration": "1 week",
+          "details": "Implement Firebase Auth and real-time push notifications for property updates.",
+          "pricePKR": "Rs. 80,000",
+          "priceUSD": "$800",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "Testing & Client Review",
+          "duration": "0.5 weeks",
+          "details": "Conduct QA testing and submit the app for client approval.",
+          "pricePKR": "Rs. 40,000",
+          "priceUSD": "$400",
+          "approvalStatus": "pending"
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "title": "AI-Powered Resume Builder",
+      "status": "proposal",
+      "category": [
+        "Web App",
+        "AI"
+      ],
+      "budget": "$1500 - $2500",
+      "deadline": "2 weeks",
+      "skills": [
+        "React",
+        "Node.js",
+        "OpenAI API",
+        "Tailwind CSS"
+      ],
+      "client": "TalentBoost HR",
+      "description": "Build an AI-based resume builder that generates ATS-optimized resumes and portfolio pages for users.",
+      "location": "Remote",
+      "postedTime": "2025-10-27T11:30:00Z",
+      "proposals": 10,
+      "proposalStatus": "shortlisted",
+      "milestones": [
+        {
+          "title": "User Interface & Auth",
+          "duration": "4 days",
+          "details": "Login, signup, dashboard, and basic UI setup with Tailwind CSS.",
+          "pricePKR": "Rs. 60,000",
+          "priceUSD": "$600",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "AI Resume Engine",
+          "duration": "6 days",
+          "details": "Integrate OpenAI APIs to generate ATS-friendly resumes and cover letters.",
+          "pricePKR": "Rs. 90,000",
+          "priceUSD": "$900",
+          "approvalStatus": "pending"
+        },
+        {
+          "title": "Portfolio & Export System",
+          "duration": "4 days",
+          "details": "User portfolio page and PDF export functionality.",
+          "pricePKR": "Rs. 70,000",
+          "priceUSD": "$700",
+          "approvalStatus": "pending"
+        }
+      ]
+    }
+  ],
+  "myProposals": [],
+  "messages": [
+    {
+      "id": "1",
+      "from": "Client A",
+      "to": "Freelancer",
+      "content": "Hi, I liked your portfolio. Are you available?",
+      "timestamp": "2025-09-30T10:00:00Z"
+    }
+  ],
+  "myWork": [
+    {
+      "id": "1",
+      "title": "E-commerce Website",
+      "status": "completed",
+      "earnings": "$1200"
+    }
+  ],
+  "profile": {
+    "name": "alishba",
+    "title": "SOFTWARE DEVELOPER",
+    "email": "john.doe@example.com",
+    "skills": [
+      "React Native",
+      "UI/UX",
+      "Node.js"
+    ],
+    "bio": "Creative and detail-oriented designer passionate about building smooth mobile experiences.",
+    "pricing": "$25/hr",
+    "avatar": "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2",
+    "balance": 750
+  },
+  "transactions": [
+    {
+      "id": "1",
+      "date": "2025-09-28",
+      "description": "Payment received for Food Delivery App milestone",
+      "amount": 800,
+      "type": "credit",
+      "status": "Completed"
+    },
+    {
+      "id": "2",
+      "date": "2025-09-30",
+      "description": "Withdrawal to JazzCash",
+      "amount": 300,
+      "type": "debit",
+      "status": "Withdrawn"
+    },
+    {
+      "id": "3",
+      "date": "2025-10-01",
+      "description": "Payment received for UI Design project",
+      "amount": 250,
+      "type": "credit",
+      "status": "Pending"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "1",
+      "userName": "Alice",
+      "projectTitle": "Food Delivery App for Pakistan",
+      "comment": "Excellent work on the mobile app! Delivered on time and communication was perfect.",
+      "duration": "4 weeks",
+      "communication": 5,
+      "quality": 5,
+      "punctuality": 5,
+      "milestones": [
+        {
+          "title": "UI/UX Design & Wireframes",
+          "rating": 5
+        },
+        {
+          "title": "Backend API Development",
+          "rating": 4
+        },
+        {
+          "title": "Mobile App Development",
+          "rating": 5
+        },
+        {
+          "title": "Payment Integration & Testing",
+          "rating": 4
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "userName": "David",
+      "projectTitle": "E-commerce Store Setup",
+      "comment": "Great design, smooth setup, and SEO optimization was very effective.",
+      "duration": "10 days",
+      "communication": 4,
+      "quality": 5,
+      "punctuality": 4,
+      "milestones": [
+        {
+          "title": "Store Setup & Theme Customization",
+          "rating": 5
+        },
+        {
+          "title": "SEO Optimization",
+          "rating": 4
+        },
+        {
+          "title": "Testing & Final Launch",
+          "rating": 5
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "userName": "Emma",
+      "projectTitle": "React Native Fitness Tracker App",
+      "comment": "The app works flawlessly. Very satisfied with the development process.",
+      "duration": "3 weeks",
+      "communication": 5,
+      "quality": 5,
+      "punctuality": 5,
+      "milestones": [
+        {
+          "title": "UI/UX Design & Prototyping",
+          "rating": 5
+        },
+        {
+          "title": "Core App Development",
+          "rating": 5
+        },
+        {
+          "title": "Testing & Launch",
+          "rating": 5
+        }
+      ]
+    }
+  ],
+  "earnings": [
+    {
+      "month": "Jan",
+      "amount": 1200,
+      "id": "19d2"
+    },
+    {
+      "month": "Feb",
+      "amount": 900,
+      "id": "483b"
+    },
+    {
+      "month": "Mar",
+      "amount": 1500,
+      "id": "ba14"
+    },
+    {
+      "month": "Apr",
+      "amount": 1100,
+      "id": "7995"
+    },
+    {
+      "month": "May",
+      "amount": 1300,
+      "id": "f7ff"
+    },
+    {
+      "month": "Jun",
+      "amount": 1700,
+      "id": "c5d9"
+    },
+    {
+      "month": "Jul",
+      "amount": 900,
+      "id": "c914"
+    },
+    {
+      "month": "Aug",
+      "amount": 1400,
+      "id": "965b"
+    },
+    {
+      "month": "Sep",
+      "amount": 2000,
+      "id": "a0a1"
+    },
+    {
+      "month": "Oct",
+      "amount": 1800,
+      "id": "1d14"
+    }
+  ]
+}

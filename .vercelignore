@@ -1,0 +1,11 @@
+node_modules
+.expo
+.git
+*.log
+.env.local
+.env*.local
+notes
+db.json
+earnings.json
+transactions.json
+

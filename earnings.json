@@ -1,0 +1,52 @@
+ [
+    {
+      "month": "Jan",
+      "amount": 1200,
+      "id": "19d2"
+    },
+    {
+      "month": "Feb",
+      "amount": 900,
+      "id": "483b"
+    },
+    {
+      "month": "Mar",
+      "amount": 1500,
+      "id": "ba14"
+    },
+    {
+      "month": "Apr",
+      "amount": 1100,
+      "id": "7995"
+    },
+    {
+      "month": "May",
+      "amount": 1300,
+      "id": "f7ff"
+    },
+    {
+      "month": "Jun",
+      "amount": 1700,
+      "id": "c5d9"
+    },
+    {
+      "month": "Jul",
+      "amount": 900,
+      "id": "c914"
+    },
+    {
+      "month": "Aug",
+      "amount": 1400,
+      "id": "965b"
+    },
+    {
+      "month": "Sep",
+      "amount": 2000,
+      "id": "a0a1"
+    },
+    {
+      "month": "Oct",
+      "amount": 1800,
+      "id": "1d14"
+    }
+  ]

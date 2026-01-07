@@ -1,0 +1,102 @@
+
+
+root/
+├─ .bolt
+├─ .expo
+├─ app/
+│   ├─ layout.tsx
+│   ├─ notfound.tsx
+│   ├─ login.tsx
+│   ├─ signup.tsx
+│   ├─ active-details.tsx
+│   ├─ completed-details.tsx
+│   ├─ earning.tsx
+│   ├─ Bid-now.tsx
+│   ├─ index.tsx
+│   ├─ FDisputes.tsx
+│   ├─ find-project.tsx
+│   ├─ profile-view.tsx
+│   ├─ index.tsx
+│   ├─ client-home.tsx
+│   ├─ project-detail.tsx
+│   ├─ proposal-detail.tsx
+│   ├─ reviewdetails.tsx
+│   ├─ reviews.tsx
+│   ├─ chatscreen.tsx
+│   ├─ wallet.tsx
+│   └─ tabs/
+│       ├─ layout.tsx
+│       ├─ index.tsx
+│       ├─ messages.tsx     
+│       ├─ my-work.tsx
+│       ├─ profile.tsx
+│       └─ project.tsx
+│    └─ client/
+│        ├─ index.tsx       # ClientHome
+│        ├─ Projects.tsx
+│        ├─ ProjectDetail.tsx
+│        ├─ index.ts
+│        ├─ ClientHome.tsx
+│        ├─ Disputes.tsx
+│        ├─ DisputeDetails.tsx
+│        ├─ Freelancers.tsx
+│        ├─ Wallet.tsx
+│        └─ components/
+│              ├─ ProjectCard.tsx
+│              └─ StatsCard.tsx
+├─ assets/
+├─ components/
+│   ├─ projectcard.tsx
+│   ├─ statscard.tsx
+│   └─ workcard.tsx
+├─ contexts/
+│   ├─ authcontext.tsx
+│   └─ walletcontext.tsx
+├─ freelance-backend/
+│   ├─ .env
+│   ├─ package-lock.json
+│   ├─ package.json
+│   ├─ server.js            
+│   ├─ models/
+│   │   ├─ earning.js
+│   │   ├─ conversation.js
+│   │   ├─ messages.js      <-- backend MongoDB model
+│   │   ├─ project.js
+│   │   ├─ transcript.js
+│   │   ├─ user.js
+│   │   └─ review.js
+│   ├─ node_modules/
+│   └─ routes/
+│       ├─ earningroutes.js
+│       ├─ messageroutes.js
+│       ├─ conversationroutes.js
+│       ├─ projectroutes.js
+        ├─ profileroutes.js
+│       ├─ reviewroutes.js
+│       ├─ transcriptroutes.js
+│       └─ userroutes.js
+├─ hooks/
+│   └─ useFrameworkReady.ts
+├─ models/                  <-- frontend models
+│   ├─ dispute.ts
+│   ├─ message.ts
+│   ├─ project.ts
+│   ├─ user.ts
+│   └─ wallet.ts
+├─ services/
+│   └─ apiservices.ts
+├─ utils/
+│   ├─ constants.ts
+│   └─ helper.ts
+│   └─ storage.ts
+├─ node_modules/
+├─ notes/
+├─ .gitignore
+├─ .npmrc
+├─ prettierrc
+├─ app.json
+├─ package-lock.json
+├─ package.json
+├─ tsconfig.json
+└─ config.json
+

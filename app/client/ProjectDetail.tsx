@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import {
   ArrowLeft,
   User,
@@ -11,68 +11,61 @@ import {
   MessageSquare,
 } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-
-// Milestone interface
-interface Milestone {
-  id: string;
-  title: string;
-  description: string;
-  amount: string;
-  status: 'completed' | 'in-progress' | 'pending';
-  dueDate: string;
-}
-
-// Projects & Milestones (for demo purposes)
-const PROJECTS_DATA = [
-  {
-    id: '1',
-    title: 'Mobile App UI/UX Design',
-    description: 'Looking for an experienced UI/UX designer to create a modern and intuitive mobile app design. The app is a fitness tracking application with social features. Need complete wireframes, high-fidelity mockups, and interactive prototypes.',
-    budget: '$2,500',
-    status: 'In Progress',
-    freelancer: { name: 'Sarah Johnson', rating: 4.9, completedProjects: 127 },
-    deadline: 'Dec 20, 2025',
-    milestones: [
-      { id: '1', title: 'Research & Wireframes', description: 'User research, competitor analysis, and low-fidelity wireframes', amount: '$500', status: 'completed', dueDate: 'Dec 5, 2025' },
-      { id: '2', title: 'High-Fidelity Mockups', description: 'Design system, UI components, and screen designs', amount: '$1,000', status: 'in-progress', dueDate: 'Dec 12, 2025' },
-      { id: '3', title: 'Interactive Prototype', description: 'Clickable prototype with animations and transitions', amount: '$700', status: 'pending', dueDate: 'Dec 18, 2025' },
-      { id: '4', title: 'Final Delivery & Handoff', description: 'Final assets, design files, and documentation', amount: '$300', status: 'pending', dueDate: 'Dec 20, 2025' },
-    ],
-  },
-  // Add other projects here
-];
+import { projectService } from '@/services/projectService';
+import { Project } from '@/models/Project';
 
 export default function ProjectDetail() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
-  
-  // Find the project by id
-  const project = PROJECTS_DATA.find((p) => p.id === id);
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!project) {
+  useEffect(() => {
+    const fetchProject = async () => {
+      if (!id) return;
+      try {
+        setLoading(true);
+        const fetchedProject = await projectService.getProjectById(id);
+        setProject(fetchedProject);
+      } catch (error: any) {
+        console.error('Failed to fetch project:', error);
+        Alert.alert('Error', error.message || 'Failed to load project');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProject();
+  }, [id]);
+
+  if (loading) {
     return (
-      <View style={styles.container}>
-        <Text style={{ margin: 20, fontSize: 16 }}>Project not found.</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text style={styles.loadingText}>Loading project...</Text>
       </View>
     );
   }
 
-  // Milestone helpers
-  const getMilestoneIcon = (status: Milestone['status']) => {
-    switch (status) {
-      case 'completed': return <CheckCircle2 size={20} color="#10B981" strokeWidth={2} />;
-      case 'in-progress': return <Clock size={20} color="#3B82F6" strokeWidth={2} />;
-      case 'pending': return <AlertCircle size={20} color="#6B7280" strokeWidth={2} />;
-    }
-  };
+  if (!project) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <ArrowLeft size={24} color="#1F2937" strokeWidth={2} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Project Details</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Project not found</Text>
+          <TouchableOpacity style={styles.backButtonStyle} onPress={() => router.back()}>
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
-  const getMilestoneColor = (status: Milestone['status']) => {
-    switch (status) {
-      case 'completed': return '#10B981';
-      case 'in-progress': return '#3B82F6';
-      case 'pending': return '#6B7280';
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -101,39 +94,75 @@ export default function ProjectDetail() {
               <DollarSign size={18} color="#6B7280" strokeWidth={2} />
               <View>
                 <Text style={styles.infoLabel}>Budget</Text>
-                <Text style={styles.infoValue}>{project.budget}</Text>
+                <Text style={styles.infoValue}>${project.budget}</Text>
               </View>
             </View>
 
-            <View style={styles.infoItem}>
-              <Calendar size={18} color="#6B7280" strokeWidth={2} />
-              <View>
-                <Text style={styles.infoLabel}>Deadline</Text>
-                <Text style={styles.infoValue}>{project.deadline}</Text>
+            {project.duration && (
+              <View style={styles.infoItem}>
+                <Calendar size={18} color="#6B7280" strokeWidth={2} />
+                <View>
+                  <Text style={styles.infoLabel}>Duration</Text>
+                  <Text style={styles.infoValue}>{project.duration}</Text>
+                </View>
               </View>
+            )}
+
+            {project.location && (
+              <View style={styles.infoItem}>
+                <Clock size={18} color="#6B7280" strokeWidth={2} />
+                <View>
+                  <Text style={styles.infoLabel}>Location</Text>
+                  <Text style={styles.infoValue}>{project.location}</Text>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* STATUS INFO */}
+        <View style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Status</Text>
+              <View style={[styles.statusBadge, { 
+                backgroundColor: project.status === 'ACTIVE' ? '#3B82F6' : 
+                                 project.status === 'COMPLETED' ? '#10B981' : '#6B7280' 
+              }]}>
+                <Text style={styles.statusText}>{project.status}</Text>
+              </View>
+            </View>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Bids</Text>
+              <Text style={styles.infoValue}>{project.bidsCount || 0}</Text>
             </View>
           </View>
         </View>
 
         {/* FREELANCER */}
-        <View style={styles.freelancerCard}>
-          <View style={styles.freelancerHeader}>
-            <View style={styles.avatarContainer}>
-              <User size={24} color="#3B82F6" strokeWidth={2} />
+        {project.freelancer && (
+          <View style={styles.freelancerCard}>
+            <View style={styles.freelancerHeader}>
+              <View style={styles.avatarContainer}>
+                <User size={24} color="#3B82F6" strokeWidth={2} />
+              </View>
+              <View style={styles.freelancerInfo}>
+                <Text style={styles.freelancerName}>{project.freelancer.userName || 'Freelancer'}</Text>
+                {project.freelancer.email && (
+                  <Text style={styles.freelancerStats}>{project.freelancer.email}</Text>
+                )}
+              </View>
             </View>
-            <View style={styles.freelancerInfo}>
-              <Text style={styles.freelancerName}>{project.freelancer?.name}</Text>
-              <Text style={styles.freelancerStats}>
-                ⭐ {project.freelancer?.rating} • {project.freelancer?.completedProjects} projects
-              </Text>
-            </View>
-          </View>
 
-          <TouchableOpacity style={styles.messageButton} onPress={() => router.push('/client/messages')}>
-            <MessageSquare size={18} color="#3B82F6" strokeWidth={2} />
-            <Text style={styles.messageButtonText}>Message</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity style={styles.messageButton} onPress={() => {
+              // TODO: Navigate to messages when implemented
+              Alert.alert('Coming Soon', 'Messaging feature coming soon!');
+            }}>
+              <MessageSquare size={18} color="#3B82F6" strokeWidth={2} />
+              <Text style={styles.messageButtonText}>Message</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* DESCRIPTION */}
         <View style={styles.section}>
@@ -141,33 +170,27 @@ export default function ProjectDetail() {
           <Text style={styles.description}>{project.description}</Text>
         </View>
 
-        {/* MILESTONES */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Milestones</Text>
-          {project.milestones.map((milestone, index) => (
-            <View key={milestone.id} style={styles.milestoneCard}>
-              <View style={styles.milestoneLeft}>
-                {getMilestoneIcon(milestone.status)}
-                <View style={styles.milestoneInfo}>
-                  <Text style={styles.milestoneTitle}>{milestone.title}</Text>
-                  <Text style={styles.milestoneDescription}>{milestone.description}</Text>
+        {/* TAGS */}
+        {project.tags && project.tags.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Skills/Tags</Text>
+            <View style={styles.tagsContainer}>
+              {project.tags.map((tag, index) => (
+                <View key={index} style={styles.tag}>
+                  <Text style={styles.tagText}>{tag}</Text>
                 </View>
-              </View>
-
-              <View style={styles.milestoneFooter}>
-                <View style={styles.milestoneMeta}>
-                  <Calendar size={14} color="#6B7280" strokeWidth={2} />
-                  <Text style={styles.milestoneDate}>{milestone.dueDate}</Text>
-                </View>
-                <Text style={[styles.milestoneAmount, { color: getMilestoneColor(milestone.status) }]}>
-                  {milestone.amount}
-                </Text>
-              </View>
-
-              {index < project.milestones.length - 1 && <View style={styles.timelineLine} />}
+              ))}
             </View>
-          ))}
-        </View>
+          </View>
+        )}
+
+        {/* CATEGORY */}
+        {project.category && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Category</Text>
+            <Text style={styles.categoryText}>{project.category}</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -199,12 +222,14 @@ const styles = StyleSheet.create({
   section: { marginHorizontal: 20, marginBottom: 20 },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
   description: { backgroundColor: '#FFF', padding: 16, borderRadius: 12, color: '#6B7280' },
-  milestoneCard: { backgroundColor: '#FFF', borderRadius: 12, padding: 16, marginBottom: 12, position: 'relative' },
-  milestoneLeft: { flexDirection: 'row', gap: 12 },
-  milestoneTitle: { fontWeight: '600' },
-  milestoneDescription: { color: '#6B7280', fontSize: 13 },
-  milestoneFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 },
-  milestoneMeta: { flexDirection: 'row', gap: 6 },
-  milestoneAmount: { fontWeight: '700' },
-  timelineLine: { position: 'absolute', left: 24, top: 50, bottom: -12, width: 2, backgroundColor: '#E5E7EB' },
+  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tag: { backgroundColor: '#EFF6FF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
+  tagText: { fontSize: 12, color: '#2563EB', fontWeight: '500' },
+  categoryText: { backgroundColor: '#FFF', padding: 16, borderRadius: 12, color: '#374151', fontSize: 16, fontWeight: '500' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' },
+  loadingText: { marginTop: 12, color: '#6B7280', fontSize: 14 },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  errorText: { fontSize: 18, color: '#374151', marginBottom: 20 },
+  backButtonStyle: { backgroundColor: '#3B82F6', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  backButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
 });

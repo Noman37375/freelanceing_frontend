@@ -2,29 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Clock, DollarSign, User } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-
-interface Project {
-  id: string;
-  title: string;
-  client?: { name?: string };
-  budgetMin?: number;
-  budgetMax?: number;
-  postedAt?: string;
-  skills: string[];
-  description?: string;
-}
-
-const STATIC_PROJECT: Project = {
-  id: 'static-1',
-  title: 'React Native Mobile App Development',
-  client: { name: 'Tech Startup' },
-  budgetMin: 300,
-  budgetMax: 600,
-  postedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 2 weeks ago
-  skills: ['React Native', 'JavaScript', 'UI/UX', 'API Integration'],
-  description:
-    'Looking for an experienced React Native developer to build a modern mobile application.',
-};
+import { Project } from '@/models/Project';
 
 const timeAgo = (timestamp?: string) => {
   if (!timestamp) return 'Not specified';
@@ -41,7 +19,11 @@ const timeAgo = (timestamp?: string) => {
   return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago`;
 };
 
-export default function ProjectCard({ project = STATIC_PROJECT }: { project?: Project }) {
+interface ProjectCardProps {
+  project: Project;
+}
+
+export default function ProjectCard({ project }: ProjectCardProps) {
   const router = useRouter();
 
   return (
@@ -54,15 +36,17 @@ export default function ProjectCard({ project = STATIC_PROJECT }: { project?: Pr
       <Text style={styles.title}>{project.title}</Text>
 
       {/* Posted by */}
-      <View style={styles.row}>
-        <User size={14} color="#6B7280" />
-        <Text style={styles.metaText}>
-          Posted by {project.client?.name || 'Unknown'}
-        </Text>
-      </View>
+      {project.client && (
+        <View style={styles.row}>
+          <User size={14} color="#6B7280" />
+          <Text style={styles.metaText}>
+            Posted by {project.client.userName || 'Unknown'}
+          </Text>
+        </View>
+      )}
 
       {/* Description */}
-      <Text style={styles.description}>
+      <Text style={styles.description} numberOfLines={2}>
         {project.description || 'Description not specified'}
       </Text>
 
@@ -71,35 +55,57 @@ export default function ProjectCard({ project = STATIC_PROJECT }: { project?: Pr
         <View style={styles.infoItem}>
           <DollarSign size={16} color="#10B981" />
           <Text style={styles.budget}>
-            ${project.budgetMin ?? 'Not specified'} – ${project.budgetMax ?? 'Not specified'}
+            ${project.budget || 'Not specified'}
           </Text>
         </View>
 
-        <View style={styles.infoItem}>
-          <Clock size={16} color="#F59E0B" />
-          <Text style={styles.postedTime}>{timeAgo(project.postedAt)}</Text>
-        </View>
+        {project.createdAt && (
+          <View style={styles.infoItem}>
+            <Clock size={16} color="#F59E0B" />
+            <Text style={styles.postedTime}>{timeAgo(project.createdAt)}</Text>
+          </View>
+        )}
       </View>
 
-      {/* Skills */}
-      <View style={styles.skills}>
-        {project.skills.map((skill, index) => (
-          <View key={index} style={styles.skillTag}>
-            <Text style={styles.skillText}>{skill}</Text>
-          </View>
-        ))}
-      </View>
+      {/* Tags/Skills */}
+      {project.tags && project.tags.length > 0 && (
+        <View style={styles.skills}>
+          {project.tags.slice(0, 3).map((tag, index) => (
+            <View key={index} style={styles.skillTag}>
+              <Text style={styles.skillText}>{tag}</Text>
+            </View>
+          ))}
+          {project.tags.length > 3 && (
+            <Text style={styles.moreTags}>+{project.tags.length - 3} more</Text>
+          )}
+        </View>
+      )}
+
+      {/* Status Badge */}
+      {project.status && (
+        <View style={[styles.statusBadge, project.status === 'ACTIVE' && styles.statusActive]}>
+          <Text style={[styles.statusText, project.status === 'ACTIVE' && styles.statusTextActive]}>
+            {project.status}
+          </Text>
+        </View>
+      )}
 
       {/* Actions */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.applyButton}
-          onPress={() => router.push(`/Bid-now?id=${project.id}`)}
+          onPress={(e) => {
+            e.stopPropagation();
+            router.push(`/Bid-now?id=${project.id}`);
+          }}
         >
           <Text style={styles.applyButtonText}>Bid Now</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.saveButton}>
+        <TouchableOpacity 
+          style={styles.saveButton}
+          onPress={(e) => e.stopPropagation()}
+        >
           <Text style={styles.saveButtonText}>Save</Text>
         </TouchableOpacity>
       </View>
@@ -127,9 +133,21 @@ const styles = StyleSheet.create({
   infoItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   budget: { fontSize: 14, fontWeight: '600', color: '#10B981' },
   postedTime: { fontSize: 13, fontWeight: '500', color: '#F59E0B' },
-  skills: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
+  skills: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14, alignItems: 'center' },
   skillTag: { backgroundColor: '#F3F4F6', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 14 },
   skillText: { fontSize: 12, fontWeight: '500', color: '#374151' },
+  moreTags: { fontSize: 12, color: '#6B7280', fontStyle: 'italic' },
+  statusBadge: { 
+    alignSelf: 'flex-start', 
+    paddingHorizontal: 8, 
+    paddingVertical: 4, 
+    borderRadius: 12, 
+    backgroundColor: '#F3F4F6',
+    marginBottom: 8,
+  },
+  statusActive: { backgroundColor: '#D1FAE5' },
+  statusText: { fontSize: 11, fontWeight: '600', color: '#6B7280' },
+  statusTextActive: { color: '#10B981' },
   footer: { flexDirection: 'row', gap: 12 },
   applyButton: { flex: 1, backgroundColor: '#2563EB', paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
   applyButtonText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },

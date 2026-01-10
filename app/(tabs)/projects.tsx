@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,15 +7,25 @@ import {
   TextInput,
   TouchableOpacity,
   Modal,
+  ActivityIndicator,
+  RefreshControl,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Search, Filter, MapPin, Clock, X } from "lucide-react-native";
 import ProjectCard from "@/components/ProjectCard";
+import { projectService } from "@/services/projectService";
+import { Project } from "@/models/Project";
+import { useRouter } from "expo-router";
 
 export default function ProjectsScreen() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showFilter, setShowFilter] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Filter states
   const [minPrice, setMinPrice] = useState("");
@@ -33,51 +43,39 @@ export default function ProjectsScreen() {
     "Data",
   ];
 
-  // 🔹 Static project data
-  const STATIC_PROJECTS = [
-    {
-      id: "1",
-      title: "React Native Mobile App",
-      skills: ["Development", "UI/UX"],
-      budget: "$500 - $1000",
-      postedTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      deadline: "7 days",
-      location: "Karachi",
-      proposals: 5,
-    },
-    {
-      id: "2",
-      title: "Website Redesign",
-      skills: ["Design", "Development"],
-      budget: "$300 - $700",
-      postedTime: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-      deadline: "14 days",
-      location: "Remote",
-      proposals: 8,
-    },
-    {
-      id: "3",
-      title: "Backend API Development",
-      skills: ["Development"],
-      budget: "$400 - $800",
-      postedTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      deadline: "10 days",
-      location: "Lahore",
-      proposals: 3,
-    },
-    {
-      id: "4",
-      title: "Content Writing for Blog",
-      skills: ["Writing", "Marketing"],
-      budget: "$100 - $300",
-      postedTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      deadline: "3 days",
-      location: "Remote",
-      proposals: 12,
-    },
-  ];
+  // Fetch projects from API
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const filters: any = { status: 'ACTIVE' };
+      if (selectedCategory !== 'All') {
+        filters.category = selectedCategory;
+      }
+      if (searchQuery) {
+        filters.search = searchQuery;
+      }
+      if (location) {
+        // Note: Location filter might need backend support
+      }
+      const fetchedProjects = await projectService.getProjects(filters);
+      setProjects(fetchedProjects);
+    } catch (error: any) {
+      console.error('Failed to fetch projects:', error);
+      Alert.alert('Error', error.message || 'Failed to load projects');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
-  const [projects] = useState(STATIC_PROJECTS);
+  useEffect(() => {
+    fetchProjects();
+  }, [selectedCategory]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchProjects();
+  };
 
   const timeAgo = (timestamp: string) => {
     const postedDate = new Date(timestamp);
@@ -101,8 +99,9 @@ export default function ProjectsScreen() {
       .includes(searchQuery.toLowerCase());
     const matchesCategory =
       selectedCategory === "All" ||
-      project.skills?.some((skill) =>
-        skill.toLowerCase().includes(selectedCategory.toLowerCase())
+      project.category === selectedCategory ||
+      project.tags?.some((tag) =>
+        tag.toLowerCase().includes(selectedCategory.toLowerCase())
       );
     const matchesLocation = location
       ? project.location?.toLowerCase().includes(location.toLowerCase())
@@ -176,25 +175,54 @@ export default function ProjectsScreen() {
       </View>
 
       {/* Project List */}
-      <ScrollView style={styles.projectsList} showsVerticalScrollIndicator={false}>
-        <Text style={styles.resultsText}>{filteredProjects.length} available tasks</Text>
-        {filteredProjects.map((project) => (
-          <View key={project.id} style={styles.projectCardContainer}>
-            <ProjectCard project={project} showDetails />
-            <View style={styles.projectMeta}>
-              <View style={styles.metaItem}>
-                <MapPin size={14} color="#6B7280" />
-                <Text style={styles.metaText}>{project.location}</Text>
-              </View>
-              <View style={styles.metaItem}>
-                <Clock size={14} color="#6B7280" />
-                <Text style={styles.metaText}>{timeAgo(project.postedTime)}</Text>
-              </View>
-              <Text style={styles.proposalsText}>{project.proposals} proposals</Text>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text style={styles.loadingText}>Loading projects...</Text>
+        </View>
+      ) : (
+        <ScrollView 
+          style={styles.projectsList} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          <Text style={styles.resultsText}>{filteredProjects.length} available tasks</Text>
+          {filteredProjects.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No projects found</Text>
+              <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
             </View>
-          </View>
-        ))}
-      </ScrollView>
+          ) : (
+            filteredProjects.map((project) => (
+              <TouchableOpacity
+                key={project.id}
+                onPress={() => router.push(`/project-details?id=${project.id}`)}
+              >
+                <View style={styles.projectCardContainer}>
+                  <ProjectCard project={project} />
+                  <View style={styles.projectMeta}>
+                    {project.location && (
+                      <View style={styles.metaItem}>
+                        <MapPin size={14} color="#6B7280" />
+                        <Text style={styles.metaText}>{project.location}</Text>
+                      </View>
+                    )}
+                    {project.createdAt && (
+                      <View style={styles.metaItem}>
+                        <Clock size={14} color="#6B7280" />
+                        <Text style={styles.metaText}>{timeAgo(project.createdAt)}</Text>
+                      </View>
+                    )}
+                    <Text style={styles.proposalsText}>{project.bidsCount || 0} bids</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
+        </ScrollView>
+      )}
 
       {/* Filter Modal */}
       <Modal
@@ -326,4 +354,9 @@ const styles = StyleSheet.create({
   applyBtn: { flex: 1, padding: 12, borderRadius: 12, backgroundColor: "#3B82F6", alignItems: "center" },
   resetText: { color: "#111827", fontWeight: "500" },
   applyText: { color: "#fff", fontWeight: "500" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 40 },
+  loadingText: { marginTop: 12, color: "#6B7280", fontSize: 14 },
+  emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 60 },
+  emptyText: { fontSize: 18, fontWeight: "600", color: "#374151", marginBottom: 8 },
+  emptySubtext: { fontSize: 14, color: "#6B7280" },
 });

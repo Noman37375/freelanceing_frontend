@@ -1,21 +1,60 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, RefreshControl } from 'react-native';
 import { Search, Filter, Plus, ArrowLeft } from 'lucide-react-native';
 import ProjectCard from './components/ProjectCard';
 import { useRouter } from 'expo-router';
-
-const PROJECTS_DATA = [
-  { id: '1', title: 'Mobile App UI/UX Design', budget: '$2,500', status: 'In Progress' as const, freelancer: 'Sarah Johnson', deadline: 'Dec 20, 2025' },
-  { id: '2', title: 'E-commerce Website Development', budget: '$5,000', status: 'Active' as const, freelancer: 'Michael Chen', deadline: 'Dec 28, 2025' },
-  { id: '3', title: 'Logo Design & Branding', budget: '$800', status: 'Completed' as const, freelancer: 'Emma Davis', deadline: 'Dec 10, 2025' },
-  { id: '4', title: 'SEO Optimization & Content Writing', budget: '$1,200', status: 'In Progress' as const, freelancer: 'David Wilson', deadline: 'Dec 18, 2025' },
-  { id: '5', title: 'Social Media Marketing Campaign', budget: '$1,800', status: 'Active' as const, freelancer: 'Lisa Anderson', deadline: 'Dec 25, 2025' },
-  { id: '6', title: 'WordPress Blog Setup', budget: '$600', status: 'Completed' as const, freelancer: 'Robert Taylor', deadline: 'Dec 5, 2025' },
-  { id: '7', title: 'Video Editing for YouTube', budget: '$900', status: 'Pending' as const, deadline: 'Dec 15, 2025' },
-];
+import { projectService } from '@/services/projectService';
+import { Project } from '@/models/Project';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Projects() {
   const router = useRouter();
+  const { user } = useAuth();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Fetch client's projects
+  const fetchProjects = async () => {
+    if (!user?.id) return;
+    try {
+      setLoading(true);
+      const filters: any = { clientId: user.id };
+      if (searchQuery) {
+        filters.search = searchQuery;
+      }
+      const fetchedProjects = await projectService.getProjects(filters);
+      setProjects(fetchedProjects);
+    } catch (error: any) {
+      console.error('Failed to fetch projects:', error);
+      Alert.alert('Error', error.message || 'Failed to load projects');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, [user?.id]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchProjects();
+  };
+
+  // Calculate stats
+  const stats = {
+    total: projects.length,
+    active: projects.filter(p => p.status === 'ACTIVE').length,
+    completed: projects.filter(p => p.status === 'COMPLETED').length,
+    cancelled: projects.filter(p => p.status === 'CANCELLED').length,
+  };
+
+  const filteredProjects = projects.filter(project =>
+    project.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <View style={styles.container}>
@@ -25,7 +64,10 @@ export default function Projects() {
           <ArrowLeft size={24} color="#1F2937" strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Projects</Text>
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity 
+          style={styles.addButton}
+          onPress={() => router.push('/create-project')}
+        >
           <Plus size={20} color="#FFFFFF" strokeWidth={2} />
         </TouchableOpacity>
       </View>
@@ -38,6 +80,8 @@ export default function Projects() {
             style={styles.searchInput}
             placeholder="Search projects..."
             placeholderTextColor="#9CA3AF"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
         </View>
         <TouchableOpacity style={styles.filterButton}>
@@ -48,45 +92,66 @@ export default function Projects() {
       {/* Stats Row */}
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>12</Text>
+          <Text style={styles.statValue}>{stats.total}</Text>
           <Text style={styles.statLabel}>Total</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={[styles.statValue, { color: '#3B82F6' }]}>5</Text>
+          <Text style={[styles.statValue, { color: '#3B82F6' }]}>{stats.active}</Text>
           <Text style={styles.statLabel}>Active</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={[styles.statValue, { color: '#10B981' }]}>4</Text>
+          <Text style={[styles.statValue, { color: '#10B981' }]}>{stats.completed}</Text>
           <Text style={styles.statLabel}>Completed</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={[styles.statValue, { color: '#F59E0B' }]}>3</Text>
-          <Text style={styles.statLabel}>Pending</Text>
+          <Text style={[styles.statValue, { color: '#F59E0B' }]}>{stats.cancelled}</Text>
+          <Text style={styles.statLabel}>Cancelled</Text>
         </View>
       </View>
 
       {/* Projects List */}
-      <ScrollView style={styles.projectsList} showsVerticalScrollIndicator={false}>
-        <View style={styles.projectsContent}>
-          {PROJECTS_DATA.map((project) => (
-            <ProjectCard
-              key={project.id}
-              title={project.title}
-              budget={project.budget}
-              status={project.status}
-              freelancer={project.freelancer}
-              deadline={project.deadline}
-              onPress={() =>
-                router.push({
-                  pathname: '/client/ProjectDetail',
-                  params: { id: project.id },
-                })
-              }
- // <-- Connected to ProjectDetail
-            />
-          ))}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text style={styles.loadingText}>Loading projects...</Text>
         </View>
-      </ScrollView>
+      ) : (
+        <ScrollView 
+          style={styles.projectsList} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          <View style={styles.projectsContent}>
+            {filteredProjects.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No projects found</Text>
+                <Text style={styles.emptySubtext}>
+                  {searchQuery ? 'Try a different search term' : 'Create your first project!'}
+                </Text>
+              </View>
+            ) : (
+              filteredProjects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  title={project.title}
+                  budget={`$${project.budget}`}
+                  status={project.status === 'ACTIVE' ? 'Active' : project.status === 'COMPLETED' ? 'Completed' : 'Cancelled'}
+                  freelancer={project.freelancer?.userName}
+                  deadline={project.duration || 'Not specified'}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/client/ProjectDetail',
+                      params: { id: project.id },
+                    })
+                  }
+                />
+              ))
+            )}
+          </View>
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -172,5 +237,10 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12, color: '#6B7280', fontWeight: '500' },
   projectsList: { flex: 1 },
   projectsContent: { padding: 20, paddingTop: 0 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 },
+  loadingText: { marginTop: 12, color: '#6B7280', fontSize: 14 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
+  emptyText: { fontSize: 18, fontWeight: '600', color: '#374151', marginBottom: 8 },
+  emptySubtext: { fontSize: 14, color: '#6B7280' },
 });
 

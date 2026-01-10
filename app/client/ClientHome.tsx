@@ -1,60 +1,99 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from 'react-native';
 import { Briefcase, DollarSign, MessageSquare, AlertCircle, Plus, Search, LogOut } from 'lucide-react-native';
 import StatsCard from './components/StatsCard';
 import ProjectCard from './components/ProjectCard';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-
-const STATS_DATA = [
-  { title: 'Projects', value: '12', icon: Briefcase, iconColor: '#3B82F6' },
-  { title: 'Total Spent', value: '$24.5K', icon: DollarSign, iconColor: '#10B981' },
-  { title: 'Messages', value: '8', icon: MessageSquare, iconColor: '#F59E0B' },
-  { title: 'Disputes', value: '2', icon: AlertCircle, iconColor: '#EF4444' },
-];
-
-const RECENT_PROJECTS = [
-  {
-    id: '1',
-    title: 'Mobile App UI/UX Design',
-    budget: '$2,500',
-    status: 'In Progress' as const,
-    freelancer: 'Sarah Johnson',
-    deadline: 'Dec 20, 2025',
-  },
-  {
-    id: '2',
-    title: 'E-commerce Website Development',
-    budget: '$5,000',
-    status: 'Active' as const,
-    freelancer: 'Michael Chen',
-    deadline: 'Dec 28, 2025',
-  },
-  {
-    id: '3',
-    title: 'Logo Design & Branding',
-    budget: '$800',
-    status: 'Completed' as const,
-    freelancer: 'Emma Davis',
-    deadline: 'Dec 10, 2025',
-  },
-];
+import { projectService } from '@/services/projectService';
+import { Project } from '@/models/Project';
 
 export default function ClientHome() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState({
+    total: 0,
+    totalSpent: 0,
+    messages: 0,
+    disputes: 0,
+  });
+
+  // Fetch client's projects
+  const fetchProjects = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      const fetchedProjects = await projectService.getProjects({ clientId: user.id });
+      setProjects(fetchedProjects);
+      
+      // Calculate stats
+      const total = fetchedProjects.length;
+      const totalSpent = fetchedProjects
+        .filter(p => p.status === 'COMPLETED')
+        .reduce((sum, p) => sum + (p.budget || 0), 0);
+      
+      setStats({
+        total,
+        totalSpent,
+        messages: 0, // TODO: Implement when messages API is ready
+        disputes: 0, // TODO: Implement when disputes API is ready
+      });
+    } catch (error: any) {
+      console.error('Failed to fetch projects:', error);
+      Alert.alert('Error', error.message || 'Failed to load data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, [user?.id]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchProjects();
+  };
+
+  // Get recent projects (last 3)
+  const recentProjects = projects
+    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+    .slice(0, 3);
 
   const handleLogout = async () => {
     await logout(); // clears storage + user
     router.replace('/login'); // go to login screen
   };
 
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.container} 
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       {/* HEADER */}
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Welcome back!</Text>
-          <Text style={styles.userName}>John Doe</Text>
+          <Text style={styles.userName}>{user?.userName || 'Client'}</Text>
         </View>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <LogOut size={20} color="#EF4444" strokeWidth={2} />
@@ -65,30 +104,56 @@ export default function ClientHome() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.statsContainer}>
-          {STATS_DATA.map((stat, index) => {
-            const isDisputes = stat.title === 'Disputes';
-            const isProjects = stat.title === 'Projects';
-            const isWallet = stat.title === 'Total Spent';
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.push('/client/Projects')}
+          >
+            <StatsCard
+              title="Projects"
+              value={stats.total.toString()}
+              icon={Briefcase}
+              iconColor="#3B82F6"
+            />
+          </TouchableOpacity>
 
-            return (
-              <TouchableOpacity
-                key={index}
-                activeOpacity={0.8}
-                onPress={() => {
-                  if (isDisputes) router.push('/client/Disputes');
-                  if (isProjects) router.push('/client/Projects');
-                  if (isWallet) router.push('/client/Wallet');
-                }}
-              >
-                <StatsCard
-                  title={stat.title}
-                  value={stat.value}
-                  icon={stat.icon}
-                  iconColor={stat.iconColor}
-                />
-              </TouchableOpacity>
-            );
-          })}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.push('/client/Wallet')}
+          >
+            <StatsCard
+              title="Total Spent"
+              value={`$${(stats.totalSpent / 1000).toFixed(1)}K`}
+              icon={DollarSign}
+              iconColor="#10B981"
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => {
+              // TODO: Navigate to messages when implemented
+              Alert.alert('Coming Soon', 'Messages feature coming soon!');
+            }}
+          >
+            <StatsCard
+              title="Messages"
+              value={stats.messages.toString()}
+              icon={MessageSquare}
+              iconColor="#F59E0B"
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.push('/client/Disputes')}
+          >
+            <StatsCard
+              title="Disputes"
+              value={stats.disputes.toString()}
+              icon={AlertCircle}
+              iconColor="#EF4444"
+            />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -96,7 +161,10 @@ export default function ClientHome() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => router.push('/create-project')}
+          >
             <View style={[styles.actionIconContainer, { backgroundColor: '#3B82F6' }]}>
               <Plus size={24} color="#FFFFFF" strokeWidth={2} />
             </View>
@@ -126,22 +194,35 @@ export default function ClientHome() {
           </TouchableOpacity>
         </View>
 
-        {RECENT_PROJECTS.map((project) => (
-          <ProjectCard
-            key={project.id}
-            title={project.title}
-            budget={project.budget}
-            status={project.status}
-            freelancer={project.freelancer}
-            deadline={project.deadline}
-            onPress={() =>
-              router.push({
-                pathname: '/client/ProjectDetail',
-                params: { id: project.id },
-              })
-            }
-          />
-        ))}
+        {recentProjects.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No projects yet</Text>
+            <Text style={styles.emptySubtext}>Create your first project to get started!</Text>
+            <TouchableOpacity 
+              style={styles.createButton}
+              onPress={() => router.push('/create-project')}
+            >
+              <Text style={styles.createButtonText}>Create Project</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          recentProjects.map((project) => (
+            <ProjectCard
+              key={project.id}
+              title={project.title}
+              budget={`$${project.budget}`}
+              status={project.status === 'ACTIVE' ? 'Active' : project.status === 'COMPLETED' ? 'Completed' : project.status === 'CANCELLED' ? 'Cancelled' : 'In Progress'}
+              freelancer={project.freelancer?.userName}
+              deadline={project.duration || 'Not specified'}
+              onPress={() =>
+                router.push({
+                  pathname: '/client/ProjectDetail',
+                  params: { id: project.id },
+                })
+              }
+            />
+          ))
+        )}
 
       </View>
     </ScrollView>
@@ -185,4 +266,26 @@ const styles = StyleSheet.create({
   actionIconContainer: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   actionTitle: { fontSize: 16, fontWeight: '600', color: '#1F2937', marginBottom: 4, textAlign: 'center' },
   actionSubtitle: { fontSize: 12, color: '#6B7280', textAlign: 'center' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' },
+  loadingText: { marginTop: 12, color: '#6B7280', fontSize: 14 },
+  emptyContainer: { 
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 12, 
+    padding: 24, 
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  emptyText: { fontSize: 16, fontWeight: '600', color: '#374151', marginBottom: 4 },
+  emptySubtext: { fontSize: 14, color: '#6B7280', marginBottom: 16, textAlign: 'center' },
+  createButton: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  createButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });

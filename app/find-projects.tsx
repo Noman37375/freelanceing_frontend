@@ -5,72 +5,53 @@ import {
   TextInput, 
   StyleSheet, 
   TouchableOpacity, 
-  FlatList 
+  FlatList,
+  ActivityIndicator,
+  RefreshControl,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import ProjectCard from '@/components/ProjectCard';
+import { projectService } from '@/services/projectService';
+import { Project } from '@/models/Project';
 
 export default function FindProjectsScreen() {
   const router = useRouter();
-
-  // 🔹 Static project data
-  const STATIC_PROJECTS = [
-    {
-      id: '1',
-      title: 'React Native Mobile App',
-      client: { name: 'Tech Startup' },
-      budgetMin: 300,
-      budgetMax: 600,
-      postedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-      skills: ['React Native', 'JavaScript', 'UI/UX', 'API Integration'],
-      description: 'Build a modern mobile app with React Native.',
-      status: 'available',
-      category: ['Mobile App', 'UI/UX Design'],
-    },
-    {
-      id: '2',
-      title: 'Website Redesign',
-      client: { name: 'Design Agency' },
-      budgetMin: 200,
-      budgetMax: 500,
-      postedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      skills: ['HTML', 'CSS', 'JavaScript', 'UI/UX'],
-      description: 'Redesign an existing website to modern standards.',
-      status: 'available',
-      category: ['Web Development', 'UI/UX Design'],
-    },
-    {
-      id: '3',
-      title: 'Backend API Development',
-      client: { name: 'SaaS Company' },
-      budgetMin: 400,
-      budgetMax: 800,
-      postedAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
-      skills: ['Node.js', 'Express', 'MongoDB', 'API'],
-      description: 'Develop RESTful APIs for a SaaS platform.',
-      status: 'available',
-      category: ['Backend', 'Web Development'],
-    },
-    {
-      id: '4',
-      title: 'E-commerce Mobile App',
-      client: { name: 'Retail Startup' },
-      budgetMin: 500,
-      budgetMax: 1000,
-      postedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-      skills: ['React Native', 'Stripe', 'UI/UX'],
-      description: 'Create a shopping app with payment integration.',
-      status: 'available',
-      category: ['Mobile App', 'UI/UX Design'],
-    },
-  ];
-
-  const [projects, setProjects] = useState(STATIC_PROJECTS);
-  const [filteredProjects, setFilteredProjects] = useState(STATIC_PROJECTS);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState('All');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch projects from API
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const filters: any = { status: 'ACTIVE' };
+      if (filterType !== 'All') {
+        filters.category = filterType;
+      }
+      if (searchText) {
+        filters.search = searchText;
+      }
+      const fetchedProjects = await projectService.getProjects(filters);
+      setProjects(fetchedProjects);
+      setFilteredProjects(fetchedProjects);
+    } catch (error: any) {
+      console.error('Failed to fetch projects:', error);
+      Alert.alert('Error', error.message || 'Failed to load projects');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
   // 🔍 Search & filter logic
   useEffect(() => {
@@ -79,15 +60,16 @@ export default function FindProjectsScreen() {
     );
 
     if (filterType !== 'All') {
-      result = result.filter((p) =>
-        Array.isArray(p.category)
-          ? p.category.includes(filterType)
-          : p.category === filterType
-      );
+      result = result.filter((p) => p.category === filterType);
     }
 
     setFilteredProjects(result);
   }, [searchText, filterType, projects]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchProjects();
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -133,12 +115,31 @@ export default function FindProjectsScreen() {
       </View>
 
       {/* 🧩 Project List */}
-      <FlatList
-        data={filteredProjects}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <ProjectCard project={item} />}
-        contentContainerStyle={{ paddingBottom: 100 }}
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text style={styles.loadingText}>Loading projects...</Text>
+        </View>
+      ) : filteredProjects.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No projects found</Text>
+          <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredProjects}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity onPress={() => router.push(`/project-details?id=${item.id}` as any)}>
+              <ProjectCard project={item} />
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -161,4 +162,9 @@ const styles = StyleSheet.create({
   filterButtonActive: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' },
   filterButtonText: { color: '#374151', fontWeight: '600' },
   filterButtonTextActive: { color: '#FFFFFF' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 },
+  loadingText: { marginTop: 12, color: '#6B7280', fontSize: 14 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
+  emptyText: { fontSize: 18, fontWeight: '600', color: '#374151', marginBottom: 8 },
+  emptySubtext: { fontSize: 14, color: '#6B7280' },
 });

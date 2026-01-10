@@ -48,12 +48,9 @@ export default function ProfileScreen() {
   
   // Form states
   const [editedUserName, setEditedUserName] = useState("");
-  const [editedTitle, setEditedTitle] = useState("");
   const [editedBio, setEditedBio] = useState("");
-  const [editedLocation, setEditedLocation] = useState("");
   const [editedPhone, setEditedPhone] = useState("");
   const [editedHourlyRate, setEditedHourlyRate] = useState("");
-  const [editedAvailability, setEditedAvailability] = useState("");
   const [editedSkills, setEditedSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState("");
 
@@ -61,12 +58,9 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (editModalVisible && user) {
       setEditedUserName(user.userName || "");
-      setEditedTitle(user.title || "");
       setEditedBio(user.bio || "");
-      setEditedLocation(user.location || "");
       setEditedPhone(user.phone || "");
       setEditedHourlyRate(user.hourlyRate?.toString() || "");
-      setEditedAvailability(user.availability || "");
       setEditedSkills(user.skills || []);
     }
   }, [editModalVisible, user]);
@@ -103,12 +97,9 @@ export default function ProfileScreen() {
     try {
       const profileData: any = {
         userName: editedUserName.trim(),
-        title: editedTitle.trim() || undefined,
         bio: editedBio.trim() || undefined,
-        location: editedLocation.trim() || undefined,
         phone: editedPhone.trim() || undefined,
         hourlyRate: editedHourlyRate ? parseFloat(editedHourlyRate) : undefined,
-        availability: editedAvailability.trim() || undefined,
         skills: editedSkills.length > 0 ? editedSkills : undefined,
       };
 
@@ -160,15 +151,8 @@ export default function ProfileScreen() {
           </View>
           
           <Text style={styles.userName}>{user?.userName || "User"}</Text>
-          {user?.title && <Text style={styles.userTitle}>{user.title}</Text>}
           
           <View style={styles.metaInfo}>
-            {user?.location && (
-              <View style={styles.metaItem}>
-                <MapPin size={14} color="#6B7280" />
-                <Text style={styles.metaText}>{user.location}</Text>
-              </View>
-            )}
             {user?.isVerified && (
               <View style={styles.verifiedBadge}>
                 <CheckCircle2 size={14} color="#10B981" />
@@ -244,16 +228,6 @@ export default function ProfileScreen() {
               <Text style={styles.contactValue}>{user?.role || 'Freelancer'}</Text>
             </View>
           </View>
-
-          {user?.availability && (
-            <View style={styles.contactRow}>
-              <Clock size={20} color="#6B7280" />
-              <View style={styles.contactContent}>
-                <Text style={styles.contactLabel}>Availability</Text>
-                <Text style={styles.contactValue}>{user.availability}</Text>
-              </View>
-            </View>
-          )}
         </SectionCard>
 
         {/* Languages */}
@@ -281,25 +255,6 @@ export default function ProfileScreen() {
                   <Text style={styles.listItemTitle}>{edu.degree}</Text>
                   <Text style={styles.listItemSubtitle}>{edu.school}</Text>
                   <Text style={styles.listItemMeta}>{edu.years}</Text>
-                </View>
-              </View>
-            ))}
-          </SectionCard>
-        )}
-
-        {/* Experience */}
-        {user?.experience && user.experience.length > 0 && (
-          <SectionCard title="Work Experience">
-            {user.experience.map((exp, index) => (
-              <View key={index} style={styles.listItem}>
-                <Briefcase size={18} color="#3B82F6" />
-                <View style={styles.listItemContent}>
-                  <Text style={styles.listItemTitle}>{exp.position}</Text>
-                  <Text style={styles.listItemSubtitle}>{exp.company}</Text>
-                  <Text style={styles.listItemMeta}>{exp.duration}</Text>
-                  {exp.description && (
-                    <Text style={styles.listItemDesc}>{exp.description}</Text>
-                  )}
                 </View>
               </View>
             ))}
@@ -382,18 +337,6 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Professional Title</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. Full Stack Developer"
-                  placeholderTextColor="#9CA3AF"
-                  value={editedTitle}
-                  onChangeText={setEditedTitle}
-                  editable={!isSaving}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Email</Text>
                 <TextInput
                   style={[styles.input, styles.inputDisabled]}
@@ -401,21 +344,6 @@ export default function ProfileScreen() {
                   editable={false}
                 />
                 <Text style={styles.inputHint}>Email cannot be changed</Text>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Location</Text>
-                <View style={styles.inputWithIcon}>
-                  <MapPin size={20} color="#9CA3AF" />
-                  <TextInput
-                    style={styles.inputWithIconText}
-                    placeholder="City, Country"
-                    placeholderTextColor="#9CA3AF"
-                    value={editedLocation}
-                    onChangeText={setEditedLocation}
-                    editable={!isSaving}
-                  />
-                </View>
               </View>
 
               <View style={styles.inputGroup}>
@@ -500,7 +428,7 @@ export default function ProfileScreen() {
               <View style={styles.divider} />
 
               {/* Pricing Section */}
-              <Text style={styles.sectionTitle}>Pricing & Availability</Text>
+              <Text style={styles.sectionTitle}>Pricing</Text>
               
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Hourly Rate (USD)</Text>
@@ -513,21 +441,6 @@ export default function ProfileScreen() {
                     value={editedHourlyRate}
                     onChangeText={setEditedHourlyRate}
                     keyboardType="decimal-pad"
-                    editable={!isSaving}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Availability</Text>
-                <View style={styles.inputWithIcon}>
-                  <Clock size={20} color="#9CA3AF" />
-                  <TextInput
-                    style={styles.inputWithIconText}
-                    placeholder="e.g. 30 hours/week"
-                    placeholderTextColor="#9CA3AF"
-                    value={editedAvailability}
-                    onChangeText={setEditedAvailability}
                     editable={!isSaving}
                   />
                 </View>

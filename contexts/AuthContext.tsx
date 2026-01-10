@@ -15,12 +15,6 @@ interface Education {
   description?: string;
 }
 
-interface Experience {
-  company: string;
-  position: string;
-  duration: string;
-  description?: string;
-}
 
 interface Certification {
   name: string;
@@ -46,19 +40,19 @@ interface User {
   updatedAt?: string;
   
   // Profile fields
-  title?: string;
   bio?: string;
   skills?: string[];
   hourlyRate?: number;
-  location?: string;
   phone?: string;
   languages?: Language[];
   education?: Education[];
-  experience?: Experience[];
   certifications?: Certification[];
   portfolio?: Portfolio[];
   profileImage?: string;
-  availability?: string;
+  rating?: number;
+  reviewsCount?: number;
+  projectsCompleted?: number;
+  about?: string;
 }
 
 interface AuthContextType {

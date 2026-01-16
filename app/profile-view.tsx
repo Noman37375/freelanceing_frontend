@@ -10,33 +10,40 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  StatusBar
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, ChevronDown, ChevronUp } from "lucide-react-native";
+import { 
+  ArrowLeft, 
+  ChevronDown, 
+  ChevronUp, 
+  Mail, 
+  Briefcase, 
+  DollarSign, 
+  Star, 
+  CheckCircle2,
+  Camera
+} from "lucide-react-native";
+import { useRouter } from 'expo-router';
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 export default function ProfileViewScreen() {
+  const router = useRouter();
   const [editMode, setEditMode] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-  // 🔹 Static user data
   const user = {
     name: "John Doe",
     title: "UI/UX Designer",
     email: "john.doe@example.com",
-    skills: ["React Native", "UI Design", "Figma"],
-    bio: "Creative and detail-oriented designer passionate about building smooth mobile experiences.",
+    skills: ["React Native", "UI Design", "Figma", "TypeScript"],
+    bio: "Creative and detail-oriented designer passionate about building smooth mobile experiences and scalable design systems.",
     pricing: "$25/hr",
-    avatar: null, // you can add a URI here
+    avatar: null,
   };
-
-  const completedProjects = [
-    { id: "1", title: "Mobile App Redesign" },
-    { id: "2", title: "Website Development" },
-  ];
 
   const reviews = [
     {
@@ -64,14 +71,11 @@ export default function ProfileViewScreen() {
 
   const [formName, setFormName] = useState(user.name);
   const [formTitle, setFormTitle] = useState(user.title);
-  const [formEmail, setFormEmail] = useState(user.email);
-  const [formSkills, setFormSkills] = useState(user.skills.join(", "));
   const [formBio, setFormBio] = useState(user.bio);
   const [formPricing, setFormPricing] = useState(user.pricing);
-  const [avatarUri, setAvatarUri] = useState<string | null>(user.avatar);
 
   const toggleExpand = (index: number) => {
-    LayoutAnimation.easeInEaseOut();
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedIndex((prev) => (prev === index ? null : index));
   };
 
@@ -80,179 +84,200 @@ export default function ProfileViewScreen() {
     if (!review) return null;
     const milestoneRatings = review.milestones?.map((m) => Number(m.rating || 0)) || [];
     const other = [Number(review.communication), Number(review.quality), Number(review.punctuality)];
-    const all = [...milestoneRatings, ...other].filter((v) => typeof v === "number" && !Number.isNaN(v));
-    if (all.length === 0) return null;
-    return Number((all.reduce((a, b) => a + b, 0) / all.length).toFixed(1));
+    const all = [...milestoneRatings, ...other];
+    return (all.reduce((a, b) => a + b, 0) / all.length).toFixed(1);
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <ArrowLeft size={22} color="#1E293B" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Profile</Text>
+        <TouchableOpacity onPress={() => setEditMode(!editMode)}>
+            <Text style={[styles.editAction, { color: editMode ? "#10B981" : "#4F46E5" }]}>
+                {editMode ? "Save" : "Edit"}
+            </Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity>
-            <ArrowLeft size={24} color="#111827" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile</Text>
+        
+        {/* AVATAR & BASIC INFO */}
+        <View style={styles.profileHero}>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarInitial}>{formName.charAt(0)}</Text>
+            </View>
+            {editMode && (
+              <TouchableOpacity style={styles.cameraIcon}>
+                <Camera size={16} color="#FFF" />
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          <TextInput 
+            style={[styles.nameInput, editMode && styles.inputActive]} 
+            value={formName} 
+            onChangeText={setFormName} 
+            editable={editMode} 
+          />
+          <View style={styles.titleRow}>
+             <Briefcase size={14} color="#64748B" />
+             <TextInput 
+                style={[styles.titleInput, editMode && styles.inputActive]} 
+                value={formTitle} 
+                onChangeText={setFormTitle} 
+                editable={editMode} 
+             />
+          </View>
         </View>
 
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatarWrapper}>
-            {avatarUri ? (
-              <Image source={{ uri: avatarUri }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                <Text style={styles.avatarInitial}>{user.name.charAt(0)}</Text>
-              </View>
-            )}
-          </View>
+        {/* QUICK STATS */}
+        {!editMode && (
+            <View style={styles.statsRow}>
+                <View style={styles.statBox}>
+                    <DollarSign size={18} color="#4F46E5" />
+                    <Text style={styles.statValue}>{formPricing}</Text>
+                    <Text style={styles.statLabel}>Rate</Text>
+                </View>
+                <View style={[styles.statBox, styles.statBorder]}>
+                    <Star size={18} color="#F59E0B" fill="#F59E0B" />
+                    <Text style={styles.statValue}>4.9</Text>
+                    <Text style={styles.statLabel}>Rating</Text>
+                </View>
+                <View style={styles.statBox}>
+                    <CheckCircle2 size={18} color="#10B981" />
+                    <Text style={styles.statValue}>12</Text>
+                    <Text style={styles.statLabel}>Jobs</Text>
+                </View>
+            </View>
+        )}
 
-          <TextInput style={styles.nameInput} value={formName} onChangeText={setFormName} editable={editMode} />
-          <TextInput style={[styles.input, { marginTop: 8 }]} value={formTitle} onChangeText={setFormTitle} editable={editMode} />
-          <TextInput style={styles.input} value={formEmail} onChangeText={setFormEmail} editable={editMode} keyboardType="email-address" />
-
-          <View style={{ width: "100%", marginTop: 12 }}>
-            <Text style={styles.sectionLabel}>Skills</Text>
-            {editMode ? (
-              <TextInput style={styles.input} value={formSkills} onChangeText={setFormSkills} />
-            ) : (
-              <View style={styles.skillsContainer}>
-                {user.skills.map((skill) => (
-                  <View key={skill} style={styles.skillBadge}>
-                    <Text style={styles.skillText}>{skill}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-
-          <View style={styles.bioContainer}>
-            <Text style={styles.sectionLabel}>Bio</Text>
-            {editMode ? (
-              <TextInput style={styles.bioInput} value={formBio} onChangeText={setFormBio} multiline />
-            ) : (
-              <View style={styles.bioCard}>
-                <Text style={styles.bioText}>{formBio}</Text>
-              </View>
-            )}
-          </View>
-
-          <View style={{ width: "100%", marginTop: 12 }}>
-            <Text style={styles.sectionLabel}>Pricing</Text>
-            {editMode ? (
-              <TextInput style={styles.input} value={formPricing} onChangeText={setFormPricing} />
-            ) : (
-              <View style={styles.pricingBox}>
-                <Text style={styles.pricingText}>{formPricing}</Text>
-              </View>
-            )}
-          </View>
-
-          <TouchableOpacity style={editMode ? styles.saveButton : styles.editButton} onPress={() => setEditMode(!editMode)}>
-            <Text style={styles.buttonText}>{editMode ? "Save Changes" : "Edit Profile"}</Text>
-          </TouchableOpacity>
+        {/* BIO SECTION */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>About Me</Text>
+          <TextInput 
+            style={[styles.bioText, editMode && styles.bioInputActive]} 
+            value={formBio} 
+            onChangeText={setFormBio} 
+            multiline 
+            editable={editMode} 
+          />
         </View>
 
-        {/* Completed Projects */}
-        <Text style={styles.sectionTitle}>Completed Projects</Text>
-        {completedProjects.map((proj, idx) => {
-          const avg = getProjectAverageRating(proj.title);
-          const review = reviews.find((r) => r.projectTitle === proj.title);
-          const preview = review?.feedback || null;
+        {/* SKILLS */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Expertise</Text>
+          <View style={styles.skillsWrapper}>
+            {user.skills.map((skill) => (
+              <View key={skill} style={styles.skillBadge}>
+                <Text style={styles.skillText}>{skill}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* PORTFOLIO / HISTORY */}
+        <Text style={[styles.sectionTitle, { marginLeft: 20, marginTop: 10 }]}>Completed Projects</Text>
+        {reviews.map((review, idx) => {
+          const avg = getProjectAverageRating(review.projectTitle);
           const expanded = expandedIndex === idx;
 
           return (
-            <View key={proj.id} style={styles.projectCard}>
+            <View key={idx} style={styles.projectCard}>
               <TouchableOpacity style={styles.projectHeader} onPress={() => toggleExpand(idx)}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.projectTitle}>{proj.title}</Text>
-                  {avg !== null && <Text style={styles.projectRating}>⭐ {avg} / 5</Text>}
-                  {preview ? <Text style={styles.projectReview} numberOfLines={2}>“{preview}”</Text> : <Text style={styles.projectNoReview}>No review available</Text>}
+                  <Text style={styles.projectTitle}>{review.projectTitle}</Text>
+                  <View style={styles.ratingInline}>
+                    <Star size={12} color="#F59E0B" fill="#F59E0B" />
+                    <Text style={styles.projectRating}>{avg} / 5.0</Text>
+                  </View>
                 </View>
-                {expanded ? <ChevronUp size={22} color="#111827" /> : <ChevronDown size={22} color="#111827" />}
+                <View style={styles.expandCircle}>
+                    {expanded ? <ChevronUp size={18} color="#4F46E5" /> : <ChevronDown size={18} color="#4F46E5" />}
+                </View>
               </TouchableOpacity>
 
               {expanded && (
-                <View style={styles.milestonesContainer}>
-                  {review?.milestones.map((m, i) => (
-                    <View key={i} style={styles.milestoneBox}>
-                      <Text style={styles.milestoneTitle}>{m.title}</Text>
-                      <Text style={styles.milestoneRating}>⭐ {m.rating} / 5</Text>
-                      {m.comment && <Text style={styles.milestoneComment}>{m.comment}</Text>}
-                    </View>
-                  ))}
+                <View style={styles.expandedContent}>
+                  <Text style={styles.feedbackText}>"{review.feedback}"</Text>
+                  <View style={styles.milestoneList}>
+                    {review.milestones.map((m, i) => (
+                      <View key={i} style={styles.milestoneItem}>
+                        <CheckCircle2 size={14} color="#10B981" />
+                        <Text style={styles.milestoneName}>{m.title}</Text>
+                        <Text style={styles.milestoneScore}>{m.rating}/5</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
               )}
             </View>
           );
         })}
-
-        <View style={{ height: 60 }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
-/* ===== styles ===== */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8f9fa" },
-  content: { padding: 16, paddingBottom: 40 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-
-  header: { flexDirection: "row", alignItems: "center", marginBottom: 12, gap: 12 },
-  headerTitle: { fontSize: 20, fontWeight: "700", color: "#111827" },
-
-  profileCard: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 16,
-    alignItems: "center",
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 3,
+  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  header: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    justifyContent: "space-between", 
+    paddingHorizontal: 20, 
+    backgroundColor: "#FFFFFF",
+    paddingBottom: 10
   },
+  backButton: { padding: 8, backgroundColor: '#F1F5F9', borderRadius: 12 },
+  headerTitle: { fontSize: 17, fontWeight: "800", color: "#1E293B" },
+  editAction: { fontSize: 15, fontWeight: "700" },
 
-  avatarWrapper: { marginBottom: 8 },
-  avatar: { width: 96, height: 96, borderRadius: 48, resizeMode: "cover" },
-  avatarPlaceholder: { backgroundColor: "#e0f2fe", justifyContent: "center", alignItems: "center" },
-  avatarInitial: { fontSize: 32, fontWeight: "700", color: "#0369A1" },
+  content: { paddingVertical: 20 },
 
-  nameInput: { fontSize: 20, fontWeight: "700", color: "#111827", textAlign: "center", width: "100%" },
-  input: { backgroundColor: "#f9fafb", borderRadius: 8, borderWidth: 1, borderColor: "#e5e7eb", padding: 10, width: "100%" },
+  profileHero: { alignItems: "center", marginBottom: 25 },
+  avatarContainer: { marginBottom: 15, position: 'relative' },
+  avatarPlaceholder: { width: 100, height: 100, borderRadius: 35, backgroundColor: "#EEF2FF", justifyContent: "center", alignItems: "center", borderWidth: 4, borderColor: '#FFF' },
+  avatarInitial: { fontSize: 40, fontWeight: "800", color: "#4F46E5" },
+  cameraIcon: { position: 'absolute', bottom: -5, right: -5, backgroundColor: '#4F46E5', padding: 8, borderRadius: 12, borderWidth: 3, borderColor: '#FFF' },
 
-  skillsContainer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center" },
-  skillBadge: { backgroundColor: "#E0F2FE", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, marginRight: 6, marginBottom: 6 },
-  skillText: { color: "#0369A1", fontSize: 14, fontWeight: "600" },
+  nameInput: { fontSize: 24, fontWeight: "800", color: "#1E293B", textAlign: "center", minWidth: 200 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  titleInput: { fontSize: 15, fontWeight: "600", color: "#64748B", textAlign: "center" },
+  inputActive: { color: '#4F46E5', textDecorationLine: 'underline' },
 
-  bioContainer: { width: "100%", marginTop: 12 },
-  bioCard: { backgroundColor: "#f9fafb", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#e5e7eb" },
-  bioText: { fontSize: 14.5, color: "#374151", lineHeight: 20 },
-  bioInput: { backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: "#d1d5db", padding: 10, height: 110, textAlignVertical: "top", color: "#111827" },
+  statsRow: { flexDirection: 'row', backgroundColor: '#FFF', marginHorizontal: 20, borderRadius: 24, padding: 20, marginBottom: 25, borderWidth: 1, borderColor: '#F1F5F9' },
+  statBox: { flex: 1, alignItems: 'center', gap: 4 },
+  statBorder: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#F1F5F9' },
+  statValue: { fontSize: 16, fontWeight: '800', color: '#1E293B' },
+  statLabel: { fontSize: 11, color: '#94A3B8', fontWeight: '700', textTransform: 'uppercase' },
 
-  pricingBox: { backgroundColor: "#ECFDF5", paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, alignItems: "center", borderWidth: 1, borderColor: "#D1FAE5" },
-  pricingText: { fontSize: 16, fontWeight: "700", color: "#065F46" },
+  section: { paddingHorizontal: 20, marginBottom: 25 },
+  sectionTitle: { fontSize: 16, fontWeight: "800", color: "#1E293B", marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  
+  bioText: { fontSize: 15, color: "#475569", lineHeight: 24 },
+  bioInputActive: { backgroundColor: '#FFF', padding: 15, borderRadius: 16, borderWidth: 1, borderColor: '#4F46E5', color: '#1E293B' },
 
-  editButton: { backgroundColor: "#3b82f6", marginTop: 12, borderRadius: 10, paddingVertical: 12, alignItems: "center", width: "100%" },
-  saveButton: { backgroundColor: "#10b981", marginTop: 12, borderRadius: 10, paddingVertical: 12, alignItems: "center", width: "100%" },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  skillsWrapper: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  skillBadge: { backgroundColor: "#FFF", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+  skillText: { color: "#4F46E5", fontSize: 13, fontWeight: "700" },
 
-  sectionTitle: { fontSize: 18, fontWeight: "700", color: "#111827", marginTop: 6, marginBottom: 8 },
-  emptyText: { textAlign: "center", color: "#777", marginTop: 6 },
-
-  projectCard: { backgroundColor: "#fff", borderRadius: 12, padding: 12, marginBottom: 8, shadowColor: "#000", shadowOpacity: 0.04, shadowOffset: { width: 0, height: 1 }, shadowRadius: 3, elevation: 2 },
+  projectCard: { backgroundColor: "#FFF", marginHorizontal: 20, borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9' },
   projectHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  projectTitle: { fontSize: 16, fontWeight: "700", color: "#111827" },
-  projectRating: { fontSize: 14, color: "#f59e0b", marginTop: 4 },
-  projectReview: { fontSize: 13, color: "#4b5563", fontStyle: "italic", marginTop: 6 },
-  projectNoReview: { fontSize: 13, color: "#9CA3AF", marginTop: 6, fontStyle: "italic" },
+  projectTitle: { fontSize: 15, fontWeight: "700", color: "#1E293B" },
+  ratingInline: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  projectRating: { fontSize: 13, fontWeight: '700', color: "#F59E0B" },
+  expandCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' },
 
-  milestonesContainer: { marginTop: 10 },
-  milestoneBox: { backgroundColor: "#f4f6fc", borderRadius: 10, padding: 8, marginBottom: 6, borderLeftWidth: 3, borderLeftColor: "#f59e0b" },
-  milestoneTitle: { fontSize: 13, fontWeight: "700", color: "#111827" },
-  milestoneComment: { fontSize: 12, color: "#475569", marginTop: 4 },
-  milestoneRating: { fontSize: 13, color: "#f59e0b", marginTop: 4 },
+  expandedContent: { marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#F8FAFC' },
+  feedbackText: { fontSize: 14, color: "#64748B", fontStyle: "italic", lineHeight: 20, marginBottom: 15 },
+  milestoneList: { gap: 10 },
+  milestoneItem: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F8FAFC', padding: 10, borderRadius: 12 },
+  milestoneName: { flex: 1, fontSize: 13, fontWeight: '600', color: '#475569' },
+  milestoneScore: { fontSize: 13, fontWeight: '700', color: '#4F46E5' },
 });

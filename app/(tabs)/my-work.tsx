@@ -5,9 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Briefcase, CheckCircle, FileText } from "lucide-react-native";
+import { Briefcase, CheckCircle, FileText, Bell, Search, LayoutDashboard } from "lucide-react-native";
 import WorkCard from "@/components/WorkCard";
 
 interface Milestone {
@@ -19,10 +20,10 @@ interface Milestone {
 interface Project {
   id: string;
   title: string;
-  client?: string;
-  budget?: string;
-  deadline?: string;
-  location?: string;
+  client: string; // Made mandatory to match detail screens
+  budget: string; // Made mandatory
+  deadline: string; 
+  location: string; // Added mandatory location
   status: "available" | "proposal" | "inProgress" | "completed";
   description?: string;
   milestones?: Milestone[];
@@ -33,7 +34,7 @@ interface Project {
 export default function MyWorkScreen() {
   const [activeTab, setActiveTab] = useState<"Active" | "Completed" | "Proposals">("Active");
 
-  // 🔹 Static projects data
+  // 🔹 UPDATED DATA: Added Location and synced names with Detail screens
   const allProjects: Project[] = [
     {
       id: "1",
@@ -41,7 +42,7 @@ export default function MyWorkScreen() {
       client: "Acme Corp",
       budget: "$1200",
       deadline: "Dec 2025",
-      location: "Remote",
+      location: "Remote", // Matches details logic
       status: "inProgress",
       milestones: [
         { title: "UI Design", approvalStatus: "approved", priceUSD: "$300" },
@@ -54,7 +55,7 @@ export default function MyWorkScreen() {
       client: "Globex Inc",
       budget: "$2000",
       deadline: "Nov 2025",
-      location: "Remote",
+      location: "New York, US", // Matches details logic
       status: "completed",
       milestones: [
         { title: "Backend Setup", approvalStatus: "approved", priceUSD: "$1000" },
@@ -64,7 +65,7 @@ export default function MyWorkScreen() {
     {
       id: "3",
       title: "Landing Page Proposal",
-      client: "Soylent",
+      client: "Soylent Corp",
       budget: "$500",
       deadline: "Dec 2025",
       location: "Remote",
@@ -81,151 +82,140 @@ export default function MyWorkScreen() {
     return false;
   });
 
-  const shortlistedCount = projects.filter((p) => p.proposalStatus === "shortlisted").length;
-
   const getStats = () => {
     if (activeTab === "Active") {
       const total = projects.reduce((sum, p) => {
-        const earned = p.milestones?.filter((m) => m.approvalStatus === "approved").reduce((s, m) => s + Number(m.priceUSD?.replace("$", "") || 0), 0) || 0;
+        const earned = p.milestones?.filter((m) => m.approvalStatus === "approved")
+          .reduce((s, m) => s + Number(m.priceUSD?.replace("$", "") || 0), 0) || 0;
         return sum + earned;
       }, 0);
-      return { label: "Total Earned (Approved)", value: `$${total}`, color: "#2563EB" };
+      return { label: "Current Earnings", value: `$${total}`, color: "#6366F1" };
     }
-
     if (activeTab === "Completed") {
       const total = projects.reduce((sum, p) => {
         const earned = p.milestones?.reduce((s, m) => s + Number(m.priceUSD?.replace("$", "") || 0), 0) || 0;
         return sum + earned;
       }, 0);
-      return { label: "Total Earned", value: `$${total}`, color: "#10B981" };
+      return { label: "Lifetime Earnings", value: `$${total}`, color: "#10B981" };
     }
-
-    return { label: "", value: "", color: "#F59E0B" };
+    const shortlisted = projects.filter((p) => p.proposalStatus === "shortlisted").length;
+    return { label: "Shortlisted Bids", value: shortlisted.toString(), color: "#F59E0B" };
   };
 
   const stats = getStats();
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Work</Text>
-        <Text style={styles.headerSubtitle}>Track your active, completed, and proposed projects</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
+      <View style={styles.headerBackground}>
+        <SafeAreaView edges={['top']}>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.headerSubtitle}>Freelancer Portal</Text>
+              <Text style={styles.headerTitle}>My Workspace</Text>
+            </View>
+            <View style={styles.headerIcons}>
+              <TouchableOpacity style={styles.iconCircle}><Search size={20} color="#F8FAFC" /></TouchableOpacity>
+              <TouchableOpacity style={styles.iconCircle}><Bell size={20} color="#F8FAFC" /></TouchableOpacity>
+            </View>
+          </View>
+
+          {/* DYNAMIC STATS CARD (Changes Indigo/Green/Orange) */}
+          <View style={[styles.statsCard, { backgroundColor: stats.color, shadowColor: stats.color }]}>
+            <View style={styles.statInfo}>
+              <Text style={styles.statLabel}>{stats.label}</Text>
+              <Text style={styles.statValue}>{stats.value}</Text>
+            </View>
+            <View style={styles.statRight}>
+               <Text style={styles.statCount}>{projects.length} Projects</Text>
+               <LayoutDashboard size={20} color="rgba(255,255,255,0.7)" />
+            </View>
+          </View>
+
+          <View style={styles.tabBar}>
+            {[
+              { key: "Active", icon: Briefcase },
+              { key: "Completed", icon: CheckCircle },
+              { key: "Proposals", icon: FileText },
+            ].map((tab) => {
+              const isActive = activeTab === tab.key;
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  style={styles.tabItem}
+                  onPress={() => setActiveTab(tab.key as any)}
+                >
+                  <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{tab.key}</Text>
+                  {isActive && <View style={[styles.activeIndicator, { backgroundColor: stats.color }]} />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </SafeAreaView>
       </View>
 
-      {/* Stats */}
-      <View style={[styles.statsContainer, { borderLeftColor: stats.color }]}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{projects.length}</Text>
-          <Text style={styles.statLabel}>Projects</Text>
-        </View>
-
-        {activeTab !== "Proposals" && (
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: stats.color }]}>{stats.value}</Text>
-            <Text style={styles.statLabel}>{stats.label}</Text>
-          </View>
-        )}
-
-        {activeTab === "Proposals" && (
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: "#2563EB" }]}>{shortlistedCount}</Text>
-            <Text style={styles.statLabel}>Shortlisted</Text>
-          </View>
-        )}
+      <View style={styles.contentBody}>
+        <ScrollView 
+          style={styles.scrollContainer} 
+          contentContainerStyle={{ paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {projects.length > 0 ? (
+            projects.map((project) => (
+              <WorkCard 
+                key={project.id} 
+                project={project} 
+                type={activeTab.toLowerCase()} 
+              />
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>No {activeTab.toLowerCase()} items</Text>
+              <Text style={styles.emptySubtext}>Your projects will appear here</Text>
+            </View>
+          )}
+        </ScrollView>
       </View>
-
-      {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        {[
-          { key: "Active", icon: Briefcase, color: "#2563EB" },
-          { key: "Completed", icon: CheckCircle, color: "#10B981" },
-          { key: "Proposals", icon: FileText, color: "#F59E0B" },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <TouchableOpacity
-              key={tab.key}
-              style={[styles.tab, isActive && { backgroundColor: tab.color }]}
-              onPress={() => setActiveTab(tab.key as typeof activeTab)}
-            >
-              <Icon size={18} color={isActive ? "#fff" : tab.color} style={{ marginRight: 6 }} />
-              <Text style={[styles.tabText, isActive && styles.activeTabText]}>{tab.key}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* Projects List */}
-      <ScrollView style={styles.scrollContainer} contentContainerStyle={{ paddingBottom: 80 }}>
-        {projects.length > 0 ? (
-          projects.map((project) => (
-            <WorkCard key={project.id} project={project} type={activeTab.toLowerCase()} />
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No {activeTab.toLowerCase()} projects found</Text>
-            <Text style={styles.emptySubtext}>Try switching tabs</Text>
-          </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
-  header: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 22,
-    paddingTop: 20,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  headerTitle: { fontSize: 26, fontWeight: "700", color: "#111827" },
-  headerSubtitle: { color: "#6B7280", fontSize: 14, marginTop: 4 },
+  container: { flex: 1, backgroundColor: "#0F172A" },
+  headerBackground: { paddingHorizontal: 20, paddingBottom: 5 },
+  headerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
+  headerSubtitle: { color: "#94A3B8", fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1.2 },
+  headerTitle: { color: "#F8FAFC", fontSize: 28, fontWeight: "900" },
+  headerIcons: { flexDirection: "row", gap: 10 },
+  iconCircle: { width: 42, height: 42, borderRadius: 14, backgroundColor: "#1E293B", justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#334155" },
 
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-evenly",
-    backgroundColor: "#FFFFFF",
-    marginHorizontal: 18,
-    marginTop: 16,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderLeftWidth: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statItem: { alignItems: "center" },
-  statValue: { fontSize: 20, fontWeight: "700", color: "#111827" },
-  statLabel: { fontSize: 13, color: "#6B7280", marginTop: 2 },
-
-  tabsContainer: {
-    flexDirection: "row",
-    marginHorizontal: 18,
-    marginTop: 16,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  tab: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "center",
+  statsCard: { 
+    marginTop: 20, 
+    borderRadius: 24, 
+    padding: 24, 
+    flexDirection: "row", 
     alignItems: "center",
-    paddingVertical: 10,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 15,
+    elevation: 10
   },
-  tabText: { fontSize: 15, fontWeight: "600", color: "#374151" },
-  activeTabText: { color: "#FFFFFF" },
+  statInfo: { flex: 1 },
+  statLabel: { color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: "700", textTransform: "uppercase" },
+  statValue: { color: "#FFFFFF", fontSize: 32, fontWeight: "900", marginTop: 4 },
+  statRight: { alignItems: 'flex-end', justifyContent: 'center' },
+  statCount: { color: "#FFF", fontSize: 14, fontWeight: "700", marginBottom: 4 },
 
-  scrollContainer: { flex: 1, paddingHorizontal: 18, paddingTop: 16 },
-  emptyState: { marginTop: 60, alignItems: "center" },
-  emptyText: { fontSize: 16, fontWeight: "600", color: "#6B7280" },
-  emptySubtext: { fontSize: 13, color: "#9CA3AF", marginTop: 6 },
+  tabBar: { flexDirection: "row", marginTop: 25, gap: 28 },
+  tabItem: { paddingVertical: 10, position: 'relative' },
+  tabText: { color: "#64748B", fontSize: 15, fontWeight: "700" },
+  tabTextActive: { color: "#F8FAFC", fontWeight: "900" },
+  activeIndicator: { position: "absolute", bottom: 0, left: 0, right: 0, height: 4, borderRadius: 2 },
+
+  contentBody: { flex: 1, backgroundColor: "#F8FAFC", borderTopLeftRadius: 36, borderTopRightRadius: 36, marginTop: 15 },
+  scrollContainer: { flex: 1, paddingHorizontal: 20, paddingTop: 25 },
+  emptyState: { marginTop: 80, alignItems: "center" },
+  emptyText: { fontSize: 18, fontWeight: "800", color: "#1E293B" },
+  emptySubtext: { fontSize: 14, color: "#94A3B8", marginTop: 8 },
 });

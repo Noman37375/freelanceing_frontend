@@ -1,3 +1,5 @@
+// ProjectsScreen.tsx
+
 import React, { useState } from "react";
 import {
   View,
@@ -7,323 +9,242 @@ import {
   TextInput,
   TouchableOpacity,
   Modal,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Search, Filter, MapPin, Clock, X } from "lucide-react-native";
+import { Search, Filter, MapPin, Clock, X, ChevronDown, SlidersHorizontal } from "lucide-react-native";
 import ProjectCard from "@/components/ProjectCard";
 
 export default function ProjectsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showFilter, setShowFilter] = useState(false);
-
-  // Filter states
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [postedWithin, setPostedWithin] = useState("");
-  const [duration, setDuration] = useState("");
   const [location, setLocation] = useState("");
 
-  const categories = [
-    "All",
-    "Design",
-    "Development",
-    "Writing",
-    "Marketing",
-    "Data",
-  ];
+  const categories = ["All", "Design", "Development", "Writing", "Marketing", "Data"];
 
-  // 🔹 Static project data
   const STATIC_PROJECTS = [
-    {
-      id: "1",
-      title: "React Native Mobile App",
-      skills: ["Development", "UI/UX"],
-      budget: "$500 - $1000",
-      postedTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      deadline: "7 days",
-      location: "Karachi",
-      proposals: 5,
-    },
-    {
-      id: "2",
-      title: "Website Redesign",
-      skills: ["Design", "Development"],
-      budget: "$300 - $700",
-      postedTime: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-      deadline: "14 days",
-      location: "Remote",
-      proposals: 8,
-    },
-    {
-      id: "3",
-      title: "Backend API Development",
-      skills: ["Development"],
-      budget: "$400 - $800",
-      postedTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      deadline: "10 days",
-      location: "Lahore",
-      proposals: 3,
-    },
-    {
-      id: "4",
-      title: "Content Writing for Blog",
-      skills: ["Writing", "Marketing"],
-      budget: "$100 - $300",
-      postedTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      deadline: "3 days",
-      location: "Remote",
-      proposals: 12,
-    },
+    { id: "1", title: "React Native Mobile App", skills: ["Development", "UI/UX"], budget: "$500 - $1000", postedTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), deadline: "7 days", location: "Karachi", proposals: 5 },
+    { id: "2", title: "Website Redesign", skills: ["Design", "Development"], budget: "$300 - $700", postedTime: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), deadline: "14 days", location: "Remote", proposals: 8 },
+    { id: "3", title: "Backend API Development", skills: ["Development"], budget: "$400 - $800", postedTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), deadline: "10 days", location: "Lahore", proposals: 3 },
   ];
-
-  const [projects] = useState(STATIC_PROJECTS);
 
   const timeAgo = (timestamp: string) => {
-    const postedDate = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - postedDate.getTime();
-
-    const diffMinutes = Math.round(diffMs / (1000 * 60));
-    const diffHours = Math.round(diffMinutes / 60);
-    const diffDays = Math.round(diffHours / 24);
-
-    if (diffMinutes < 1) return "Just now";
-    if (diffHours < 1) return `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+    const diffDays = Math.round((new Date().getTime() - new Date(timestamp).getTime()) / (1000 * 60 * 60 * 24));
+    return `${diffDays}d ago`;
   };
 
-  const filteredProjects = projects.filter((project) => {
-    const matchesSearch = project.title
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      selectedCategory === "All" ||
-      project.skills?.some((skill) =>
-        skill.toLowerCase().includes(selectedCategory.toLowerCase())
-      );
-    const matchesLocation = location
-      ? project.location?.toLowerCase().includes(location.toLowerCase())
-      : true;
-
-    return matchesSearch && matchesCategory && matchesLocation;
+  const filteredProjects = STATIC_PROJECTS.filter((project) => {
+    const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "All" || project.skills?.some(s => s.includes(selectedCategory));
+    return matchesSearch && matchesCategory;
   });
 
-  const resetFilters = () => {
-    setMinPrice("");
-    setMaxPrice("");
-    setPostedWithin("");
-    setDuration("");
-    setSelectedCategory("All");
-    setLocation("");
-  };
-
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Available Tasks</Text>
-        <TouchableOpacity
-          style={styles.filterButton}
-          onPress={() => setShowFilter(true)}
-        >
-          <Filter size={20} color="#6B7280" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Search size={20} color="#6B7280" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search available tasks..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
+    <View style={styles.container}>
+      <View style={styles.topBackground} />
+      
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.headerSubtitle}>Discover</Text>
+            <Text style={styles.headerTitle}>Available Tasks</Text>
+          </View>
+          <TouchableOpacity style={styles.headerIconButton} onPress={() => setShowFilter(true)}>
+            <SlidersHorizontal size={22} color="#FFF" />
+          </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Categories */}
-      <View style={styles.categoriesContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesContent}
-        >
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category}
-              style={[
-                styles.categoryButton,
-                selectedCategory === category && styles.categoryButtonActive,
-              ]}
-              onPress={() => setSelectedCategory(category)}
-            >
-              <Text
-                style={[
-                  styles.categoryText,
-                  selectedCategory === category && styles.categoryTextActive,
-                ]}
+        {/* Search Bar - Floating Style */}
+        <View style={styles.searchWrapper}>
+          <View style={styles.searchBar}>
+            <Search size={18} color="#94A3B8" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by service or title..."
+              placeholderTextColor="#94A3B8"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+        </View>
+
+        {/* Categories Pills */}
+        <View style={styles.categoriesWrapper}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContent}>
+            {categories.map((category) => (
+              <TouchableOpacity
+                key={category}
+                style={[styles.categoryPill, selectedCategory === category && styles.categoryPillActive]}
+                onPress={() => setSelectedCategory(category)}
               >
-                {category}
-              </Text>
+                <Text style={[styles.categoryText, selectedCategory === category && styles.categoryTextActive]}>
+                  {category}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Main List */}
+        <ScrollView style={styles.projectsList} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+          <View style={styles.listHeader}>
+            <Text style={styles.resultsCount}>{filteredProjects.length} tasks found</Text>
+            <TouchableOpacity style={styles.sortToggle}>
+              <Text style={styles.sortToggleText}>Newest first</Text>
+              <ChevronDown size={14} color="#6366F1" />
             </TouchableOpacity>
+          </View>
+
+          {filteredProjects.map((project) => (
+            <View key={project.id} style={styles.projectCardWrapper}>
+              <ProjectCard project={project} showDetails />
+              <View style={styles.projectFooter}>
+                <View style={styles.metaGroup}>
+                  <View style={styles.badge}>
+                    <MapPin size={12} color="#64748B" />
+                    <Text style={styles.badgeText}>{project.location}</Text>
+                  </View>
+                  <View style={styles.badge}>
+                    <Clock size={12} color="#64748B" />
+                    <Text style={styles.badgeText}>{timeAgo(project.postedTime)}</Text>
+                  </View>
+                </View>
+                <Text style={styles.proposalCount}>{project.proposals} proposals</Text>
+              </View>
+            </View>
           ))}
         </ScrollView>
-      </View>
+      </SafeAreaView>
 
-      {/* Project List */}
-      <ScrollView style={styles.projectsList} showsVerticalScrollIndicator={false}>
-        <Text style={styles.resultsText}>{filteredProjects.length} available tasks</Text>
-        {filteredProjects.map((project) => (
-          <View key={project.id} style={styles.projectCardContainer}>
-            <ProjectCard project={project} showDetails />
-            <View style={styles.projectMeta}>
-              <View style={styles.metaItem}>
-                <MapPin size={14} color="#6B7280" />
-                <Text style={styles.metaText}>{project.location}</Text>
-              </View>
-              <View style={styles.metaItem}>
-                <Clock size={14} color="#6B7280" />
-                <Text style={styles.metaText}>{timeAgo(project.postedTime)}</Text>
-              </View>
-              <Text style={styles.proposalsText}>{project.proposals} proposals</Text>
-            </View>
-          </View>
-        ))}
-      </ScrollView>
-
-      {/* Filter Modal */}
-      <Modal
-        visible={showFilter}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowFilter(false)}
-      >
+      {/* Modern Filter Modal */}
+      <Modal visible={showFilter} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={styles.filterModal}>
+          <View style={styles.filterSheet}>
+            <View style={styles.sheetHandle} />
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filter Options</Text>
-              <TouchableOpacity onPress={() => setShowFilter(false)}>
-                <X size={20} color="#6B7280" />
+              <Text style={styles.modalTitle}>Refine Search</Text>
+              <TouchableOpacity onPress={() => setShowFilter(false)} style={styles.closeCircle}>
+                <X size={20} color="#1E293B" />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.modalLabel}>Location</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter location"
-                value={location}
-                onChangeText={setLocation}
-              />
+            <Text style={styles.modalLabel}>Location</Text>
+            <View style={styles.modalInputWrapper}>
+              <MapPin size={18} color="#94A3B8" />
+              <TextInput style={styles.modalInput} placeholder="e.g. Remote" value={location} onChangeText={setLocation} />
+            </View>
 
-              <Text style={styles.modalLabel}>Category</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {categories.map((cat) => (
-                  <TouchableOpacity
-                    key={cat}
-                    style={[styles.optionButton, selectedCategory === cat && styles.optionActive]}
-                    onPress={() => setSelectedCategory(cat)}
-                  >
-                    <Text style={[styles.optionText, selectedCategory === cat && styles.optionTextActive]}>
-                      {cat}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
-              <View style={styles.actions}>
-                <TouchableOpacity style={styles.resetBtn} onPress={resetFilters}>
-                  <Text style={styles.resetText}>Reset</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.applyBtn} onPress={() => setShowFilter(false)}>
-                  <Text style={styles.applyText}>Apply</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.clearBtn} onPress={() => {setLocation(""); setSelectedCategory("All");}}>
+                <Text style={styles.clearBtnText}>Reset All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.applyBtn} onPress={() => setShowFilter(false)}>
+                <Text style={styles.applyBtnText}>Show Results</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
+  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  topBackground: {
+    position: 'absolute',
+    top: 0,
+    height: 200,
+    width: '100%',
+    backgroundColor: '#1E1B4B',
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
+    paddingVertical: 15,
   },
-  headerTitle: { fontSize: 24, fontWeight: "bold", color: "#111827" },
-  filterButton: { padding: 8 },
-  searchContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+  headerSubtitle: { color: '#C7D2FE', fontSize: 13, fontWeight: '600', textTransform: 'uppercase' },
+  headerTitle: { fontSize: 28, fontWeight: "800", color: "#FFFFFF" },
+  headerIconButton: {
+    width: 45,
+    height: 45,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  searchWrapper: { paddingHorizontal: 20, marginTop: 5 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
-  },
-  searchInput: { flex: 1, fontSize: 16, color: "#111827" },
-  categoriesContainer: {
     backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-    paddingVertical: 8,
+    borderRadius: 16,
+    paddingHorizontal: 15,
+    height: 55,
+    gap: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  categoriesContent: { paddingHorizontal: 16, gap: 10 },
-  categoryButton: {
-    paddingHorizontal: 18,
+  searchInput: { flex: 1, fontSize: 15, color: "#1E293B", fontWeight: '500' },
+  categoriesWrapper: { paddingVertical: 20 },
+  categoriesContent: { paddingHorizontal: 20, gap: 8 },
+  categoryPill: {
+    paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: "#F3F4F6",
+    borderRadius: 25,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  categoryButtonActive: { backgroundColor: "#3B82F6" },
-  categoryText: { fontSize: 15, fontWeight: "500", color: "#6B7280" },
+  categoryPillActive: { backgroundColor: "#4F46E5", borderColor: '#4F46E5' },
+  categoryText: { fontSize: 14, fontWeight: "600", color: "#64748B" },
   categoryTextActive: { color: "#FFFFFF" },
-  projectsList: { flex: 1, paddingHorizontal: 20, paddingBottom: 20 },
-  resultsText: { fontSize: 16, color: "#6B7280", marginVertical: 16 },
-  projectCardContainer: { marginBottom: 16 },
-  projectMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    gap: 16,
+  projectsList: { flex: 1, paddingHorizontal: 20 },
+  listHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  resultsCount: { fontSize: 14, fontWeight: "700", color: "#64748B" },
+  sortToggle: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  sortToggleText: { fontSize: 14, color: '#6366F1', fontWeight: '600' },
+  projectCardWrapper: {
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    overflow: 'hidden',
   },
-  metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
-  metaText: { fontSize: 12, color: "#6B7280" },
-  proposalsText: { fontSize: 12, color: "#3B82F6", fontWeight: "500", marginLeft: "auto" },
-  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.3)" },
-  filterModal: { backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: "85%" },
-  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  modalTitle: { fontSize: 18, fontWeight: "bold", color: "#111827" },
-  modalLabel: { fontSize: 15, fontWeight: "500", color: "#374151", marginTop: 16, marginBottom: 6 },
-  row: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  input: { flex: 1, borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 10, padding: 10, fontSize: 15 },
-  optionButton: { backgroundColor: "#F3F4F6", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
-  optionActive: { backgroundColor: "#3B82F6" },
-  optionText: { color: "#374151", fontSize: 14 },
-  optionTextActive: { color: "#fff" },
-  actions: { flexDirection: "row", justifyContent: "space-between", marginTop: 24 },
-  resetBtn: { flex: 1, padding: 12, borderRadius: 12, backgroundColor: "#E5E7EB", marginRight: 10, alignItems: "center" },
-  applyBtn: { flex: 1, padding: 12, borderRadius: 12, backgroundColor: "#3B82F6", alignItems: "center" },
-  resetText: { color: "#111827", fontWeight: "500" },
-  applyText: { color: "#fff", fontWeight: "500" },
+  projectFooter: {
+    flexDirection: "row",
+    justifyContent: 'space-between',
+    alignItems: "center",
+    padding: 15,
+    backgroundColor: '#F8FAFC',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  metaGroup: { flexDirection: 'row', gap: 10 },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFF', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+  badgeText: { fontSize: 11, fontWeight: '600', color: '#64748B' },
+  proposalCount: { fontSize: 12, color: "#4F46E5", fontWeight: "700" },
+
+  modalOverlay: { flex: 1, backgroundColor: "rgba(15, 23, 42, 0.5)", justifyContent: "flex-end" },
+  filterSheet: { backgroundColor: "#fff", borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 25, paddingBottom: 40 },
+  sheetHandle: { width: 40, height: 5, backgroundColor: '#E2E8F0', borderRadius: 3, alignSelf: 'center', marginBottom: 20 },
+  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
+  modalTitle: { fontSize: 20, fontWeight: "800", color: "#1E293B" },
+  closeCircle: { backgroundColor: '#F1F5F9', padding: 8, borderRadius: 20 },
+  modalLabel: { fontSize: 14, fontWeight: "700", color: "#475569", marginBottom: 10 },
+  modalInputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 12, paddingHorizontal: 15, borderWidth: 1, borderColor: '#E2E8F0', height: 50, marginBottom: 25 },
+  modalInput: { flex: 1, marginLeft: 10, fontSize: 15, color: '#1E293B' },
+  modalActions: { flexDirection: "row", gap: 15 },
+  clearBtn: { flex: 1, height: 55, justifyContent: 'center', alignItems: 'center', borderRadius: 16, backgroundColor: '#F1F5F9' },
+  applyBtn: { flex: 2, height: 55, justifyContent: 'center', alignItems: 'center', borderRadius: 16, backgroundColor: '#4F46E5' },
+  clearBtnText: { color: "#475569", fontWeight: "700" },
+  applyBtnText: { color: "#FFF", fontWeight: "700", fontSize: 16 },
 });

@@ -8,7 +8,7 @@ import {
   TouchableOpacity
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Star } from 'lucide-react-native';
+import { ArrowLeft, Star, MessageSquareQuote } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
 export default function ReviewsScreen() {
@@ -51,137 +51,158 @@ export default function ReviewsScreen() {
   ]);
 
   const renderStars = (count: number) => (
-    <View style={{ flexDirection: 'row' }}>
-      {[...Array(Math.round(count))].map((_, i) => (
-        <Star key={i} size={14} color="#F59E0B" fill="#F59E0B" />
+    <View style={{ flexDirection: 'row', gap: 2 }}>
+      {[...Array(5)].map((_, i) => (
+        <Star 
+          key={i} 
+          size={14} 
+          color={i < Math.floor(count) ? "#4F46E5" : "#E2E8F0"} 
+          fill={i < Math.floor(count) ? "#4F46E5" : "transparent"} 
+        />
       ))}
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#111827" />
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <ArrowLeft size={22} color="#1E293B" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Reviews</Text>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.headerTitle}>Client Reviews</Text>
+          <Text style={styles.headerSubtitle}>{reviews.length} Feedbacks received</Text>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {reviews.length === 0 && (
-          <Text style={styles.noReviews}>No reviews for completed projects yet.</Text>
-        )}
-
-        {reviews.map((review) => (
-          <Pressable
-            key={review.id}
-            style={({ pressed }) => [
-              styles.reviewCard,
-              pressed && { transform: [{ scale: 0.98 }], opacity: 0.9 }
-            ]}
-            onPress={() => router.push({ pathname: '/reviewDetails', params: { id: review.id } })}
-          >
-            <View style={styles.cardTopRow}>
-              <View style={styles.ratingPill}>
-                {renderStars(Number(review.rating))}
-                <Text style={styles.ratingText}>{review.rating} / 5</Text>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {reviews.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <MessageSquareQuote size={48} color="#CBD5E1" />
+            <Text style={styles.noReviews}>No reviews for completed projects yet.</Text>
+          </View>
+        ) : (
+          reviews.map((review) => (
+            <Pressable
+              key={review.id}
+              style={({ pressed }) => [
+                styles.reviewCard,
+                pressed && { transform: [{ scale: 0.98 }], opacity: 0.9 }
+              ]}
+              onPress={() => router.push({ pathname: '/reviewDetails', params: { id: review.id } })}
+            >
+              <View style={styles.cardHeader}>
+                <View style={styles.titleInfo}>
+                  <Text style={styles.projectTitle} numberOfLines={1}>{review.projectTitle}</Text>
+                  <View style={styles.ratingRow}>
+                    {renderStars(Number(review.rating))}
+                    <Text style={styles.ratingValue}>{review.rating}</Text>
+                  </View>
+                </View>
+                <View style={styles.userAvatar}>
+                  <Text style={styles.avatarText}>{review.userName[0]}</Text>
+                </View>
               </View>
-              <Text style={styles.projectTitle}>{review.projectTitle}</Text>
-            </View>
 
-            <Text numberOfLines={2} style={styles.comment}>{review.comment}</Text>
+              <View style={styles.commentContainer}>
+                <Text numberOfLines={3} style={styles.comment}>"{review.comment}"</Text>
+              </View>
 
-            <View style={styles.cardFooter}>
-              <Text style={styles.userName}>By {review.userName}</Text>
-              <Text style={styles.duration}>{review.duration}</Text>
-            </View>
-          </Pressable>
-        ))}
+              <View style={styles.cardFooter}>
+                <Text style={styles.userName}>{review.userName}</Text>
+                <View style={styles.dot} />
+                <Text style={styles.duration}>{review.duration}</Text>
+              </View>
+            </Pressable>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 15,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    gap: 15,
   },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: '#111827' },
+  backButton: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    padding: 8,
+  },
+  headerTextContainer: { flex: 1 },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B' },
+  headerSubtitle: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  
   scroll: { padding: 20 },
-  noReviews: {
-    color: '#6B7280',
-    textAlign: 'center',
-    marginTop: 40,
-    fontSize: 16,
-  },
+  
+  emptyContainer: { alignItems: 'center', marginTop: 60, gap: 12 },
+  noReviews: { color: '#94A3B8', textAlign: 'center', fontSize: 16, fontWeight: '500' },
+  
   reviewCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 18,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#1E293B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  cardTopRow: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
-  ratingPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF3C7',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  ratingText: {
-    marginLeft: 4,
-    fontWeight: '600',
-    color: '#F59E0B',
-    fontSize: 13,
-  },
+  titleInfo: { flex: 1, marginRight: 10 },
   projectTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
-    textAlign: 'right',
-    flexShrink: 1,
-    marginLeft: 12,
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  ratingValue: { fontSize: 13, fontWeight: '700', color: '#4F46E5' },
+  
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: { color: '#4F46E5', fontWeight: '800', fontSize: 16 },
+
+  commentContainer: {
+    backgroundColor: '#F8FAFC',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 12,
   },
   comment: {
-    color: '#374151',
+    color: '#475569',
     fontSize: 14,
-    lineHeight: 20,
-    marginTop: 6,
+    lineHeight: 22,
+    fontStyle: 'italic',
   },
+  
   cardFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    paddingTop: 8,
+    alignItems: 'center',
   },
-  userName: {
-    color: '#6B7280',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  duration: {
-    color: '#6B7280',
-    fontSize: 13,
-    fontWeight: '500',
-  },
+  userName: { color: '#1E293B', fontSize: 13, fontWeight: '700' },
+  dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#CBD5E1', marginHorizontal: 8 },
+  duration: { color: '#94A3B8', fontSize: 12, fontWeight: '500' },
 });

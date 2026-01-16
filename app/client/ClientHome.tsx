@@ -69,6 +69,7 @@ export default function ClientHome() {
             const isDisputes = stat.title === 'Disputes';
             const isProjects = stat.title === 'Projects';
             const isWallet = stat.title === 'Total Spent';
+            const isMessages = stat.title === 'Messages';
 
             return (
               <TouchableOpacity
@@ -78,6 +79,7 @@ export default function ClientHome() {
                   if (isDisputes) router.push('/client/Disputes');
                   if (isProjects) router.push('/client/Projects');
                   if (isWallet) router.push('/client/Wallet');
+                  if (isMessages) router.push('/client/messages');
                 }}
               >
                 <StatsCard

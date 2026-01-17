@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Clock, DollarSign, User } from 'lucide-react-native';
+import { Clock, DollarSign, User, Zap, Bookmark } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { Project } from '@/models/Project';
 
@@ -30,7 +30,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
     <TouchableOpacity
       style={styles.container}
       onPress={() => router.push(`/project-details?id=${project.id}`)}
-      activeOpacity={0.85}
+      activeOpacity={0.9}
     >
       {/* Title */}
       <Text style={styles.title}>{project.title}</Text>
@@ -50,7 +50,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         {project.description || 'Description not specified'}
       </Text>
 
-      {/* Budget + Posted Time */}
+      {/* Meta Information Badges */}
       <View style={styles.infoRow}>
         <View style={styles.infoItem}>
           <DollarSign size={16} color="#10B981" />
@@ -90,7 +90,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         </View>
       )}
 
-      {/* Actions */}
+      {/* Action Footer */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.applyButton}
@@ -99,7 +99,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             router.push(`/Bid-now?id=${project.id}`);
           }}
         >
-          <Text style={styles.applyButtonText}>Bid Now</Text>
+          <Text style={styles.applyButtonText}>Place a Bid</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -116,7 +116,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',

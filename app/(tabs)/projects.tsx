@@ -12,7 +12,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Search, Filter, MapPin, Clock, X } from "lucide-react-native";
+import { Search, Filter, MapPin, Clock, X, ChevronDown, SlidersHorizontal } from "lucide-react-native";
 import ProjectCard from "@/components/ProjectCard";
 import { projectService } from "@/services/projectService";
 import { Project } from "@/models/Project";
@@ -34,14 +34,7 @@ export default function ProjectsScreen() {
   const [duration, setDuration] = useState("");
   const [location, setLocation] = useState("");
 
-  const categories = [
-    "All",
-    "Design",
-    "Development",
-    "Writing",
-    "Marketing",
-    "Data",
-  ];
+  const categories = ["All", "Design", "Development", "Writing", "Marketing", "Data"];
 
   // Fetch projects from API
   const fetchProjects = async () => {
@@ -78,19 +71,8 @@ export default function ProjectsScreen() {
   };
 
   const timeAgo = (timestamp: string) => {
-    const postedDate = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - postedDate.getTime();
-
-    const diffMinutes = Math.round(diffMs / (1000 * 60));
-    const diffHours = Math.round(diffMinutes / 60);
-    const diffDays = Math.round(diffHours / 24);
-
-    if (diffMinutes < 1) return "Just now";
-    if (diffHours < 1) return `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+    const diffDays = Math.round((new Date().getTime() - new Date(timestamp).getTime()) / (1000 * 60 * 60 * 24));
+    return `${diffDays}d ago`;
   };
 
   const filteredProjects = projects.filter((project) => {
@@ -110,40 +92,35 @@ export default function ProjectsScreen() {
     return matchesSearch && matchesCategory && matchesLocation;
   });
 
-  const resetFilters = () => {
-    setMinPrice("");
-    setMaxPrice("");
-    setPostedWithin("");
-    setDuration("");
-    setSelectedCategory("All");
-    setLocation("");
-  };
-
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Available Tasks</Text>
-        <TouchableOpacity
-          style={styles.filterButton}
-          onPress={() => setShowFilter(true)}
-        >
-          <Filter size={20} color="#6B7280" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Search size={20} color="#6B7280" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search available tasks..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
+    <View style={styles.container}>
+      <View style={styles.topBackground} />
+      
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.headerSubtitle}>Discover</Text>
+            <Text style={styles.headerTitle}>Available Tasks</Text>
+          </View>
+          <TouchableOpacity style={styles.headerIconButton} onPress={() => setShowFilter(true)}>
+            <SlidersHorizontal size={22} color="#FFF" />
+          </TouchableOpacity>
         </View>
-      </View>
+
+        {/* Search Bar - Floating Style */}
+        <View style={styles.searchWrapper}>
+          <View style={styles.searchBar}>
+            <Search size={18} color="#94A3B8" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by service or title..."
+              placeholderTextColor="#94A3B8"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+        </View>
 
       {/* Categories */}
       <View style={styles.categoriesContainer}>
@@ -232,73 +209,63 @@ export default function ProjectsScreen() {
         onRequestClose={() => setShowFilter(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.filterModal}>
+          <View style={styles.filterSheet}>
+            <View style={styles.sheetHandle} />
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filter Options</Text>
-              <TouchableOpacity onPress={() => setShowFilter(false)}>
-                <X size={20} color="#6B7280" />
+              <Text style={styles.modalTitle}>Refine Search</Text>
+              <TouchableOpacity onPress={() => setShowFilter(false)} style={styles.closeCircle}>
+                <X size={20} color="#1E293B" />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.modalLabel}>Location</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter location"
-                value={location}
-                onChangeText={setLocation}
-              />
+            <Text style={styles.modalLabel}>Location</Text>
+            <View style={styles.modalInputWrapper}>
+              <MapPin size={18} color="#94A3B8" />
+              <TextInput style={styles.modalInput} placeholder="e.g. Remote" value={location} onChangeText={setLocation} />
+            </View>
 
-              <Text style={styles.modalLabel}>Category</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {categories.map((cat) => (
-                  <TouchableOpacity
-                    key={cat}
-                    style={[styles.optionButton, selectedCategory === cat && styles.optionActive]}
-                    onPress={() => setSelectedCategory(cat)}
-                  >
-                    <Text style={[styles.optionText, selectedCategory === cat && styles.optionTextActive]}>
-                      {cat}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
-              <View style={styles.actions}>
-                <TouchableOpacity style={styles.resetBtn} onPress={resetFilters}>
-                  <Text style={styles.resetText}>Reset</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.applyBtn} onPress={() => setShowFilter(false)}>
-                  <Text style={styles.applyText}>Apply</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.clearBtn} onPress={() => {setLocation(""); setSelectedCategory("All");}}>
+                <Text style={styles.clearBtnText}>Reset All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.applyBtn} onPress={() => setShowFilter(false)}>
+                <Text style={styles.applyBtnText}>Show Results</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
+  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  topBackground: {
+    position: 'absolute',
+    top: 0,
+    height: 200,
+    width: '100%',
+    backgroundColor: '#1E1B4B',
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
+    paddingVertical: 15,
   },
-  headerTitle: { fontSize: 24, fontWeight: "bold", color: "#111827" },
-  filterButton: { padding: 8 },
-  searchContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+  headerSubtitle: { color: '#C7D2FE', fontSize: 13, fontWeight: '600', textTransform: 'uppercase' },
+  headerTitle: { fontSize: 28, fontWeight: "800", color: "#FFFFFF" },
+  headerIconButton: {
+    width: 45,
+    height: 45,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  searchWrapper: { paddingHorizontal: 20, marginTop: 5 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",

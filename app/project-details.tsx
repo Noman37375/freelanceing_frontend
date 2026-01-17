@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, StatusBar, SafeAreaView } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { projectService } from "@/services/projectService";
@@ -81,15 +81,15 @@ export default function ProjectDetails() {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#111827" />
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <ArrowLeft size={22} color="#1E293B" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Project Details</Text>
-        <View style={{ width: 24 }} />
-      </View>
+        <Text style={styles.headerTitle}>Job Details</Text>
+        <View style={{ width: 40 }} />
+      </SafeAreaView>
 
       <View style={styles.card}>
         <Text style={styles.title}>{project.title}</Text>
@@ -131,13 +131,10 @@ export default function ProjectDetails() {
           </TouchableOpacity>
         )}
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
-/* =======================
-   STYLES
-======================= */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 16, backgroundColor: "#FFFFFF", borderBottomWidth: 1, borderBottomColor: "#E5E7EB" },

@@ -1,4 +1,4 @@
-// HomeScreen.tsx (STATIC DATA VERSION)
+// HomeScreen.tsx (ULTRA-POLISHED VERSION)
 
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -8,6 +8,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  StatusBar,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -16,6 +18,9 @@ import {
   TrendingUp,
   Star,
   AlertTriangle,
+  ChevronRight,
+  Zap,
+  LayoutGrid,
 } from 'lucide-react-native';
 
 import { storageGet } from "@/utils/storage";
@@ -25,40 +30,7 @@ import { useWallet } from '@/contexts/WalletContext';
 import ProjectCard from '@/components/ProjectCard';
 import StatsCard from '@/components/StatsCard';
 
-/* =======================
-   STATIC DATA
-======================= */
-
-const STATIC_PROJECTS = [
-  {
-    id: '1',
-    title: 'React Native App',
-    description: 'Build a mobile app using React Native',
-    budget: 500,
-    skills: ['react native', 'javascript'],
-    status: 'available',
-  },
-  {
-    id: '2',
-    title: 'Node.js API',
-    description: 'Create REST APIs with Node.js',
-    budget: 300,
-    skills: ['node.js', 'express'],
-    status: 'available',
-  },
-];
-
-const STATIC_EARNINGS = [
-  { id: '1', amount: 200 },
-  { id: '2', amount: 450 },
-  { id: '3', amount: 150 },
-];
-
-const STATIC_REVIEWS = [
-  { id: '1', rating: 4.5 },
-  { id: '2', rating: 5 },
-  { id: '3', rating: 4 },
-];
+const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -69,9 +41,6 @@ export default function HomeScreen() {
   const [earnings, setEarnings] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
 
-  /* =======================
-     ROLE CHECK
-  ======================= */
   useEffect(() => {
     const checkRole = async () => {
       const storedUser = await storageGet("user");
@@ -85,269 +54,261 @@ export default function HomeScreen() {
     checkRole();
   }, []);
 
-  /* =======================
-     LOAD STATIC DATA
-  ======================= */
   useEffect(() => {
-    setRecentProjects(STATIC_PROJECTS);
-    setEarnings(STATIC_EARNINGS);
-    setReviews(STATIC_REVIEWS);
+    setRecentProjects([
+      { id: '1', title: 'React Native App', description: 'Build a mobile app using React Native', budget: 500, skills: ['react native', 'javascript'], status: 'available' },
+      { id: '2', title: 'Node.js API', description: 'Create REST APIs with Node.js', budget: 300, skills: ['node.js', 'express'], status: 'available' },
+    ]);
+    setEarnings([{ id: '1', amount: 200 }, { id: '2', amount: 450 }, { id: '3', amount: 150 }]);
+    setReviews([{ id: '1', rating: 4.5 }, { id: '2', rating: 5 }, { id: '3', rating: 4 }]);
   }, []);
 
-  /* =======================
-     CALCULATIONS
-  ======================= */
-  const totalEarnings = earnings.reduce(
-    (acc, e) => acc + Number(e.amount),
-    0
-  );
-
-  const avgRating =
-    reviews.length > 0
-      ? (
-          reviews.reduce((acc, r) => acc + Number(r.rating), 0) /
-          reviews.length
-        ).toFixed(1)
-      : '0';
+  const totalEarnings = earnings.reduce((acc, e) => acc + Number(e.amount), 0);
+  const avgRating = reviews.length > 0 ? (reviews.reduce((acc, r) => acc + Number(r.rating), 0) / reviews.length).toFixed(1) : '0';
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <StatusBar barStyle="light-content" />
+      
+      {/* Dynamic Background Element */}
+      <View style={styles.topGradient} />
 
-        {/* Header */}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        
+        {/* Header Section */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>Good morning,</Text>
-            <Text style={styles.userName}>
-              {user?.userName || user?.email?.split('@')[0] || 'Freelancer'}
+          <View>
+            <Text style={styles.greetingText}>Welcome back,</Text>
+            <Text style={styles.userNameText}>
+              {user?.userName || user?.email?.split('@')[0] || 'Freelancer'} 👋
             </Text>
-            {user?.role && (
-              <Text style={styles.userRole}>{user.role}</Text>
-            )}
           </View>
-
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.walletButton}
-              onPress={() => router.push('/wallet')}
+          <View style={styles.headerIcons}>
+            <TouchableOpacity 
+              style={styles.iconCircle}
+              onPress={() => router.push('/notifications')}
+              activeOpacity={0.7}
             >
-              <Wallet size={20} color="#3B82F6" />
-              <Text style={styles.walletText}>${balance}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.notificationButton}>
-              <Bell size={24} color="#6B7280" />
+              <Bell size={20} color="#FFF" />
+              <View style={styles.statusDot} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Stats */}
-        <View style={styles.statsContainer}>
+        {/* Balance Glass Card */}
+        <View style={styles.balanceCard}>
+          <View>
+            <Text style={styles.balanceLabel}>Available Balance</Text>
+            <Text style={styles.balanceAmount}>${balance}</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.withdrawButton}
+            onPress={() => router.push('/wallet')}
+          >
+            <Wallet size={16} color="#6366F1" />
+            <Text style={styles.withdrawText}>Wallet</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Analytics Grid */}
+        <View style={styles.statsRow}>
           <StatsCard
-            icon={<TrendingUp size={24} color="#10B981" />}
+            icon={<TrendingUp size={20} color="#10B981" />}
             title="Earnings"
             value={`$${totalEarnings}`}
-            subtitle="Total Earnings"
+            subtitle="+12% this month"
             color="#10B981"
             onPress={() => router.push('/earnings')}
           />
-
           <StatsCard
-            icon={<Star size={24} color="#F59E0B" />}
+            icon={<Star size={20} color="#F59E0B" />}
             title="Rating"
             value={avgRating}
-            subtitle="Average"
+            subtitle="Top Rated Status"
             color="#F59E0B"
             onPress={() => router.push('/reviews')}
           />
         </View>
 
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-
-          <View style={styles.quickActions}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push('/find-projects')}
-            >
-              <Text style={styles.actionButtonText}>Find Projects</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionButton, styles.actionButtonSecondary]}
-              onPress={() => router.push('/profile-view')}
-            >
-              <Text
-                style={[
-                  styles.actionButtonText,
-                  styles.actionButtonSecondaryText,
-                ]}
-              >
-                Profile
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Dispute Button (NEW, SAFE ADDITION) */}
-          <TouchableOpacity
-            style={styles.disputeButton}
-            onPress={() => router.push('/FDisputes')}
+        {/* Quick Actions - Floating Style */}
+        <View style={styles.actionContainer}>
+           <TouchableOpacity 
+            style={styles.primaryAction}
+            onPress={() => router.push('/find-projects')}
           >
-            <AlertTriangle size={18} color="#DC2626" />
-            <Text style={styles.disputeButtonText}>
-              Dispute
-            </Text>
+            <Zap size={20} color="#FFF" fill="#FFF" />
+            <Text style={styles.primaryActionText}>Browse Projects</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.secondaryAction}
+            onPress={() => router.push('/profile-view')}
+          >
+            <LayoutGrid size={20} color="#4F46E5" />
+            <Text style={styles.secondaryActionText}>My Profile</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Recommended Projects */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recommended Projects</Text>
+        {/* Project List Section */}
+        <View style={styles.projectSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recommended for you</Text>
+            <TouchableOpacity><Text style={styles.linkText}>View All</Text></TouchableOpacity>
+          </View>
 
           {recentProjects.map(project => (
-            <ProjectCard key={project.id} project={project} />
+            <View key={project.id} style={styles.cardWrapper}>
+              <ProjectCard project={project} />
+            </View>
           ))}
         </View>
+
+        {/* Support Footer */}
+        <TouchableOpacity 
+          style={styles.supportCard}
+          onPress={() => router.push('/FDisputes')}
+        >
+          <View style={styles.supportIconBox}>
+            <AlertTriangle size={20} color="#EF4444" />
+          </View>
+          <View style={styles.supportContent}>
+            <Text style={styles.supportTitle}>Resolution Center</Text>
+            <Text style={styles.supportSub}>Open a dispute or get help</Text>
+          </View>
+          <ChevronRight size={20} color="#9CA3AF" />
+        </TouchableOpacity>
 
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-/* =======================
-   STYLES
-======================= */
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  topGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 240,
+    backgroundColor: '#1E1B4B', // Deep Indigo
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
+  
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    marginBottom: 16,
+    marginBottom: 25,
+  },
+  greetingText: { color: '#C7D2FE', fontSize: 14, fontWeight: '500' },
+  userNameText: { color: '#FFFFFF', fontSize: 24, fontWeight: '800' },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statusDot: {
+    position: 'absolute',
+    top: 12,
+    right: 14,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
+    borderWidth: 2,
+    borderColor: '#1E1B4B',
   },
 
-  headerLeft: {
-    flex: 1,
+  balanceCard: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 24,
+    padding: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+    marginBottom: 24,
   },
-
-  greeting: { 
-    fontSize: 14, 
-    color: '#9CA3AF',
-    fontWeight: '500',
-  },
-  userName: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
-    color: '#111827',
-    marginTop: 2,
-  },
-  userRole: {
-    fontSize: 13,
-    color: '#3B82F6',
-    fontWeight: '600',
-    marginTop: 4,
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  balanceLabel: { color: '#64748B', fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  balanceAmount: { color: '#1E293B', fontSize: 32, fontWeight: '800', marginTop: 4 },
+  withdrawButton: {
+    backgroundColor: '#EEF2FF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 12,
-    alignSelf: 'flex-start',
+    gap: 8,
   },
+  withdrawText: { color: '#4F46E5', fontWeight: '700', fontSize: 14 },
 
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
 
-  walletButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-  },
-
-  walletText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3B82F6',
-  },
-
-  notificationButton: { padding: 8 },
-
-  statsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    gap: 12,
-    marginBottom: 24,
-  },
-
-  section: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 16,
-  },
-
-  quickActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-
-  actionButton: {
-    flex: 1,
-    backgroundColor: '#3B82F6',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-
-  actionButtonSecondary: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-  },
-
-  actionButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-
-  actionButtonSecondaryText: {
-    color: '#374151',
-  },
-
-  /* ===== Dispute Button Styles (NEW) ===== */
-  disputeButton: {
-    marginTop: 14,
+  actionContainer: { flexDirection: 'row', gap: 12, marginBottom: 32 },
+  primaryAction: {
+    flex: 1.5,
+    backgroundColor: '#4F46E5',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#FEF2F2',
+    paddingVertical: 16,
+    borderRadius: 16,
+    shadowColor: '#4F46E5',
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+  },
+  primaryActionText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
+  secondaryAction: {
+    flex: 1,
+    backgroundColor: '#FFF',
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: '#E2E8F0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 16,
   },
+  secondaryActionText: { color: '#475569', fontWeight: '700', fontSize: 16 },
 
-  disputeButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#DC2626',
+  projectSection: { marginBottom: 24 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B' },
+  linkText: { color: '#4F46E5', fontWeight: '600', fontSize: 14 },
+  cardWrapper: { marginBottom: 12 },
+
+  supportCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
+  supportIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#FEF2F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  supportContent: { flex: 1 },
+  supportTitle: { color: '#1E293B', fontSize: 15, fontWeight: '700' },
+  supportSub: { color: '#94A3B8', fontSize: 13, marginTop: 2 },
 });

@@ -6,8 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  StatusBar,
 } from "react-native";
-import { ArrowLeft, CheckCircle, Clock, Info } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ArrowLeft, CheckCircle, Clock, Info, User, DollarSign, MapPin, Calendar } from "lucide-react-native";
 
 interface Milestone {
   title: string;
@@ -30,7 +32,6 @@ interface Project {
 }
 
 export default function AvailableDetailsScreen() {
-  // 🔹 Hardcoded static project data
   const [project, setProject] = useState<Project>({
     id: "1",
     title: "Mobile App Redesign",
@@ -88,130 +89,155 @@ export default function AvailableDetailsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
-          <ArrowLeft color="#111827" size={22} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{project.title}</Text>
-      </View>
-
-      {/* Project Summary */}
-      <View style={styles.summary}>
-        <Text style={styles.summaryText}>👤 Client: {project.client}</Text>
-        <Text style={styles.summaryText}>💰 Budget: {project.budget}</Text>
-        <Text style={styles.summaryText}>📍 Location: {project.location}</Text>
-        <Text style={styles.summaryText}>⏰ Deadline: {project.deadline}</Text>
-      </View>
-
-      {/* Description */}
-      <Text style={styles.sectionTitle}>Project Description</Text>
-      <View style={styles.descriptionCard}>
-        <Text style={styles.descriptionText}>{project.description}</Text>
-      </View>
-
-      {/* Milestones */}
-      <Text style={styles.sectionTitle}>Project Milestones</Text>
-
-      {project.milestones.map((m, index) => (
-        <View
-          key={index}
-          style={[
-            styles.milestoneCard,
-            m.approvalStatus === "approved"
-              ? styles.approvedCard
-              : m.approvalStatus === "requested"
-              ? styles.requestedCard
-              : m.approvalStatus === "inReview"
-              ? styles.inReviewCard
-              : styles.pendingCard,
-          ]}
-        >
-          <View style={styles.milestoneInfo}>
-            {m.approvalStatus === "approved" ? (
-              <CheckCircle color="#16A34A" size={20} />
-            ) : m.approvalStatus === "requested" || m.approvalStatus === "inReview" ? (
-              <Clock color="#F59E0B" size={20} />
-            ) : (
-              <Clock color="#6B7280" size={20} />
-            )}
-            <Text
-              style={[
-                styles.milestoneTitle,
-                m.approvalStatus === "approved" && styles.approvedText,
-              ]}
-            >
-              {m.title}
-            </Text>
-          </View>
-
-          <View style={styles.milestoneDetails}>
-            <Text style={styles.detailText}>📆 Duration: {m.duration}</Text>
-            <Text style={styles.detailText}>💵 {m.priceUSD} ({m.pricePKR})</Text>
-            <View style={styles.detailRow}>
-              <Info color="#6B7280" size={14} />
-              <Text style={styles.detailDescription}>{m.details}</Text>
-            </View>
-          </View>
-
-          {m.approvalStatus === "pending" ? (
-            <TouchableOpacity
-              style={styles.requestButton}
-              onPress={() => handleRequestApproval(index)}
-            >
-              <Text style={styles.requestText}>Request Approval</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
+      {/* HEADER SECTION (Deep Indigo) */}
+      <View style={styles.darkHeader}>
+        <SafeAreaView>
+          <View style={styles.navRow}>
+            <TouchableOpacity style={styles.backButton}>
+              <ArrowLeft color="#F8FAFC" size={22} />
             </TouchableOpacity>
-          ) : (
-            <View style={styles.statusTag}>
-              <Text
-                style={[
-                  styles.statusText,
-                  m.approvalStatus === "approved"
-                    ? { color: "#16A34A" }
-                    : m.approvalStatus === "inReview"
-                    ? { color: "#3B82F6" }
-                    : { color: "#F59E0B" },
-                ]}
-              >
-                {m.approvalStatus === "approved"
-                  ? "Approved"
-                  : m.approvalStatus === "inReview"
-                  ? "In Review"
-                  : "Requested"}
-              </Text>
+            <Text style={styles.headerTitle} numberOfLines={1}>{project.title}</Text>
+          </View>
+
+          <View style={styles.summaryGrid}>
+            <View style={styles.summaryItem}>
+              <User size={14} color="#C7D2FE" />
+              <Text style={styles.summaryText}>{project.client}</Text>
             </View>
-          )}
+            <View style={styles.summaryItem}>
+              <DollarSign size={14} color="#C7D2FE" />
+              <Text style={styles.summaryText}>{project.budget}</Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <MapPin size={14} color="#C7D2FE" />
+              <Text style={styles.summaryText}>{project.location}</Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <Calendar size={14} color="#C7D2FE" />
+              <Text style={styles.summaryText}>{project.deadline}</Text>
+            </View>
+          </View>
+        </SafeAreaView>
+      </View>
+
+      {/* CONTENT AREA */}
+      <ScrollView 
+        style={styles.contentBody} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+      >
+        <Text style={styles.sectionTitle}>Project Overview</Text>
+        <View style={styles.descriptionCard}>
+          <Text style={styles.descriptionText}>{project.description}</Text>
         </View>
-      ))}
-    </ScrollView>
+
+        <Text style={styles.sectionTitle}>Milestones</Text>
+
+        {project.milestones.map((m, index) => (
+          <View
+            key={index}
+            style={[
+              styles.milestoneCard,
+              m.approvalStatus === "approved" ? styles.approvedCardBorder : 
+              m.approvalStatus === "pending" ? styles.pendingCardBorder : styles.activeCardBorder
+            ]}
+          >
+            <View style={styles.milestoneHeader}>
+              <View style={styles.milestoneIconTitle}>
+                {m.approvalStatus === "approved" ? (
+                  <CheckCircle color="#10B981" size={20} />
+                ) : (
+                  <Clock color={m.approvalStatus === "pending" ? "#94A3B8" : "#6366F1"} size={20} />
+                )}
+                <Text style={[
+                  styles.milestoneTitle,
+                  m.approvalStatus === "approved" && styles.approvedText
+                ]}>
+                  {m.title}
+                </Text>
+              </View>
+              <Text style={styles.milestonePrice}>{m.priceUSD}</Text>
+            </View>
+
+            <View style={styles.milestoneBody}>
+              <Text style={styles.milestoneSubtext}>Duration: {m.duration} • {m.pricePKR} PKR</Text>
+              <View style={styles.detailRow}>
+                <Info color="#94A3B8" size={14} />
+                <Text style={styles.detailDescription}>{m.details}</Text>
+              </View>
+            </View>
+
+            {m.approvalStatus === "pending" ? (
+              <TouchableOpacity
+                style={styles.requestButton}
+                onPress={() => handleRequestApproval(index)}
+              >
+                <Text style={styles.requestText}>Request Approval</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={[
+                styles.statusTag, 
+                { backgroundColor: m.approvalStatus === 'approved' ? '#ECFDF5' : '#EEF2FF' }
+              ]}>
+                <Text style={[
+                  styles.statusText,
+                  { color: m.approvalStatus === "approved" ? "#10B981" : "#6366F1" }
+                ]}>
+                  {m.approvalStatus === "approved" ? "Approved" : 
+                   m.approvalStatus === "inReview" ? "In Review" : "Approval Requested"}
+                </Text>
+              </View>
+            )}
+          </View>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB", padding: 20 },
-  header: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
-  backButton: { backgroundColor: "#E5E7EB", padding: 8, borderRadius: 8, marginRight: 8 },
-  headerTitle: { fontSize: 20, fontWeight: "700", color: "#111827", flexShrink: 1 },
-  summary: { backgroundColor: "#FFFFFF", padding: 16, borderRadius: 12, elevation: 2, marginBottom: 20 },
-  summaryText: { fontSize: 14, color: "#374151", marginBottom: 6 },
-  sectionTitle: { fontSize: 18, fontWeight: "600", marginBottom: 12, color: "#111827" },
-  descriptionCard: { backgroundColor: "#FFFFFF", padding: 14, borderRadius: 10, marginBottom: 20, elevation: 1 },
-  descriptionText: { fontSize: 14, color: "#4B5563", lineHeight: 20 },
-  milestoneCard: { backgroundColor: "#FFFFFF", borderRadius: 12, padding: 14, marginBottom: 10, elevation: 2 },
-  milestoneInfo: { flexDirection: "row", alignItems: "center", gap: 10 },
-  milestoneTitle: { fontSize: 15, color: "#111827", flex: 1 },
-  approvedText: { textDecorationLine: "line-through", color: "#16A34A" },
-  milestoneDetails: { marginTop: 8 },
-  detailText: { fontSize: 13, color: "#6B7280", marginBottom: 2 },
-  detailRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-  detailDescription: { fontSize: 13, color: "#4B5563", flex: 1 },
-  requestButton: { backgroundColor: "#3B82F6", paddingVertical: 8, borderRadius: 8, marginTop: 10 },
-  requestText: { color: "#FFFFFF", fontWeight: "500", textAlign: "center" },
-  statusTag: { marginTop: 10, backgroundColor: "#F3F4F6", paddingVertical: 6, borderRadius: 8 },
-  statusText: { textAlign: "center", fontWeight: "500", fontSize: 13 },
-  approvedCard: { borderLeftWidth: 4, borderLeftColor: "#16A34A" },
-  requestedCard: { borderLeftWidth: 4, borderLeftColor: "#F59E0B" },
-  inReviewCard: { borderLeftWidth: 4, borderLeftColor: "#3B82F6" },
-  pendingCard: { borderLeftWidth: 4, borderLeftColor: "#E5E7EB" },
+  container: { flex: 1, backgroundColor: "#0F172A" },
+  
+  // Header
+  darkHeader: { paddingHorizontal: 20, paddingBottom: 25 },
+  navRow: { flexDirection: "row", alignItems: "center", marginTop: 10, gap: 12 },
+  backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: "#1E293B", justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#334155" },
+  headerTitle: { fontSize: 22, fontWeight: "800", color: "#F8FAFC", flex: 1 },
+  
+  summaryGrid: { flexDirection: "row", flexWrap: "wrap", marginTop: 20, gap: 10 },
+  summaryItem: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#1E293B", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: "#334155" },
+  summaryText: { color: "#F8FAFC", fontSize: 12, fontWeight: "600" },
+
+  // Content Body
+  contentBody: { flex: 1, backgroundColor: "#F8FAFC", borderTopLeftRadius: 32, borderTopRightRadius: 32 },
+  sectionTitle: { fontSize: 18, fontWeight: "800", color: "#1E293B", marginBottom: 12, marginTop: 10 },
+  descriptionCard: { backgroundColor: "#FFF", padding: 16, borderRadius: 20, marginBottom: 25, borderWidth: 1, borderColor: "#E2E8F0" },
+  descriptionText: { fontSize: 14, color: "#475569", lineHeight: 22 },
+
+  // Milestone Cards
+  milestoneCard: { backgroundColor: "#FFF", borderRadius: 20, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: "#E2E8F0", shadowColor: "#000", shadowOpacity: 0.02, shadowRadius: 10, elevation: 2 },
+  milestoneHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  milestoneIconTitle: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
+  milestoneTitle: { fontSize: 16, fontWeight: "700", color: "#1E293B" },
+  milestonePrice: { fontSize: 16, fontWeight: "800", color: "#6366F1" },
+  approvedText: { textDecorationLine: "line-through", color: "#94A3B8" },
+  
+  milestoneBody: { marginBottom: 15 },
+  milestoneSubtext: { fontSize: 13, color: "#64748B", fontWeight: "600", marginBottom: 6 },
+  detailRow: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
+  detailDescription: { fontSize: 13, color: "#94A3B8", flex: 1, lineHeight: 18 },
+
+  requestButton: { backgroundColor: "#6366F1", paddingVertical: 12, borderRadius: 14, shadowColor: "#6366F1", shadowOpacity: 0.2, shadowRadius: 5 },
+  requestText: { color: "#FFFFFF", fontWeight: "700", textAlign: "center", fontSize: 14 },
+  
+  statusTag: { paddingVertical: 10, borderRadius: 14 },
+  statusText: { textAlign: "center", fontWeight: "700", fontSize: 13 },
+
+  // Border accents
+  approvedCardBorder: { borderLeftWidth: 5, borderLeftColor: "#10B981" },
+  activeCardBorder: { borderLeftWidth: 5, borderLeftColor: "#6366F1" },
+  pendingCardBorder: { borderLeftWidth: 5, borderLeftColor: "#CBD5E1" },
 });

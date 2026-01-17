@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Star } from 'lucide-react-native';
+import { ArrowLeft, Star, Calendar, CheckCircle2, Quote } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
 export default function ReviewDetails() {
   const router = useRouter();
 
-  // Static project and review data
   const project = {
     title: 'React Native App Development',
     milestones: [
@@ -31,7 +30,6 @@ export default function ReviewDetails() {
     duration: '2 weeks ago',
   };
 
-  // Calculate average rating
   const milestoneRatings = (review?.milestones || []).map((m) => m.rating || 0);
   const extraRatings = [review.communication, review.quality, review.punctuality];
   const allRatings = [...milestoneRatings, ...extraRatings];
@@ -39,140 +37,153 @@ export default function ReviewDetails() {
     ? (allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(1)
     : '0';
 
-  const renderStars = (count: number) => (
-    <View style={{ flexDirection: 'row' }}>
-      {[...Array(Math.round(count))].map((_, i) => (
-        <Star key={i} size={16} color="#F59E0B" fill="#F59E0B" />
+  const renderStars = (count: number, size = 14) => (
+    <View style={{ flexDirection: 'row', gap: 2 }}>
+      {[...Array(5)].map((_, i) => (
+        <Star 
+          key={i} 
+          size={size} 
+          color={i < Math.floor(count) ? "#4F46E5" : "#E2E8F0"} 
+          fill={i < Math.floor(count) ? "#4F46E5" : "transparent"} 
+        />
       ))}
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#111827" />
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <ArrowLeft size={22} color="#1E293B" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{review.projectTitle}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>Project Review</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Overall Rating */}
-        <View style={styles.overallBox}>
-          <View style={styles.starRow}>{renderStars(Number(averageRating))}</View>
-          <Text style={styles.overallText}>{averageRating} / 5 Overall Rating</Text>
-        </View>
-
-        {/* Sub Ratings */}
-        <View style={styles.subRatings}>
-          <View style={styles.subRatingRow}>
-            <Text style={styles.subLabel}>Communication</Text>
-            {renderStars(review.communication)}
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* OVERALL SCORECARD */}
+        <View style={styles.heroCard}>
+          <Text style={styles.heroProjectTitle}>{review.projectTitle}</Text>
+          <View style={styles.ratingCircle}>
+            <Text style={styles.ratingLargeText}>{averageRating}</Text>
+            <Text style={styles.ratingSmallText}>/ 5.0</Text>
           </View>
-          <View style={styles.subRatingRow}>
-            <Text style={styles.subLabel}>Quality of Work</Text>
-            {renderStars(review.quality)}
-          </View>
-          <View style={styles.subRatingRow}>
-            <Text style={styles.subLabel}>Punctuality</Text>
-            {renderStars(review.punctuality)}
+          <View style={styles.heroStarRow}>{renderStars(Number(averageRating), 18)}</View>
+          <View style={styles.durationBadge}>
+            <Calendar size={12} color="#94A3B8" />
+            <Text style={styles.durationText}>Completed {review.duration}</Text>
           </View>
         </View>
 
-        <Text style={styles.comment}>{review.comment}</Text>
-        <Text style={styles.duration}>⏱ Duration: {review.duration}</Text>
+        {/* FEEDBACK COMMENT */}
+        <View style={styles.commentCard}>
+          <Quote size={20} color="#C7D2FE" fill="#C7D2FE" style={{ marginBottom: 8 }} />
+          <Text style={styles.commentText}>{review.comment}</Text>
+        </View>
 
-        {/* Milestones */}
-        <Text style={styles.sectionTitle}>Completed Milestones</Text>
-        {review.milestones.map((m, idx) => {
-          const milestoneDetails = project.milestones.find(pm => pm.title === m.title);
-          return (
-            <View key={idx} style={styles.milestone}>
-              <View style={styles.milestoneHeader}>
-                <Text style={styles.milestoneTitle}>{m.title}</Text>
-                {renderStars(m.rating)}
+        {/* METRICS SECTION */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Performance Metrics</Text>
+          <View style={styles.metricBox}>
+            {[
+              { label: 'Communication', val: review.communication },
+              { label: 'Quality of Work', val: review.quality },
+              { label: 'Punctuality', val: review.punctuality }
+            ].map((item, i) => (
+              <View key={i} style={[styles.metricRow, i !== 2 && styles.borderBottom]}>
+                <Text style={styles.metricLabel}>{item.label}</Text>
+                {renderStars(item.val)}
               </View>
-              {milestoneDetails && (
-                <>
-                  <Text style={styles.milestoneDuration}>{milestoneDetails.duration}</Text>
-                  <Text style={styles.milestoneDetails}>{milestoneDetails.details}</Text>
-                </>
-              )}
-            </View>
-          );
-        })}
+            ))}
+          </View>
+        </View>
+
+        {/* MILESTONES SECTION */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Milestone Breakdown</Text>
+          {review.milestones.map((m, idx) => {
+            const milestoneDetails = project.milestones.find(pm => pm.title === m.title);
+            return (
+              <View key={idx} style={styles.milestoneCard}>
+                <View style={styles.milestoneHeader}>
+                  <View style={styles.milestoneTitleGroup}>
+                    <CheckCircle2 size={18} color="#4F46E5" />
+                    <Text style={styles.milestoneTitle}>{m.title}</Text>
+                  </View>
+                  {renderStars(m.rating, 12)}
+                </View>
+                {milestoneDetails && (
+                  <View style={styles.milestoneBody}>
+                    <Text style={styles.milestoneDuration}>Timeline: {milestoneDetails.duration}</Text>
+                    <Text style={styles.milestoneDetails}>{milestoneDetails.details}</Text>
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 20,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#111827' },
+  backButton: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    padding: 8,
+  },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B', flex: 1, textAlign: 'center' },
+
   content: { padding: 20 },
 
-  overallBox: {
-    alignItems: 'center',
+  heroCard: {
     backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     marginBottom: 20,
-  },
-  starRow: { flexDirection: 'row', marginBottom: 4 },
-  overallText: { fontWeight: 'bold', color: '#111827', fontSize: 16 },
-
-  subRatings: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-    marginBottom: 20,
-  },
-  subRatingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  subLabel: { fontWeight: '500', color: '#374151', fontSize: 15 },
-
-  comment: { fontSize: 15, color: '#374151', marginBottom: 12, textAlign: 'center' },
-  duration: { color: '#6B7280', marginBottom: 20, textAlign: 'center' },
-
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#111827', marginBottom: 10 },
-  milestone: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowColor: '#1E293B',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
     elevation: 2,
   },
-  milestoneHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  milestoneTitle: { fontWeight: 'bold', color: '#111827', fontSize: 15 },
-  milestoneDuration: { color: '#6B7280', marginBottom: 4 },
-  milestoneDetails: { color: '#374151', fontSize: 14 },
+  heroProjectTitle: { fontSize: 14, fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 },
+  ratingCircle: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 8 },
+  ratingLargeText: { fontSize: 48, fontWeight: '800', color: '#1E293B' },
+  ratingSmallText: { fontSize: 18, fontWeight: '600', color: '#94A3B8', marginBottom: 8, marginLeft: 4 },
+  heroStarRow: { marginBottom: 16 },
+  durationBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F8FAFC', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  durationText: { fontSize: 12, color: '#94A3B8', fontWeight: '600' },
+
+  commentCard: { backgroundColor: '#EEF2FF', borderRadius: 20, padding: 20, marginBottom: 25 },
+  commentText: { fontSize: 16, color: '#312E81', lineHeight: 24, fontWeight: '500', fontStyle: 'italic' },
+
+  section: { marginBottom: 25 },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: '#1E293B', marginBottom: 12 },
+  
+  metricBox: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 8, borderWidth: 1, borderColor: '#F1F5F9' },
+  metricRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
+  borderBottom: { borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
+  metricLabel: { fontSize: 15, fontWeight: '600', color: '#475569' },
+
+  milestoneCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9' },
+  milestoneHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  milestoneTitleGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  milestoneTitle: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
+  milestoneBody: { paddingLeft: 26 },
+  milestoneDuration: { fontSize: 12, color: '#4F46E5', fontWeight: '700', marginBottom: 4 },
+  milestoneDetails: { fontSize: 14, color: '#64748B', lineHeight: 20 },
 });

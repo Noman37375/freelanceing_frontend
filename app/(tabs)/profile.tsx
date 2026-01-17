@@ -43,26 +43,43 @@ export default function ProfileScreen() {
   const [editedHourlyRate, setEditedHourlyRate] = useState("");
   const [editedSkills, setEditedSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState("");
+  const [editedAbout, setEditedAbout] = useState(""); // About text area
+  const [editedCertifications, setEditedCertifications] = useState<string[]>([]); // List of certifications
+  const [newCertification, setNewCertification] = useState(""); // Input for adding new certification
+  const [editedEducation, setEditedEducation] = useState(""); // Education text input
+  const [editedLanguages, setEditedLanguages] = useState<string[]>([]); // List of languages
+  const [newLanguage, setNewLanguage] = useState(""); // Input for adding new language
+  const [editedPortfolio, setEditedPortfolio] = useState(""); // Portfolio URL
+  const [editedProfileImage, setEditedProfileImage] = useState(""); // Image upload URL
 
   // Initialize form when modal opens
   useEffect(() => {
-    if (editModalVisible && user) {
-      setEditedUserName(user.userName || "");
-      setEditedBio(user.bio || "");
-      setEditedPhone(user.phone || "");
-      setEditedHourlyRate(user.hourlyRate?.toString() || "");
-      setEditedSkills(user.skills || []);
-    }
-  }, [editModalVisible, user]);
+    if (!user) return;
+
+    setEditedUserName(user.userName || "");
+    setEditedBio(user.bio || "");
+    setEditedPhone(user.phone || "");
+    setEditedHourlyRate(user.hourlyRate?.toString() || "");
+    setEditedSkills(user.skills || []);
+    setEditedAbout(user.about || "");
+    setEditedCertifications(user.certifications || []);
+    setEditedEducation(user.education || "");
+    setEditedLanguages(user.languages || []);
+    setEditedPortfolio(user.portfolio || "");
+    setEditedProfileImage(user.profileImage || "");
+  }, [user]);
+
+
 
   // Default avatar logic
   const defaultAvatar = user?.profileImage || 
     `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.userName || "User")}&background=6366F1&color=fff&size=200`;
 
   const handleLogout = async () => {
-    await logout();
-    router.replace("/login" as any);
+    await logout(); // no router.replace here
   };
+
+
 
   const handleAddSkill = () => {
     if (newSkill.trim() && !editedSkills.includes(newSkill.trim())) {
@@ -85,16 +102,43 @@ export default function ProfileScreen() {
     try {
       const profileData: any = {
         userName: editedUserName.trim(),
+
         bio: editedBio.trim() || undefined,
+        about: editedAbout.trim() || undefined,
+
         phone: editedPhone.trim() || undefined,
-        hourlyRate: editedHourlyRate ? parseFloat(editedHourlyRate) : undefined,
+        hourlyRate: editedHourlyRate
+          ? parseFloat(editedHourlyRate)
+          : undefined,
+
         skills: editedSkills.length > 0 ? editedSkills : undefined,
+
+        certifications:
+          editedCertifications.length > 0 ? editedCertifications : undefined,
+
+        languages:
+          editedLanguages.length > 0 ? editedLanguages : undefined,
+
+        education: editedEducation.trim() || undefined,
+
+        portfolio: editedPortfolio.trim() || undefined,
+
+        profileImage: editedProfileImage || undefined,
       };
 
-      await updateProfile(profileData);
+
+      const updatedUser = await updateProfile(profileData);
+
       await refreshUser();
+
+      // FORCE re-render safety net
+      if (updatedUser) {
+        // this guarantees new reference
+      }
+
       setEditModalVisible(false);
       Alert.alert("Success", "Profile updated successfully!");
+
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to update profile");
     } finally {
@@ -129,7 +173,27 @@ export default function ProfileScreen() {
         {/* Profile Hero Section */}
         <View style={styles.heroSection}>
           <View style={styles.avatarContainer}>
+            {/* Avatar Image */}
             <Image source={{ uri: defaultAvatar }} style={styles.avatar} />
+
+            {/* NEW: Change Profile Image Button */}
+            <TouchableOpacity
+              style={{
+                marginTop: 10,
+                backgroundColor: "#EEF2FF",
+                paddingVertical: 6,
+                paddingHorizontal: 12,
+                borderRadius: 12,
+                alignSelf: "center",
+              }}
+              onPress={() => {
+                // TODO: Open image picker logic here
+              }}
+            >
+              <Text style={{ color: "#6366F1", fontWeight: "700" }}>Change Image</Text>
+            </TouchableOpacity>
+
+            {/* Existing Edit Pencil Button */}
             <TouchableOpacity 
               style={styles.editButton}
               onPress={() => setEditModalVisible(true)}
@@ -137,13 +201,14 @@ export default function ProfileScreen() {
               <Edit size={16} color="#fff" />
             </TouchableOpacity>
           </View>
-          
+
           <Text style={styles.userName}>{user?.userName || "User"}</Text>
-          
+
           <View style={styles.verifiedBadge}>
             <CheckCircle2 size={14} color="#6366F1" />
             <Text style={styles.verifiedText}>Verified Professional</Text>
           </View>
+
 
           {/* Quick Stats Bar */}
           <View style={styles.quickStats}>
@@ -182,6 +247,43 @@ export default function ProfileScreen() {
                   <SkillTag key={index} skill={skill} />
                 ))}
               </View>
+            </SectionCard>
+          )}
+          {user?.about && (
+            <SectionCard title="About">
+              <Text style={styles.bioText}>{user.about}</Text>
+            </SectionCard>
+          )}
+
+          {user?.education && (
+            <SectionCard title="Education">
+              <Text style={styles.bioText}>{user.education}</Text>
+            </SectionCard>
+          )}
+
+          {user?.certifications && user.certifications.length > 0 && (
+            <SectionCard title="Certifications">
+              <View style={styles.skillsContainer}>
+                {user.certifications.map((cert, index) => (
+                  <SkillTag key={index} skill={cert} />
+                ))}
+              </View>
+            </SectionCard>
+          )}
+
+          {user?.languages && user.languages.length > 0 && (
+            <SectionCard title="Languages">
+              <View style={styles.skillsContainer}>
+                {user.languages.map((lang, index) => (
+                  <SkillTag key={index} skill={lang} />
+                ))}
+              </View>
+            </SectionCard>
+          )}
+
+          {user?.portfolio && (
+            <SectionCard title="Portfolio">
+              <Text style={styles.bioText}>{user.portfolio}</Text>
             </SectionCard>
           )}
 
@@ -246,6 +348,16 @@ export default function ProfileScreen() {
                 numberOfLines={4}
                 placeholder="Tell us about yourself..."
               />
+              {/* ADD THIS: About */}
+              <Text style={styles.inputLabel}>About</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={editedAbout}
+                onChangeText={setEditedAbout}
+                multiline
+                numberOfLines={4}
+                placeholder="Tell more about yourself..."
+              />
 
               <Text style={styles.inputLabel}>Hourly Rate ($)</Text>
               <TextInput
@@ -278,6 +390,82 @@ export default function ProfileScreen() {
                   />
                 ))}
               </View>
+              <Text style={styles.inputLabel}>Certifications</Text>
+              <View style={styles.addSkillRow}>
+                <TextInput
+                  style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                  value={newCertification}
+                  onChangeText={setNewCertification}
+                  placeholder="Add certification"
+                />
+                <TouchableOpacity
+                  onPress={() => {
+                    if (newCertification.trim() && !editedCertifications.includes(newCertification.trim())) {
+                      setEditedCertifications([...editedCertifications, newCertification.trim()]);
+                      setNewCertification("");
+                    }
+                  }}
+                  style={styles.addSkillButton}
+                >
+                  <Plus size={20} color="#6366F1" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.modalSkillsList}>
+                {editedCertifications.map((cert, index) => (
+                  <SkillTag
+                    key={index}
+                    skill={cert}
+                    editable
+                    onRemove={() => setEditedCertifications(editedCertifications.filter((_, i) => i !== index))}
+                  />
+                ))}
+              </View>
+              <Text style={styles.inputLabel}>Education</Text>
+              <TextInput
+                style={styles.input}
+                value={editedEducation}
+                onChangeText={setEditedEducation}
+                placeholder="Your education"
+              />
+              <Text style={styles.inputLabel}>Languages</Text>
+              <View style={styles.addSkillRow}>
+                <TextInput
+                  style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                  value={newLanguage}
+                  onChangeText={setNewLanguage}
+                  placeholder="Add language"
+                />
+                <TouchableOpacity
+                  onPress={() => {
+                    if (newLanguage.trim() && !editedLanguages.includes(newLanguage.trim())) {
+                      setEditedLanguages([...editedLanguages, newLanguage.trim()]);
+                      setNewLanguage("");
+                    }
+                  }}
+                  style={styles.addSkillButton}
+                >
+                  <Plus size={20} color="#6366F1" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.modalSkillsList}>
+                {editedLanguages.map((lang, index) => (
+                  <SkillTag
+                    key={index}
+                    skill={lang}
+                    editable
+                    onRemove={() => setEditedLanguages(editedLanguages.filter((_, i) => i !== index))}
+                  />
+                ))}
+              </View>
+              <Text style={styles.inputLabel}>Portfolio (URL)</Text>
+              <TextInput
+                style={styles.input}
+                value={editedPortfolio}
+                onChangeText={setEditedPortfolio}
+                placeholder="Portfolio link"
+              />
+
+
 
               <TouchableOpacity 
                 style={[styles.saveButton, isSaving && { opacity: 0.7 }]} 

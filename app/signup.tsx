@@ -35,6 +35,46 @@ const Signup = () => {
     hasUppercase: false,
     hasNumber: false,
   });
+  const SUGGESTED_SKILLS = [
+    "Java",
+    "JavaScript",
+    "React",
+    "React Native",
+    "Node.js",
+    "MongoDB",
+    "Python",
+    "Django",
+    "UI/UX Design",
+    "Figma",
+    "Flutter",
+    "C++",
+    "C#",
+    "PHP",
+    "Laravel",
+    "Next.js",
+    "HTML",
+    "CSS",
+    "Tailwind CSS",
+  ];
+  const [skillInput, setSkillInput] = useState("");
+  const [skills, setSkills] = useState<string[]>([]);
+  const [filteredSkills, setFilteredSkills] = useState<string[]>([]);
+  const [showSkillDropdown, setShowSkillDropdown] = useState(false);
+
+
+
+  // ================= Freelancer Profile Fields =================
+  const [bio, setBio] = useState("");
+  const [about, setAbout] = useState("");
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [phone, setPhone] = useState("");
+  const [certifications, setCertifications] = useState("");
+  const [education, setEducation] = useState("");
+  const [languages, setLanguages] = useState<string[]>([]);
+  const [hourlyRate, setHourlyRate] = useState("");
+  const [portfolio, setPortfolio] = useState("");
+  // ==============================================================
+
 
   const router = useRouter();
   const { signup } = useAuth();
@@ -88,7 +128,19 @@ const Signup = () => {
 
     try {
       console.log('[Signup] Attempting signup for:', email, 'Role:', role);
-      const response = await signup(userName, email, password, role);
+      const response = await signup(userName, email, password, role, {
+        bio,
+        about,
+        skills,
+        phone,
+        certifications,
+        education,
+        languages,
+        hourly_rate: Number(hourlyRate),
+        portfolio,
+        profile_image: profileImage,
+      });
+
       console.log('[Signup] Signup successful:', response);
       
       // Automatically navigate to OTP verification screen
@@ -437,6 +489,318 @@ const Signup = () => {
                   }
                 </Text>
               </View>
+              {/* ================= Improved Freelancer Profile Fields ================= */}
+              {role === "Freelancer" && (
+                <>
+                  {/* Bio */}
+                  <View style={styles.inputGroup}>
+                    <View style={styles.labelContainer}>
+                      <Briefcase size={18} color="#A855F7" />
+                      <Text style={styles.inputLabel}>Short Bio</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.inputWrapper,
+                        focusedInput === 'bio' && styles.inputWrapperFocused,
+                      ]}
+                    >
+                      <TextInput
+                        style={[
+                          styles.textInput,
+                          { flex: 1, height: 60, textAlignVertical: 'top', paddingVertical: 8 } // padding fixes placeholder
+                        ]}
+                        placeholder="Write a short professional bio"
+                        placeholderTextColor="#94A3B8"
+                        multiline
+                        value={bio}
+                        onChangeText={setBio}
+                        onFocus={() => setFocusedInput('bio')}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!isLoading}
+                      />
+                    </View>
+                  </View>
+
+                  {/* About You */}
+                  <View style={styles.inputGroup}>
+                    <View style={styles.labelContainer}>
+                      <Briefcase size={18} color="#A855F7" />
+                      <Text style={styles.inputLabel}>About You</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.inputWrapper,
+                        focusedInput === 'about' && styles.inputWrapperFocused,
+                      ]}
+                    >
+                      <TextInput
+                        style={[
+                          styles.textInput,
+                          { flex: 1, height: 70, textAlignVertical: 'top', paddingVertical: 8 }
+                        ]}
+                        placeholder="Tell clients about yourself"
+                        placeholderTextColor="#94A3B8"
+                        multiline
+                        value={about}
+                        onChangeText={setAbout}
+                        onFocus={() => setFocusedInput('about')}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!isLoading}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Skills with Suggestions + Tags */}
+                  <View style={styles.inputGroup}>
+                    <View style={styles.labelContainer}>
+                      <User size={18} color="#A855F7" />
+                      <Text style={styles.inputLabel}>Skills</Text>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.inputWrapper,
+                        focusedInput === "skills" && styles.inputWrapperFocused,
+                        { flexWrap: "wrap", alignItems: "center", paddingVertical: 10 }
+                      ]}
+                    >
+                      {/* Selected skill tags */}
+                      {skills.map((skill, index) => (
+                        <View key={index} style={styles.skillTag}>
+                          <Text style={styles.skillTagText}>{skill}</Text>
+                          <TouchableOpacity
+                            onPress={() =>
+                              setSkills(skills.filter((_, i) => i !== index))
+                            }
+                          >
+                            <Text style={styles.skillRemove}>×</Text>
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+
+                      {/* Input */}
+                      <TextInput
+                        style={[styles.textInput, { flex: 1, minWidth: 120 }]}
+                        placeholder="Select or type a skill"
+                        placeholderTextColor="#94A3B8"
+                        value={skillInput}
+                        onChangeText={(text) => {
+                          setSkillInput(text);
+                          setShowSkillDropdown(true);
+
+                          const filtered = SUGGESTED_SKILLS.filter(
+                            (skill) =>
+                              skill.toLowerCase().includes(text.toLowerCase()) &&
+                              !skills.includes(skill)
+                          );
+                          setFilteredSkills(filtered);
+                        }}
+                        onFocus={() => {
+                          setFocusedInput("skills");
+                          setShowSkillDropdown(true);
+                          setFilteredSkills(
+                            SUGGESTED_SKILLS.filter((s) => !skills.includes(s))
+                          );
+                        }}
+                        onBlur={() => {
+                          setFocusedInput(null);
+                          setTimeout(() => setShowSkillDropdown(false), 300);
+
+                        }}
+                        onSubmitEditing={() => {
+                          if (
+                            skillInput.trim() !== "" &&
+                            !skills.includes(skillInput.trim())
+                          ) {
+                            setSkills([...skills, skillInput.trim()]);
+                            setSkillInput("");
+                          }
+                        }}
+                      />
+                    </View>
+
+                    {/* Dropdown */}
+                    {showSkillDropdown && filteredSkills.length > 0 && (
+                      <View style={styles.skillDropdown}>
+                        {filteredSkills.slice(0, 6).map((skill, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={styles.skillOption}
+                            onPress={() => {
+                              if (!skills.includes(skill)) {
+                                setSkills([...skills, skill]);
+                              }
+
+                              setSkillInput("");
+                              setShowSkillDropdown(false);
+                            }}
+                          >
+                            <Text style={styles.skillOptionText}>{skill}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+
+
+                  {/* Phone */}
+                  <View style={styles.inputGroup}>
+                    <View style={styles.labelContainer}>
+                      <User size={18} color="#A855F7" />
+                      <Text style={styles.inputLabel}>Phone</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.inputWrapper,
+                        focusedInput === 'phone' && styles.inputWrapperFocused
+                      ]}
+                    >
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="+92 300 1234567"
+                        placeholderTextColor="#94A3B8"
+                        keyboardType="phone-pad"
+                        value={phone}
+                        onChangeText={setPhone}
+                        onFocus={() => setFocusedInput('phone')}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!isLoading}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Education */}
+                  <View style={styles.inputGroup}>
+                    <View style={styles.labelContainer}>
+                      <Briefcase size={18} color="#A855F7" />
+                      <Text style={styles.inputLabel}>Education</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.inputWrapper,
+                        focusedInput === 'education' && styles.inputWrapperFocused
+                      ]}
+                    >
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="BS Software Engineering"
+                        placeholderTextColor="#94A3B8"
+                        value={education}
+                        onChangeText={setEducation}
+                        onFocus={() => setFocusedInput('education')}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!isLoading}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Certifications */}
+                  <View style={styles.inputGroup}>
+                    <View style={styles.labelContainer}>
+                      <Briefcase size={18} color="#A855F7" />
+                      <Text style={styles.inputLabel}>Certifications</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.inputWrapper,
+                        focusedInput === 'certifications' && styles.inputWrapperFocused
+                      ]}
+                    >
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="Google UX, AWS"
+                        placeholderTextColor="#94A3B8"
+                        value={certifications}
+                        onChangeText={setCertifications}
+                        onFocus={() => setFocusedInput('certifications')}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!isLoading}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Languages */}
+                  <View style={styles.inputGroup}>
+                    <View style={styles.labelContainer}>
+                      <User size={18} color="#A855F7" />
+                      <Text style={styles.inputLabel}>Languages</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.inputWrapper,
+                        focusedInput === 'languages' && styles.inputWrapperFocused
+                      ]}
+                    >
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="English, Urdu"
+                        placeholderTextColor="#94A3B8"
+                        value={languages.join(", ")}
+                        onChangeText={(t) =>
+                          setLanguages(t.split(",").map(l => l.trim()))
+                        }
+                        onFocus={() => setFocusedInput('languages')}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!isLoading}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Hourly Rate */}
+                  <View style={styles.inputGroup}>
+                    <View style={styles.labelContainer}>
+                      <Briefcase size={18} color="#A855F7" />
+                      <Text style={styles.inputLabel}>Hourly Rate ($)</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.inputWrapper,
+                        focusedInput === 'hourlyRate' && styles.inputWrapperFocused
+                      ]}
+                    >
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="25"
+                        placeholderTextColor="#94A3B8"
+                        keyboardType="numeric"
+                        value={hourlyRate}
+                        onChangeText={setHourlyRate}
+                        onFocus={() => setFocusedInput('hourlyRate')}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!isLoading}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Portfolio */}
+                  <View style={styles.inputGroup}>
+                    <View style={styles.labelContainer}>
+                      <Briefcase size={18} color="#A855F7" />
+                      <Text style={styles.inputLabel}>Portfolio URL</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.inputWrapper,
+                        focusedInput === 'portfolio' && styles.inputWrapperFocused
+                      ]}
+                    >
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="https://myportfolio.com"
+                        placeholderTextColor="#94A3B8"
+                        value={portfolio}
+                        onChangeText={setPortfolio}
+                        onFocus={() => setFocusedInput('portfolio')}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!isLoading}
+                      />
+                    </View>
+                  </View>
+                </>
+              )}
+              {/* ====================================================================== */}
+
+
 
               {/* Sign Up Button */}
               <TouchableOpacity
@@ -612,8 +976,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     paddingHorizontal: 16,
-    height: 56,
+    minHeight: 56,          // ✅ allow growth for tags & bio
+    paddingVertical: 12,
   },
+
   inputWrapperFocused: {
     borderColor: '#A855F7',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -772,6 +1138,56 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 16,
   },
+  skillDropdown: {
+    backgroundColor: "#0F172A",
+    borderRadius: 12,
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: "rgba(168, 85, 247, 0.3)",
+    overflow: "hidden",
+    zIndex: 999,          // ✅ floats above form
+    elevation: 10,        // ✅ Android fix
+    position: "relative",
+  },
+
+
+  skillOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.05)",
+  },
+
+  skillOptionText: {
+    color: "#E5E7EB",
+    fontSize: 14,
+  },
+
+  skillTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(168, 85, 247, 0.15)",
+    borderColor: "#A855F7",
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 6,
+    marginBottom: 6,
+  },
+
+  skillTagText: {
+    color: "#E9D5FF",
+    fontSize: 13,
+    marginRight: 6,
+  },
+
+  skillRemove: {
+    color: "#A855F7",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+
   bottomGradient: {
     position: 'absolute',
     bottom: 0,

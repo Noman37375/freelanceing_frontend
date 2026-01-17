@@ -91,46 +91,48 @@ export default function ProjectDetails() {
         <View style={{ width: 40 }} />
       </SafeAreaView>
 
-      <View style={styles.card}>
-        <Text style={styles.title}>{project.title}</Text>
-        <Text style={styles.budget}>💰 ${project.budget}</Text>
-        {project.duration && <Text style={styles.deadline}>🕒 {project.duration}</Text>}
-        {project.client && <Text style={styles.client}>👤 {project.client.userName}</Text>}
-        {project.location && <Text style={styles.location}>📍 {project.location}</Text>}
-        <Text style={styles.status}>Status: {project.status}</Text>
-        <Text style={styles.bidsCount}>Bids: {project.bidsCount}</Text>
+      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.card}>
+          <Text style={styles.title}>{project.title}</Text>
+          <Text style={styles.budget}>💰 ${project.budget}</Text>
+          {project.duration && <Text style={styles.deadline}>🕒 {project.duration}</Text>}
+          {project.client && <Text style={styles.client}>👤 {project.client.userName}</Text>}
+          {project.location && <Text style={styles.location}>📍 {project.location}</Text>}
+          <Text style={styles.status}>Status: {project.status}</Text>
+          <Text style={styles.bidsCount}>Bids: {project.bidsCount}</Text>
 
-        <Text style={styles.sectionTitle}>Description</Text>
-        <Text style={styles.description}>{project.description}</Text>
+          <Text style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.description}>{project.description}</Text>
 
-        {project.tags && project.tags.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>Skills/Tags Required</Text>
-            <View style={styles.skillContainer}>
-              {project.tags.map((tag: string, i: number) => (
-                <Text key={i} style={styles.skillTag}>{tag}</Text>
-              ))}
+          {project.tags && project.tags.length > 0 && (
+            <>
+              <Text style={styles.sectionTitle}>Skills/Tags Required</Text>
+              <View style={styles.skillContainer}>
+                {project.tags.map((tag: string, i: number) => (
+                  <Text key={i} style={styles.skillTag}>{tag}</Text>
+                ))}
+              </View>
+            </>
+          )}
+
+          {project.category && (
+            <View style={styles.categoryContainer}>
+              <Text style={styles.sectionTitle}>Category</Text>
+              <Text style={styles.category}>{project.category}</Text>
             </View>
-          </>
-        )}
+          )}
 
-        {project.category && (
-          <View style={styles.categoryContainer}>
-            <Text style={styles.sectionTitle}>Category</Text>
-            <Text style={styles.category}>{project.category}</Text>
-          </View>
-        )}
-
-        {/* Only show Bid button if user is a Freelancer and project is ACTIVE */}
-        {user?.role === 'Freelancer' && project.status === 'ACTIVE' && (
-          <TouchableOpacity
-            style={styles.applyButton}
-            onPress={() => router.push(`/Bid-now?id=${project.id}` as any)}
-          >
-            <Text style={styles.applyButtonText}>🚀 Bid Now</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+          {/* Only show Bid button if user is a Freelancer and project is ACTIVE */}
+          {user?.role === 'Freelancer' && project.status === 'ACTIVE' && (
+            <TouchableOpacity
+              style={styles.applyButton}
+              onPress={() => router.push(`/Bid-now?id=${project.id}` as any)}
+            >
+              <Text style={styles.applyButtonText}>🚀 Bid Now</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -139,6 +141,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 16, backgroundColor: "#FFFFFF", borderBottomWidth: 1, borderBottomColor: "#E5E7EB" },
   headerTitle: { fontSize: 20, fontWeight: "bold", color: "#111827" },
+  backButton: { padding: 8 },
+  scrollContent: { flex: 1 },
   card: { backgroundColor: "#FFFFFF", margin: 20, borderRadius: 12, padding: 20, elevation: 3 },
   title: { fontSize: 22, fontWeight: "bold", color: "#111827", marginBottom: 8 },
   budget: { fontSize: 16, color: "#3B82F6", marginBottom: 4, fontWeight: "600" },

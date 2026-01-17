@@ -175,7 +175,7 @@ export default function ProjectsScreen() {
             filteredProjects.map((project) => (
               <TouchableOpacity
                 key={project.id}
-                onPress={() => router.push(`/project-details?id=${project.id}`)}
+                onPress={() => router.push(`/project-details?id=${project.id}` as any)}
               >
                 <View style={styles.projectCardContainer}>
                   <ProjectCard project={project} />
@@ -235,6 +235,7 @@ export default function ProjectsScreen() {
           </View>
         </View>
       </Modal>
+      </SafeAreaView>
     </View>
   );
 }
@@ -306,21 +307,68 @@ const styles = StyleSheet.create({
   metaText: { fontSize: 12, color: "#6B7280" },
   proposalsText: { fontSize: 12, color: "#3B82F6", fontWeight: "500", marginLeft: "auto" },
   modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.3)" },
-  filterModal: { backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: "85%" },
-  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  modalTitle: { fontSize: 18, fontWeight: "bold", color: "#111827" },
-  modalLabel: { fontSize: 15, fontWeight: "500", color: "#374151", marginTop: 16, marginBottom: 6 },
-  row: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  input: { flex: 1, borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 10, padding: 10, fontSize: 15 },
-  optionButton: { backgroundColor: "#F3F4F6", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
-  optionActive: { backgroundColor: "#3B82F6" },
-  optionText: { color: "#374151", fontSize: 14 },
-  optionTextActive: { color: "#fff" },
-  actions: { flexDirection: "row", justifyContent: "space-between", marginTop: 24 },
-  resetBtn: { flex: 1, padding: 12, borderRadius: 12, backgroundColor: "#E5E7EB", marginRight: 10, alignItems: "center" },
-  applyBtn: { flex: 1, padding: 12, borderRadius: 12, backgroundColor: "#3B82F6", alignItems: "center" },
-  resetText: { color: "#111827", fontWeight: "500" },
-  applyText: { color: "#fff", fontWeight: "500" },
+  filterSheet: { 
+    backgroundColor: "#fff", 
+    borderTopLeftRadius: 24, 
+    borderTopRightRadius: 24, 
+    padding: 20, 
+    maxHeight: "85%",
+    paddingBottom: 40,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: "#CBD5E1",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
+  modalTitle: { fontSize: 22, fontWeight: "700", color: "#1E293B" },
+  closeCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalLabel: { fontSize: 15, fontWeight: "600", color: "#475569", marginTop: 20, marginBottom: 8 },
+  modalInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  modalInput: { flex: 1, fontSize: 15, color: "#1E293B" },
+  modalActions: { 
+    flexDirection: "row", 
+    gap: 12, 
+    marginTop: 32,
+  },
+  clearBtn: { 
+    flex: 1, 
+    padding: 16, 
+    borderRadius: 12, 
+    backgroundColor: "#F1F5F9", 
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  clearBtnText: { color: "#475569", fontWeight: "600", fontSize: 15 },
+  applyBtn: { 
+    flex: 1, 
+    padding: 16, 
+    borderRadius: 12, 
+    backgroundColor: "#3B82F6", 
+    alignItems: "center",
+  },
+  applyBtnText: { color: "#fff", fontWeight: "600", fontSize: 15 },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 40 },
   loadingText: { marginTop: 12, color: "#6B7280", fontSize: 14 },
   emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 60 },

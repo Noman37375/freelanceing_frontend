@@ -36,24 +36,7 @@ const MOCK_PROJECT: Project = {
   location: "Remote",
   proposalStatus: "shortlisted",
   description: "This is a fallback description shown because the database ID was not found. We need a high-converting landing page for our new organic supplement line.",
-  milestones: [
-    {
-      title: "Initial Wireframes",
-      duration: "3 days",
-      details: "Basic layout and content structure planning.",
-      pricePKR: "15,000",
-      priceUSD: "$50",
-      approvalStatus: "approved"
-    },
-    {
-      title: "Final UI Design",
-      duration: "1 week",
-      details: "High fidelity designs with full branding.",
-      pricePKR: "45,000",
-      priceUSD: "$150",
-      approvalStatus: "pending"
-    }
-  ],
+  milestones: [],
 };
 
 interface Milestone {
@@ -209,52 +192,6 @@ export default function ProposalDetailsScreen() {
           )}
         </View>
 
-        <Text style={styles.sectionTitle}>Proposed Milestones</Text>
-
-        {project.milestones?.map((m, index) => (
-          <View
-            key={index}
-            style={[
-              styles.milestoneCard,
-              m.approvalStatus === "approved" ? styles.approvedCardBorder : 
-              m.approvalStatus === "rejected" ? styles.rejectedCardBorder : styles.activeCardBorder
-            ]}
-          >
-            <View style={styles.milestoneHeader}>
-              <View style={styles.milestoneIconTitle}>
-                {m.approvalStatus === "approved" ? (
-                  <CheckCircle color="#10B981" size={20} />
-                ) : (
-                  <Clock color={m.approvalStatus === "pending" ? "#94A3B8" : "#6366F1"} size={20} />
-                )}
-                <Text style={[styles.milestoneTitle, m.approvalStatus === "approved" && styles.approvedText]}>
-                  {m.title}
-                </Text>
-              </View>
-              <Text style={styles.milestonePrice}>{m.priceUSD}</Text>
-            </View>
-
-            <View style={styles.milestoneBody}>
-              <Text style={styles.milestoneSubtext}>Duration: {m.duration} • {m.pricePKR} PKR</Text>
-              <View style={styles.detailRow}>
-                <Info color="#94A3B8" size={14} />
-                <Text style={styles.detailDescription}>{m.details}</Text>
-              </View>
-            </View>
-
-            <View style={[
-              styles.statusTag, 
-              { backgroundColor: m.approvalStatus === 'approved' ? '#ECFDF5' : m.approvalStatus === 'rejected' ? '#FEF2F2' : '#EEF2FF' }
-            ]}>
-              <Text style={[
-                styles.statusText,
-                { color: m.approvalStatus === "approved" ? "#10B981" : m.approvalStatus === 'rejected' ? '#DC2626' : "#6366F1" }
-              ]}>
-                {m.approvalStatus.toUpperCase()}
-              </Text>
-            </View>
-          </View>
-        ))}
       </ScrollView>
     </View>
   );

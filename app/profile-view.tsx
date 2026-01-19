@@ -51,10 +51,7 @@ export default function ProfileViewScreen() {
       communication: 5,
       quality: 4,
       punctuality: 5,
-      milestones: [
-        { title: "UI Design", rating: 5, comment: "Excellent design work" },
-        { title: "Prototype", rating: 4, comment: "Smooth transitions" },
-      ],
+      milestones: [],
       feedback: "Great collaboration and timely delivery.",
     },
     {
@@ -62,9 +59,7 @@ export default function ProfileViewScreen() {
       communication: 4,
       quality: 4,
       punctuality: 4,
-      milestones: [
-        { title: "Backend Setup", rating: 4, comment: "Solid implementation" },
-      ],
+      milestones: [],
       feedback: "Good work overall.",
     },
   ];
@@ -204,15 +199,6 @@ export default function ProfileViewScreen() {
               {expanded && (
                 <View style={styles.expandedContent}>
                   <Text style={styles.feedbackText}>"{review.feedback}"</Text>
-                  <View style={styles.milestoneList}>
-                    {review.milestones.map((m, i) => (
-                      <View key={i} style={styles.milestoneItem}>
-                        <CheckCircle2 size={14} color="#10B981" />
-                        <Text style={styles.milestoneName}>{m.title}</Text>
-                        <Text style={styles.milestoneScore}>{m.rating}/5</Text>
-                      </View>
-                    ))}
-                  </View>
                 </View>
               )}
             </View>

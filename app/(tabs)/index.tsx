@@ -20,12 +20,14 @@ import {
   AlertTriangle,
   ChevronRight,
   Zap,
-  LayoutGrid,
 } from 'lucide-react-native';
 
 import { storageGet } from "@/utils/storage";
 import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/contexts/WalletContext';
+import { projectService } from '@/services/projectService';
+import { reviewService } from '@/services/reviewService';
+import { walletService } from '@/services/walletService';
 
 import ProjectCard from '@/components/ProjectCard';
 import StatsCard from '@/components/StatsCard';
@@ -47,7 +49,7 @@ export default function HomeScreen() {
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
         if (parsedUser.role?.toLowerCase() !== "freelancer") {
-          router.replace("/client");
+          router.replace("/(client-tabs)");
         }
       }
     };
@@ -55,13 +57,26 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    setRecentProjects([
-      { id: '1', title: 'React Native App', description: 'Build a mobile app using React Native', budget: 500, skills: ['react native', 'javascript'], status: 'available' },
-      { id: '2', title: 'Node.js API', description: 'Create REST APIs with Node.js', budget: 300, skills: ['node.js', 'express'], status: 'available' },
-    ]);
-    setEarnings([{ id: '1', amount: 200 }, { id: '2', amount: 450 }, { id: '3', amount: 150 }]);
-    setReviews([{ id: '1', rating: 4.5 }, { id: '2', rating: 5 }, { id: '3', rating: 4 }]);
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      // Fetch recent projects
+      const projectsData = await projectService.getProjects({ status: 'ACTIVE' });
+      setRecentProjects(projectsData.slice(0, 2));
+
+      // Fetch reviews for average rating
+      const reviewsData = await reviewService.getMyReviews();
+      setReviews(reviewsData.map(r => ({ id: r.id, rating: r.rating })));
+
+      // Fetch wallet for earnings
+      const walletData = await walletService.getWallet();
+      setEarnings([{ id: '1', amount: walletData.balance }]);
+    } catch (error: any) {
+      console.error('Failed to fetch data:', error);
+    }
+  };
 
   const totalEarnings = earnings.reduce((acc, e) => acc + Number(e.amount), 0);
   const avgRating = reviews.length > 0 ? (reviews.reduce((acc, r) => acc + Number(r.rating), 0) / reviews.length).toFixed(1) : '0';
@@ -139,14 +154,6 @@ export default function HomeScreen() {
             <Zap size={20} color="#FFF" fill="#FFF" />
             <Text style={styles.primaryActionText}>Browse Projects</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.secondaryAction}
-            onPress={() => router.push('/profile-view')}
-          >
-            <LayoutGrid size={20} color="#4F46E5" />
-            <Text style={styles.secondaryActionText}>My Profile</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Project List Section */}
@@ -205,6 +212,7 @@ const styles = StyleSheet.create({
   },
   greetingText: { color: '#C7D2FE', fontSize: 14, fontWeight: '500' },
   userNameText: { color: '#FFFFFF', fontSize: 24, fontWeight: '800' },
+  headerIcons: { flexDirection: 'row', gap: 10 },
   iconCircle: {
     width: 44,
     height: 44,
@@ -254,9 +262,9 @@ const styles = StyleSheet.create({
 
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
 
-  actionContainer: { flexDirection: 'row', gap: 12, marginBottom: 32 },
+  actionContainer: { flexDirection: 'row', gap: 12, marginBottom: 32, justifyContent: 'center' },
   primaryAction: {
-    flex: 1.5,
+    flex: 1,
     backgroundColor: '#4F46E5',
     flexDirection: 'row',
     alignItems: 'center',
@@ -270,19 +278,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
   },
   primaryActionText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
-  secondaryAction: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
-    borderRadius: 16,
-  },
-  secondaryActionText: { color: '#475569', fontWeight: '700', fontSize: 16 },
 
   projectSection: { marginBottom: 24 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 },

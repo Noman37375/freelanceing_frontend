@@ -1,84 +1,39 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { Search, Filter, User, Star, MapPin, Briefcase } from 'lucide-react-native';
-
-interface Freelancer {
-  id: string;
-  name: string;
-  title: string;
-  rating: number;
-  reviews: number;
-  hourlyRate: string;
-  location: string;
-  skills: string[];
-  completedProjects: number;
-  availability: 'Available' | 'Busy' | 'Not Available';
-}
-
-const FREELANCERS_DATA: Freelancer[] = [
-  {
-    id: '1',
-    name: 'Sarah Johnson',
-    title: 'UI/UX Designer',
-    rating: 4.9,
-    reviews: 127,
-    hourlyRate: '$85/hr',
-    location: 'San Francisco, CA',
-    skills: ['UI Design', 'Figma', 'Prototyping'],
-    completedProjects: 127,
-    availability: 'Available',
-  },
-  {
-    id: '2',
-    name: 'Michael Chen',
-    title: 'Full Stack Developer',
-    rating: 4.8,
-    reviews: 94,
-    hourlyRate: '$95/hr',
-    location: 'New York, NY',
-    skills: ['React', 'Node.js', 'MongoDB'],
-    completedProjects: 94,
-    availability: 'Available',
-  },
-  {
-    id: '3',
-    name: 'Emma Davis',
-    title: 'Graphic Designer',
-    rating: 5.0,
-    reviews: 156,
-    hourlyRate: '$70/hr',
-    location: 'Los Angeles, CA',
-    skills: ['Illustration', 'Branding', 'Adobe CC'],
-    completedProjects: 156,
-    availability: 'Busy',
-  },
-  {
-    id: '4',
-    name: 'David Wilson',
-    title: 'SEO Specialist',
-    rating: 4.7,
-    reviews: 82,
-    hourlyRate: '$60/hr',
-    location: 'Chicago, IL',
-    skills: ['SEO', 'Content Strategy', 'Analytics'],
-    completedProjects: 82,
-    availability: 'Available',
-  },
-  {
-    id: '5',
-    name: 'Lisa Anderson',
-    title: 'Social Media Manager',
-    rating: 4.9,
-    reviews: 103,
-    hourlyRate: '$55/hr',
-    location: 'Miami, FL',
-    skills: ['Instagram', 'Facebook Ads', 'Content'],
-    completedProjects: 103,
-    availability: 'Available',
-  },
-];
+import { freelancerService, Freelancer } from '@/services/freelancerService';
 
 export default function Freelancers() {
-  const getAvailabilityColor = (availability: Freelancer['availability']) => {
+  const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    fetchFreelancers();
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchFreelancers();
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  const fetchFreelancers = async () => {
+    try {
+      setLoading(true);
+      const data = await freelancerService.getFreelancers({
+        search: searchQuery || undefined,
+      });
+      setFreelancers(data);
+    } catch (error: any) {
+      console.error('Failed to fetch freelancers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAvailabilityColor = (availability: string) => {
     switch (availability) {
       case 'Available':
         return '#10B981';
@@ -86,6 +41,8 @@ export default function Freelancers() {
         return '#F59E0B';
       case 'Not Available':
         return '#EF4444';
+      default:
+        return '#10B981';
     }
   };
 
@@ -102,6 +59,8 @@ export default function Freelancers() {
             style={styles.searchInput}
             placeholder="Search by skills, name..."
             placeholderTextColor="#9CA3AF"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
         </View>
         <TouchableOpacity style={styles.filterButton}>
@@ -126,7 +85,16 @@ export default function Freelancers() {
 
       <ScrollView style={styles.freelancersList} showsVerticalScrollIndicator={false}>
         <View style={styles.freelancersContent}>
-          {FREELANCERS_DATA.map((freelancer) => (
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#3B82F6" />
+            </View>
+          ) : freelancers.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No freelancers found</Text>
+            </View>
+          ) : (
+            freelancers.map((freelancer) => (
             <TouchableOpacity key={freelancer.id} style={styles.freelancerCard}>
               <View style={styles.cardHeader}>
                 <View style={styles.avatarContainer}>
@@ -177,8 +145,9 @@ export default function Freelancers() {
               <TouchableOpacity style={styles.viewProfileButton}>
                 <Text style={styles.viewProfileText}>View Profile</Text>
               </TouchableOpacity>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            ))
+          )}
         </View>
       </ScrollView>
     </View>
@@ -391,5 +360,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#6B7280',
   },
 });

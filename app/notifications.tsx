@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import {
   ArrowLeft,
@@ -18,69 +19,77 @@ import {
 } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-interface Notification {
-  id: string;
-  type: "payment" | "project" | "security";
-  title: string;
-  message: string;
-  time: string;
-  isRead: boolean;
-}
-
-const NOTIFICATIONS_DATA: Notification[] = [
-  {
-    id: "1",
-    type: "payment",
-    title: "Payment Received",
-    message: "Alice Johnson paid $500.00 for 'Landing Page Design'.",
-    time: "2m ago",
-    isRead: false,
-  },
-  {
-    id: "2",
-    type: "project",
-    title: "Milestone Approved",
-    message: "Your milestone 'Initial Prototype' was approved by Mark Lee.",
-    time: "1h ago",
-    isRead: false,
-  },
-  {
-    id: "3",
-    type: "security",
-    title: "New Login Detected",
-    message: "A new login was detected from a Chrome browser on Windows.",
-    time: "5h ago",
-    isRead: true,
-  },
-  {
-    id: "4",
-    type: "project",
-    title: "New Message",
-    message: "Charlie Davis sent you a message regarding the logo assets.",
-    time: "Yesterday",
-    isRead: true,
-  },
-];
+import { notificationService, Notification } from "@/services/notificationService";
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const [notifications, setNotifications] = useState(NOTIFICATIONS_DATA);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const markAllRead = () => {
-    setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const data = await notificationService.getNotifications();
+      setNotifications(data);
+    } catch (error: any) {
+      console.error('Failed to fetch notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
+    } catch (error: any) {
+      console.error('Failed to mark all as read:', error);
+    }
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   const getIcon = (type: string) => {
-    switch (type) {
-      case "payment":
-        return <View style={[styles.iconBox, { backgroundColor: "#ECFDF5" }]}><CreditCard size={20} color="#10B981" /></View>;
-      case "project":
-        return <View style={[styles.iconBox, { backgroundColor: "#EEF2FF" }]}><Briefcase size={20} color="#6366F1" /></View>;
-      case "security":
-        return <View style={[styles.iconBox, { backgroundColor: "#FEF2F2" }]}><ShieldCheck size={20} color="#EF4444" /></View>;
-      default:
-        return <Bell size={20} color="#64748B" />;
+    if (type.toLowerCase().includes('payment') || type.toLowerCase().includes('payment')) {
+      return <View style={[styles.iconBox, { backgroundColor: "#ECFDF5" }]}><CreditCard size={20} color="#10B981" /></View>;
+    }
+    if (type.toLowerCase().includes('project') || type.toLowerCase().includes('proposal')) {
+      return <View style={[styles.iconBox, { backgroundColor: "#EEF2FF" }]}><Briefcase size={20} color="#6366F1" /></View>;
+    }
+    if (type.toLowerCase().includes('security') || type.toLowerCase().includes('login')) {
+      return <View style={[styles.iconBox, { backgroundColor: "#FEF2F2" }]}><ShieldCheck size={20} color="#EF4444" /></View>;
+    }
+    return <View style={[styles.iconBox, { backgroundColor: "#F1F5F9" }]}><Bell size={20} color="#64748B" /></View>;
+  };
+
+  const handleNotificationPress = async (notification: Notification) => {
+    if (!notification.isRead) {
+      try {
+        await notificationService.markAsRead(notification.id);
+        setNotifications(notifications.map(n => 
+          n.id === notification.id ? { ...n, isRead: true } : n
+        ));
+      } catch (error) {
+        console.error('Failed to mark notification as read:', error);
+      }
     }
   };
 
@@ -88,6 +97,7 @@ export default function NotificationsScreen() {
     <TouchableOpacity 
       style={[styles.notificationCard, !item.isRead && styles.unreadCard]}
       activeOpacity={0.7}
+      onPress={() => handleNotificationPress(item)}
     >
       {getIcon(item.type)}
       <View style={styles.textDetails}>
@@ -96,7 +106,7 @@ export default function NotificationsScreen() {
           {!item.isRead && <Circle size={8} color="#6366F1" fill="#6366F1" />}
         </View>
         <Text style={styles.notifMessage} numberOfLines={2}>{item.message}</Text>
-        <Text style={styles.notifTime}>{item.time}</Text>
+        <Text style={styles.notifTime}>{formatTime(item.createdAt)}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -114,19 +124,27 @@ export default function NotificationsScreen() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={notifications}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Bell size={48} color="#CBD5E1" />
-            <Text style={styles.emptyText}>All caught up!</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6366F1" />
+        </View>
+      ) : (
+        <FlatList
+          data={notifications}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          refreshing={loading}
+          onRefresh={fetchNotifications}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Bell size={48} color="#CBD5E1" />
+              <Text style={styles.emptyText}>All caught up!</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -209,5 +227,11 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
     fontSize: 16,
     fontWeight: "600",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
   },
 });

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Clock, DollarSign, User, Zap, Bookmark } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { Project } from '@/models/Project';
+import { Project, getProjectDisplayStatus } from '@/models/Project';
 
 const timeAgo = (timestamp?: string) => {
   if (!timestamp) return 'Not specified';
@@ -83,9 +83,9 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 
       {/* Status Badge */}
       {project.status && (
-        <View style={[styles.statusBadge, project.status === 'ACTIVE' && styles.statusActive]}>
-          <Text style={[styles.statusText, project.status === 'ACTIVE' && styles.statusTextActive]}>
-            {project.status}
+        <View style={[styles.statusBadge, getProjectDisplayStatus(project) === 'Active' && styles.statusActive, getProjectDisplayStatus(project) === 'In Progress' && styles.statusInProgress]}>
+          <Text style={[styles.statusText, getProjectDisplayStatus(project) === 'Active' && styles.statusTextActive, getProjectDisplayStatus(project) === 'In Progress' && styles.statusTextInProgress]}>
+            {getProjectDisplayStatus(project)}
           </Text>
         </View>
       )}
@@ -146,8 +146,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   statusActive: { backgroundColor: '#D1FAE5' },
+  statusInProgress: { backgroundColor: '#DBEAFE' },
   statusText: { fontSize: 11, fontWeight: '600', color: '#6B7280' },
   statusTextActive: { color: '#10B981' },
+  statusTextInProgress: { color: '#3B82F6' },
   footer: { flexDirection: 'row', gap: 12 },
   applyButton: { flex: 1, backgroundColor: '#2563EB', paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
   applyButtonText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },

@@ -8,5 +8,10 @@ export default function Index() {
 
   if (!user) return <Redirect href="/login" />; // not logged in → login page
 
-  return <Redirect href="/(tabs)" />; // logged in → tabs
+  // Redirect based on user role
+  if (user.role === 'Client') {
+    return <Redirect href="/(client-tabs)" />; // Client → client tabs
+  }
+
+  return <Redirect href="/(tabs)" />; // Freelancer → tabs
 }

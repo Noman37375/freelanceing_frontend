@@ -40,53 +40,9 @@ export default function AvailableDetailsScreen() {
     deadline: "Dec 2025",
     location: "Remote",
     description: "Redesign a mobile app with modern UI/UX and improve user engagement.",
-    milestones: [
-      {
-        title: "UI Design",
-        duration: "2 weeks",
-        details: "Create wireframes and final design assets.",
-        pricePKR: "60000",
-        priceUSD: "$300",
-        approvalStatus: "approved",
-      },
-      {
-        title: "Prototype",
-        duration: "1 week",
-        details: "Build interactive prototype for client testing.",
-        pricePKR: "40000",
-        priceUSD: "$200",
-        approvalStatus: "pending",
-      },
-      {
-        title: "Final Implementation",
-        duration: "3 weeks",
-        details: "Implement the design in React Native.",
-        pricePKR: "100000",
-        priceUSD: "$500",
-        approvalStatus: "requested",
-      },
-    ],
+    milestones: [],
   });
 
-  const handleRequestApproval = (index: number) => {
-    const updatedMilestones = [...project.milestones];
-    const selected = updatedMilestones[index];
-
-    if (
-      selected.approvalStatus === "approved" ||
-      selected.approvalStatus === "requested" ||
-      selected.approvalStatus === "inReview"
-    )
-      return;
-
-    updatedMilestones[index].approvalStatus = "requested";
-    setProject({ ...project, milestones: updatedMilestones });
-
-    Alert.alert(
-      "Approval Requested",
-      `Milestone "${selected.title}" is now marked for review.`
-    );
-  };
 
   return (
     <View style={styles.container}>
@@ -134,65 +90,6 @@ export default function AvailableDetailsScreen() {
           <Text style={styles.descriptionText}>{project.description}</Text>
         </View>
 
-        <Text style={styles.sectionTitle}>Milestones</Text>
-
-        {project.milestones.map((m, index) => (
-          <View
-            key={index}
-            style={[
-              styles.milestoneCard,
-              m.approvalStatus === "approved" ? styles.approvedCardBorder : 
-              m.approvalStatus === "pending" ? styles.pendingCardBorder : styles.activeCardBorder
-            ]}
-          >
-            <View style={styles.milestoneHeader}>
-              <View style={styles.milestoneIconTitle}>
-                {m.approvalStatus === "approved" ? (
-                  <CheckCircle color="#10B981" size={20} />
-                ) : (
-                  <Clock color={m.approvalStatus === "pending" ? "#94A3B8" : "#6366F1"} size={20} />
-                )}
-                <Text style={[
-                  styles.milestoneTitle,
-                  m.approvalStatus === "approved" && styles.approvedText
-                ]}>
-                  {m.title}
-                </Text>
-              </View>
-              <Text style={styles.milestonePrice}>{m.priceUSD}</Text>
-            </View>
-
-            <View style={styles.milestoneBody}>
-              <Text style={styles.milestoneSubtext}>Duration: {m.duration} • {m.pricePKR} PKR</Text>
-              <View style={styles.detailRow}>
-                <Info color="#94A3B8" size={14} />
-                <Text style={styles.detailDescription}>{m.details}</Text>
-              </View>
-            </View>
-
-            {m.approvalStatus === "pending" ? (
-              <TouchableOpacity
-                style={styles.requestButton}
-                onPress={() => handleRequestApproval(index)}
-              >
-                <Text style={styles.requestText}>Request Approval</Text>
-              </TouchableOpacity>
-            ) : (
-              <View style={[
-                styles.statusTag, 
-                { backgroundColor: m.approvalStatus === 'approved' ? '#ECFDF5' : '#EEF2FF' }
-              ]}>
-                <Text style={[
-                  styles.statusText,
-                  { color: m.approvalStatus === "approved" ? "#10B981" : "#6366F1" }
-                ]}>
-                  {m.approvalStatus === "approved" ? "Approved" : 
-                   m.approvalStatus === "inReview" ? "In Review" : "Approval Requested"}
-                </Text>
-              </View>
-            )}
-          </View>
-        ))}
       </ScrollView>
     </View>
   );

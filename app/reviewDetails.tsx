@@ -9,11 +9,7 @@ export default function ReviewDetails() {
 
   const project = {
     title: 'React Native App Development',
-    milestones: [
-      { title: 'UI Design', duration: '1 week', details: 'Created app screens and flows' },
-      { title: 'API Integration', duration: '1 week', details: 'Connected APIs and handled data' },
-      { title: 'Testing & QA', duration: '3 days', details: 'Performed testing and bug fixes' },
-    ],
+    milestones: [],
   };
 
   const review = {
@@ -21,18 +17,13 @@ export default function ReviewDetails() {
     communication: 5,
     quality: 4,
     punctuality: 5,
-    milestones: [
-      { title: 'UI Design', rating: 5 },
-      { title: 'API Integration', rating: 4 },
-      { title: 'Testing & QA', rating: 5 },
-    ],
+    milestones: [],
     comment: 'Excellent work! Delivered on time with high quality.',
     duration: '2 weeks ago',
   };
 
-  const milestoneRatings = (review?.milestones || []).map((m) => m.rating || 0);
   const extraRatings = [review.communication, review.quality, review.punctuality];
-  const allRatings = [...milestoneRatings, ...extraRatings];
+  const allRatings = [...extraRatings];
   const averageRating = allRatings.length > 0
     ? (allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(1)
     : '0';
@@ -99,30 +90,6 @@ export default function ReviewDetails() {
           </View>
         </View>
 
-        {/* MILESTONES SECTION */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Milestone Breakdown</Text>
-          {review.milestones.map((m, idx) => {
-            const milestoneDetails = project.milestones.find(pm => pm.title === m.title);
-            return (
-              <View key={idx} style={styles.milestoneCard}>
-                <View style={styles.milestoneHeader}>
-                  <View style={styles.milestoneTitleGroup}>
-                    <CheckCircle2 size={18} color="#4F46E5" />
-                    <Text style={styles.milestoneTitle}>{m.title}</Text>
-                  </View>
-                  {renderStars(m.rating, 12)}
-                </View>
-                {milestoneDetails && (
-                  <View style={styles.milestoneBody}>
-                    <Text style={styles.milestoneDuration}>Timeline: {milestoneDetails.duration}</Text>
-                    <Text style={styles.milestoneDetails}>{milestoneDetails.details}</Text>
-                  </View>
-                )}
-              </View>
-            );
-          })}
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from 'react-native';
-import { Briefcase, DollarSign, MessageSquare, AlertCircle, Plus, Search, LogOut } from 'lucide-react-native';
-import StatsCard from './_components/StatsCard';
-import ProjectCard from './_components/ProjectCard';
+import { Briefcase, DollarSign, MessageSquare, AlertCircle, Plus, Search } from 'lucide-react-native';
+import StatsCard from '@/components/ClientStatsCard';
+import ProjectCard from '@/components/ClientProjectCard';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { projectService } from '@/services/projectService';
 import { Project, getProjectDisplayStatus } from '@/models/Project';
+import { disputeService } from '@/services/disputeService';
 
 export default function ClientHome() {
   const router = useRouter();
-  const { logout, user } = useAuth();
+  const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -32,6 +33,9 @@ export default function ClientHome() {
       const fetchedProjects = await projectService.getProjects({ clientId: user.id });
       setProjects(fetchedProjects);
       
+      // Fetch disputes count
+      const disputes = await disputeService.getMyDisputes();
+      
       // Calculate stats
       const total = fetchedProjects.length;
       const totalSpent = fetchedProjects
@@ -42,7 +46,7 @@ export default function ClientHome() {
         total,
         totalSpent,
         messages: 0, // TODO: Implement when messages API is ready
-        disputes: 0, // TODO: Implement when disputes API is ready
+        disputes: disputes.length,
       });
     } catch (error: any) {
       console.error('Failed to fetch projects:', error);
@@ -67,11 +71,6 @@ export default function ClientHome() {
     .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
     .slice(0, 3);
 
-  const handleLogout = async () => {
-    await logout(); // clears storage + user
-    router.replace('/login'); // go to login screen
-  };
-
   if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
@@ -88,6 +87,7 @@ export default function ClientHome() {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
+      contentContainerStyle={{ paddingBottom: 100 }}
     >
       {/* HEADER */}
       <View style={styles.header}>
@@ -95,9 +95,6 @@ export default function ClientHome() {
           <Text style={styles.greeting}>Welcome back!</Text>
           <Text style={styles.userName}>{user?.userName || 'Client'}</Text>
         </View>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <LogOut size={20} color="#EF4444" strokeWidth={2} />
-        </TouchableOpacity>
       </View>
 
       {/* OVERVIEW STATS */}
@@ -106,7 +103,7 @@ export default function ClientHome() {
         <View style={styles.statsContainer}>
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => router.push('/client/Projects')}
+            onPress={() => router.push('/(client-tabs)/projects')}
           >
             <StatsCard
               title="Projects"
@@ -130,10 +127,7 @@ export default function ClientHome() {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => {
-              // TODO: Navigate to messages when implemented
-              Alert.alert('Coming Soon', 'Messages feature coming soon!');
-            }}
+            onPress={() => router.push('/(client-tabs)/messages')}
           >
             <StatsCard
               title="Messages"
@@ -174,7 +168,7 @@ export default function ClientHome() {
 
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => router.push('/client/Freelancers')}
+            onPress={() => router.push('/(client-tabs)/freelancers')}
           >
             <View style={[styles.actionIconContainer, { backgroundColor: '#10B981' }]}>
               <Search size={24} color="#FFFFFF" strokeWidth={2} />
@@ -189,7 +183,7 @@ export default function ClientHome() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Projects</Text>
-          <TouchableOpacity onPress={() => router.push('/client/Projects')}>
+          <TouchableOpacity onPress={() => router.push('/(client-tabs)/projects')}>
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
@@ -229,8 +223,6 @@ export default function ClientHome() {
   );
 }
 
-/* ================= STYLES ================= */
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   header: {
@@ -246,13 +238,10 @@ const styles = StyleSheet.create({
   },
   greeting: { fontSize: 14, color: '#6B7280', fontWeight: '500' },
   userName: { fontSize: 24, fontWeight: '700', color: '#1F2937', marginTop: 4 },
-  logoutButton: { padding: 8, borderRadius: 8, backgroundColor: '#FEE2E2' },
-
   section: { padding: 20 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 16 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   viewAllText: { fontSize: 14, color: '#3B82F6', fontWeight: '600' },
-
   statsContainer: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -8 },
   actionsContainer: { flexDirection: 'row', gap: 12 },
   actionButton: {

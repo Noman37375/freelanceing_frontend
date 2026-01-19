@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,16 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Briefcase, CheckCircle, FileText, Bell, Search, LayoutDashboard } from "lucide-react-native";
 import WorkCard from "@/components/WorkCard";
+import { projectService } from "@/services/projectService";
+import { proposalService } from "@/services/projectService";
+import { useAuth } from "@/contexts/AuthContext";
+import { Project } from "@/models/Project";
+import { Proposal } from "@/models/Project";
 
 interface Milestone {
   title: string;
@@ -32,73 +38,72 @@ interface Project {
 }
 
 export default function MyWorkScreen() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"Active" | "Completed" | "Proposals">("Active");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // 🔹 UPDATED DATA: Added Location and synced names with Detail screens
-  const allProjects: Project[] = [
-    {
-      id: "1",
-      title: "Mobile App Redesign",
-      client: "Acme Corp",
-      budget: "$1200",
-      deadline: "Dec 2025",
-      location: "Remote", // Matches details logic
-      status: "inProgress",
-      milestones: [
-        { title: "UI Design", approvalStatus: "approved", priceUSD: "$300" },
-        { title: "Prototype", approvalStatus: "pending", priceUSD: "$200" },
-      ],
-    },
-    {
-      id: "2",
-      title: "Website Development",
-      client: "Globex Inc",
-      budget: "$2000",
-      deadline: "Nov 2025",
-      location: "New York, US", // Matches details logic
-      status: "completed",
-      milestones: [
-        { title: "Backend Setup", approvalStatus: "approved", priceUSD: "$1000" },
-        { title: "Frontend Implementation", approvalStatus: "approved", priceUSD: "$1000" },
-      ],
-    },
-    {
-      id: "3",
-      title: "Landing Page Proposal",
-      client: "Soylent Corp",
-      budget: "$500",
-      deadline: "Dec 2025",
-      location: "Remote",
-      status: "proposal",
-      proposalStatus: "shortlisted",
-      milestones: [],
-    },
-  ];
+  useEffect(() => {
+    fetchData();
+  }, [activeTab]);
 
-  const projects = allProjects.filter((p) => {
-    if (activeTab === "Active") return p.status === "inProgress";
-    if (activeTab === "Completed") return p.status === "completed";
-    if (activeTab === "Proposals") return p.status === "proposal";
-    return false;
-  });
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      if (activeTab === "Proposals") {
+        const proposalsData = await proposalService.getMyProposals();
+        setProposals(proposalsData);
+        setProjects([]);
+      } else {
+        const status = activeTab === "Active" ? "ACTIVE" : "COMPLETED";
+        const projectsData = await projectService.getProjects({
+          freelancerId: user?.id,
+          status: status as any,
+        });
+        setProjects(projectsData);
+        setProposals([]);
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const displayProjects = activeTab === "Proposals" 
+    ? proposals.map(p => ({
+        id: p.id,
+        title: p.project?.title || 'Unknown Project',
+        client: p.project?.client?.userName || 'Unknown Client',
+        budget: `$${p.bidAmount.toFixed(2)}`,
+        deadline: p.project?.duration || 'N/A',
+        location: p.project?.location || 'Remote',
+        status: p.status === 'ACCEPTED' ? 'inProgress' : 'proposal',
+        proposalStatus: p.status === 'ACCEPTED' ? 'shortlisted' : p.status === 'PENDING' ? 'submitted' : 'rejected',
+        milestones: [],
+      }))
+    : projects.map(p => ({
+        id: p.id,
+        title: p.title,
+        client: p.client?.userName || 'Unknown Client',
+        budget: `$${p.budget.toFixed(2)}`,
+        deadline: p.duration || 'N/A',
+        location: p.location || 'Remote',
+        status: p.status === 'ACTIVE' ? 'inProgress' : p.status === 'COMPLETED' ? 'completed' : 'available',
+        milestones: [],
+      }));
 
   const getStats = () => {
     if (activeTab === "Active") {
-      const total = projects.reduce((sum, p) => {
-        const earned = p.milestones?.filter((m) => m.approvalStatus === "approved")
-          .reduce((s, m) => s + Number(m.priceUSD?.replace("$", "") || 0), 0) || 0;
-        return sum + earned;
-      }, 0);
-      return { label: "Current Earnings", value: `$${total}`, color: "#6366F1" };
+      const total = projects.reduce((sum, p) => sum + Number(p.budget || 0), 0);
+      return { label: "Current Earnings", value: `$${total.toFixed(2)}`, color: "#6366F1" };
     }
     if (activeTab === "Completed") {
-      const total = projects.reduce((sum, p) => {
-        const earned = p.milestones?.reduce((s, m) => s + Number(m.priceUSD?.replace("$", "") || 0), 0) || 0;
-        return sum + earned;
-      }, 0);
-      return { label: "Lifetime Earnings", value: `$${total}`, color: "#10B981" };
+      const total = projects.reduce((sum, p) => sum + Number(p.budget || 0), 0);
+      return { label: "Lifetime Earnings", value: `$${total.toFixed(2)}`, color: "#10B981" };
     }
-    const shortlisted = projects.filter((p) => p.proposalStatus === "shortlisted").length;
+    const shortlisted = proposals.filter((p) => p.status === "ACCEPTED").length;
     return { label: "Shortlisted Bids", value: shortlisted.toString(), color: "#F59E0B" };
   };
 
@@ -128,7 +133,9 @@ export default function MyWorkScreen() {
               <Text style={styles.statValue}>{stats.value}</Text>
             </View>
             <View style={styles.statRight}>
-               <Text style={styles.statCount}>{projects.length} Projects</Text>
+               <Text style={styles.statCount}>
+                 {activeTab === "Proposals" ? proposals.length : projects.length} {activeTab === "Proposals" ? "Proposals" : "Projects"}
+               </Text>
                <LayoutDashboard size={20} color="rgba(255,255,255,0.7)" />
             </View>
           </View>
@@ -160,12 +167,18 @@ export default function MyWorkScreen() {
           style={styles.scrollContainer} 
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
+          refreshing={loading}
+          onRefresh={fetchData}
         >
-          {projects.length > 0 ? (
-            projects.map((project) => (
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#6366F1" />
+            </View>
+          ) : displayProjects.length > 0 ? (
+            displayProjects.map((project) => (
               <WorkCard 
                 key={project.id} 
-                project={project} 
+                project={project as any} 
                 type={activeTab.toLowerCase()} 
               />
             ))
@@ -218,4 +231,5 @@ const styles = StyleSheet.create({
   emptyState: { marginTop: 80, alignItems: "center" },
   emptyText: { fontSize: 18, fontWeight: "800", color: "#1E293B" },
   emptySubtext: { fontSize: 14, color: "#94A3B8", marginTop: 8 },
+  loadingContainer: { padding: 60, alignItems: "center", justifyContent: "center" },
 });

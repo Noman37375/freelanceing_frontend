@@ -1,55 +1,35 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import { Clock, CheckCircle2, XCircle, ChevronRight, ArrowLeft, Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-
-export interface Dispute {
-  id: string;
-  clientName: string;
-  projectTitle: string;
-  reason: string;
-  status: 'Pending' | 'Resolved' | 'Denied';
-  createdDate: string;
-  amount: string;
-  description?: string; // Optional for the list, used in detail
-}
-
-const DISPUTES_DATA: Dispute[] = [
-  { 
-    id: '1', 
-    clientName: 'Alice Brown', 
-    projectTitle: 'Landing Page Design', 
-    reason: 'Late payment', 
-    status: 'Pending', 
-    createdDate: 'Dec 12, 2025', 
-    amount: '$500',
-    description: 'The client has not released the payment even though the work was approved three weeks ago.'
-  },
-  { 
-    id: '2', 
-    clientName: 'Mark Lee', 
-    projectTitle: 'React Native App', 
-    reason: 'Scope change', 
-    status: 'Resolved', 
-    createdDate: 'Dec 8, 2025', 
-    amount: '$1,200',
-    description: 'Additional features were requested outside of the initial contract without a price adjustment.'
-  },
-  { 
-    id: '3', 
-    clientName: 'Jane Smith', 
-    projectTitle: 'Logo Design', 
-    reason: 'Feedback not applied', 
-    status: 'Denied', 
-    createdDate: 'Dec 5, 2025', 
-    amount: '$300',
-    description: 'The client claimed feedback wasn’t followed, but logs show the revisions were submitted.'
-  },
-];
+import { disputeService, Dispute } from '@/services/disputeService';
 
 export default function Disputes() {
   const router = useRouter();
-  const [selectedTab, setSelectedTab] = useState<Dispute['status']>('Pending');
+  const [selectedTab, setSelectedTab] = useState<'Pending' | 'Resolved' | 'Denied'>('Pending');
+  const [disputes, setDisputes] = useState<Dispute[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDisputes();
+  }, [selectedTab]);
+
+  const fetchDisputes = async () => {
+    try {
+      setLoading(true);
+      const data = await disputeService.getMyDisputes(selectedTab);
+      setDisputes(data);
+    } catch (error: any) {
+      console.error('Failed to fetch disputes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
   const getStatusIcon = (status: Dispute['status']) => {
     switch (status) {
@@ -75,13 +55,13 @@ export default function Disputes() {
     }
   };
 
-  const filteredDisputes = DISPUTES_DATA.filter(d => d.status === selectedTab);
-
   const counts = {
-    Pending: DISPUTES_DATA.filter(d => d.status === 'Pending').length,
-    Resolved: DISPUTES_DATA.filter(d => d.status === 'Resolved').length,
-    Denied: DISPUTES_DATA.filter(d => d.status === 'Denied').length,
+    Pending: disputes.filter(d => d.status === 'Pending').length,
+    Resolved: disputes.filter(d => d.status === 'Resolved').length,
+    Denied: disputes.filter(d => d.status === 'Denied').length,
   };
+
+  const filteredDisputes = disputes.filter(d => d.status === selectedTab);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -115,7 +95,11 @@ export default function Disputes() {
 
       <ScrollView style={styles.disputesList} showsVerticalScrollIndicator={false}>
         <View style={styles.disputesContent}>
-          {filteredDisputes.length === 0 ? (
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#3B82F6" />
+            </View>
+          ) : filteredDisputes.length === 0 ? (
             <Text style={styles.noDisputeText}>No {selectedTab} disputes</Text>
           ) : (
             filteredDisputes.map((dispute) => (
@@ -131,15 +115,23 @@ export default function Disputes() {
                   <View style={styles.disputeLeft}>
                     <View style={styles.iconContainer}>{getStatusIcon(dispute.status)}</View>
                     <View style={styles.disputeInfo}>
-                      <Text style={styles.projectTitle}>{dispute.projectTitle}</Text>
-                      <Text style={styles.clientName}>vs {dispute.clientName}</Text>
+                      <Text style={styles.projectTitle}>{dispute.project?.title || 'Unknown Project'}</Text>
+                      <Text style={styles.clientName}>
+                        vs {dispute.freelancer?.userName || dispute.client?.userName || 'Unknown'}
+                      </Text>
                     </View>
                   </View>
                   <ChevronRight size={20} color="#6B7280" strokeWidth={2} />
                 </View>
                 <Text style={styles.reason} numberOfLines={2}>{dispute.reason}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusBackground(dispute.status) }]}>
-                  <Text style={[styles.statusText, { color: getStatusColor(dispute.status) }]}>{dispute.status}</Text>
+                {dispute.amount > 0 && (
+                  <Text style={styles.amountText}>Amount: ${dispute.amount.toFixed(2)}</Text>
+                )}
+                <View style={styles.disputeFooter}>
+                  <Text style={styles.dateText}>{formatDate(dispute.createdAt)}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusBackground(dispute.status) }]}>
+                    <Text style={[styles.statusText, { color: getStatusColor(dispute.status) }]}>{dispute.status}</Text>
+                  </View>
                 </View>
               </TouchableOpacity>
             ))
@@ -175,4 +167,8 @@ const styles = StyleSheet.create({
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, alignSelf: 'flex-start' },
   statusText: { fontSize: 12, fontWeight: '600' },
   noDisputeText: { textAlign: 'center', marginTop: 40, fontSize: 16, color: '#6B7280' },
+  loadingContainer: { padding: 40, alignItems: 'center', justifyContent: 'center' },
+  disputeFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+  amountText: { fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 },
+  dateText: { fontSize: 12, color: '#6B7280' },
 });

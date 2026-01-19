@@ -12,7 +12,7 @@ import {
 } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { projectService } from '@/services/projectService';
-import { Project } from '@/models/Project';
+import { Project, getProjectDisplayStatus } from '@/models/Project';
 
 export default function ProjectDetail() {
   const router = useRouter();
@@ -126,10 +126,11 @@ export default function ProjectDetail() {
             <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>Status</Text>
               <View style={[styles.statusBadge, { 
-                backgroundColor: project.status === 'ACTIVE' ? '#3B82F6' : 
-                                 project.status === 'COMPLETED' ? '#10B981' : '#6B7280' 
+                backgroundColor: getProjectDisplayStatus(project) === 'Active' ? '#3B82F6' : 
+                                 getProjectDisplayStatus(project) === 'Completed' ? '#10B981' :
+                                 getProjectDisplayStatus(project) === 'In Progress' ? '#6366F1' : '#6B7280' 
               }]}>
-                <Text style={styles.statusText}>{project.status}</Text>
+                <Text style={styles.statusText}>{getProjectDisplayStatus(project)}</Text>
               </View>
             </View>
             <View style={styles.infoItem}>

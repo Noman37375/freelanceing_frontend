@@ -122,8 +122,8 @@ export default function ProjectDetails() {
             </View>
           )}
 
-          {/* Only show Bid button if user is a Freelancer and project is ACTIVE */}
-          {user?.role === 'Freelancer' && project.status === 'ACTIVE' && (
+          {/* Only show Bid button if user is a Freelancer and project is ACTIVE (no freelancer assigned yet) */}
+          {user?.role === 'Freelancer' && project.status === 'ACTIVE' && !project.freelancerId && (
             <TouchableOpacity
               style={styles.applyButton}
               onPress={() => router.push(`/Bid-now?id=${project.id}` as any)}

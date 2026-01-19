@@ -146,6 +146,24 @@ export const proposalService = {
   },
 
   /**
+   * Get all proposals for client's projects
+   */
+  getClientProposals: async (): Promise<Proposal[]> => {
+    console.log('[ProjectService] Calling /api/v1/proposals/client');
+    try {
+      const response = await apiCall('/api/v1/proposals/client', {
+        method: 'GET',
+      });
+      console.log('[ProjectService] Response received:', response);
+      console.log('[ProjectService] Proposals in response:', response.data?.proposals?.length || 0);
+      return response.data.proposals || [];
+    } catch (error: any) {
+      console.error('[ProjectService] Error in getClientProposals:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Submit a proposal (Freelancer only)
    */
   createProposal: async (projectId: string, proposalData: {
@@ -163,11 +181,18 @@ export const proposalService = {
    * Update proposal status (Accept/Reject) - Project owner only
    */
   updateProposalStatus: async (id: string, status: 'ACCEPTED' | 'REJECTED'): Promise<Proposal> => {
-    const response = await apiCall(`/api/v1/proposals/${id}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    });
-    return response.data.proposal;
+    console.log('[ProjectService] Updating proposal status:', { id, status });
+    try {
+      const response = await apiCall(`/api/v1/proposals/${id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status }),
+      });
+      console.log('[ProjectService] Update response:', response);
+      return response.data.proposal;
+    } catch (error: any) {
+      console.error('[ProjectService] Error updating proposal status:', error);
+      throw error;
+    }
   },
 
   /**

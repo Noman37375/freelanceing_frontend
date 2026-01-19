@@ -5,5 +5,5 @@ export { default as ProjectDetail } from './ProjectDetail';
 export { default as Freelancers } from './Freelancers';
 export { default as Disputes } from './Disputes';
 export { default as DisputeDetail } from './DisputeDetail';
-export { default as StatsCard } from './components/StatsCard';
-export { default as ProjectCard } from './components/ProjectCard';
+export { default as StatsCard } from './_components/StatsCard';
+export { default as ProjectCard } from './_components/ProjectCard';

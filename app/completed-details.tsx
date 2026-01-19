@@ -40,32 +40,7 @@ export default function CompletedDetails() {
     location: "Remote",
     description: "Redesign the corporate website with modern UI/UX and responsive layout.",
     completedDate: "Dec 20, 2025",
-    milestones: [
-      {
-        title: "Design Mockups",
-        duration: "3 days",
-        details: "Create Figma mockups for all pages",
-        priceUSD: "$500",
-        pricePKR: "PKR 100,000",
-        status: "completed",
-      },
-      {
-        title: "Frontend Implementation",
-        duration: "5 days",
-        details: "Develop responsive React components",
-        priceUSD: "$600",
-        pricePKR: "PKR 120,000",
-        status: "completed",
-      },
-      {
-        title: "Backend Integration",
-        duration: "4 days",
-        details: "Connect frontend with API endpoints",
-        priceUSD: "$400",
-        pricePKR: "PKR 80,000",
-        status: "completed",
-      },
-    ],
+    milestones: [],
   });
 
   return (
@@ -121,32 +96,6 @@ export default function CompletedDetails() {
           </View>
         </View>
 
-        {/* Milestones Section */}
-        <View style={styles.sectionHeader}>
-          <FileText size={18} color="#6366F1" />
-          <Text style={styles.sectionTitle}>Completed Milestones</Text>
-        </View>
-
-        {project.milestones.map((m, i) => (
-          <View key={i} style={styles.milestoneItem}>
-            <View style={styles.milestoneTop}>
-              <View style={styles.milestoneLeft}>
-                <CheckCircle2 size={20} color="#10B981" />
-                <Text style={styles.milestoneTitle}>{m.title}</Text>
-              </View>
-              <View style={styles.statusBadge}>
-                <Text style={styles.statusText}>PAID</Text>
-              </View>
-            </View>
-
-            <Text style={styles.milestoneDetail}>{m.details}</Text>
-
-            <View style={styles.milestoneFooter}>
-              <Text style={styles.footerInfo}>⏳ {m.duration}</Text>
-              <Text style={styles.footerPrice}>{m.priceUSD} ({m.pricePKR})</Text>
-            </View>
-          </View>
-        ))}
 
         {/* Completion Success Card */}
         <View style={styles.successCard}>

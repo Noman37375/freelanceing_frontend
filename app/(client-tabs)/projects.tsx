@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, RefreshControl } from 'react-native';
-import { Search, Filter, Plus, ArrowLeft } from 'lucide-react-native';
-import ProjectCard from './_components/ProjectCard';
+import { Search, Filter, Plus } from 'lucide-react-native';
+import ProjectCard from '@/components/ClientProjectCard';
 import { useRouter } from 'expo-router';
 import { projectService } from '@/services/projectService';
 import { Project, getProjectDisplayStatus } from '@/models/Project';
@@ -15,7 +15,6 @@ export default function Projects() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch client's projects
   const fetchProjects = async () => {
     if (!user?.id) return;
     try {
@@ -39,17 +38,26 @@ export default function Projects() {
     fetchProjects();
   }, [user?.id]);
 
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery !== '') {
+        fetchProjects();
+      }
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchProjects();
   };
 
-  // Calculate stats
   const stats = {
     total: projects.length,
-    active: projects.filter(p => p.status === 'ACTIVE').length,
+    active: projects.filter(p => p.status === 'ACTIVE' && !p.freelancerId).length,
     completed: projects.filter(p => p.status === 'COMPLETED').length,
     cancelled: projects.filter(p => p.status === 'CANCELLED').length,
+    inProgress: projects.filter(p => p.freelancerId && p.status !== 'COMPLETED' && p.status !== 'CANCELLED').length,
   };
 
   const filteredProjects = projects.filter(project =>
@@ -58,11 +66,8 @@ export default function Projects() {
 
   return (
     <View style={styles.container}>
-      {/* Header with Back Arrow */}
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#1F2937" strokeWidth={2} />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>My Projects</Text>
         <TouchableOpacity 
           style={styles.addButton}
@@ -122,6 +127,7 @@ export default function Projects() {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
+          contentContainerStyle={{ paddingBottom: 100 }}
         >
           <View style={styles.projectsContent}>
             {filteredProjects.length === 0 ? (
@@ -172,14 +178,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   headerTitle: { fontSize: 24, fontWeight: '700', color: '#1F2937' },
   addButton: {
@@ -243,4 +241,3 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 18, fontWeight: '600', color: '#374151', marginBottom: 8 },
   emptySubtext: { fontSize: 14, color: '#6B7280' },
 });
-

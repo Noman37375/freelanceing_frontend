@@ -1,23 +1,90 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Wallet as WalletIcon, ArrowDownToLine, ArrowUpFromLine, Lock, Clock, ArrowLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-
-const WALLET_BALANCE = {
-  available: 5420.50,
-  escrow: 3200.00,
-  total: 8620.50,
-};
-
-const TRANSACTIONS = [
-  { id: '1', type: 'escrow' as const, title: 'Mobile App UI/UX Design', amount: -2500.00, date: 'Dec 12, 2025', status: 'locked' },
-  { id: '2', type: 'payment' as const, title: 'Logo Design & Branding', amount: -800.00, date: 'Dec 10, 2025', status: 'completed' },
-  { id: '3', type: 'deposit' as const, title: 'Wallet Top-up', amount: 5000.00, date: 'Dec 8, 2025', status: 'completed' },
-  { id: '4', type: 'escrow' as const, title: 'E-commerce Website Development', amount: -700.00, date: 'Dec 5, 2025', status: 'locked' },
-];
+import { walletService, Transaction } from '@/services/walletService';
 
 export default function Wallet() {
   const router = useRouter();
+  const [wallet, setWallet] = useState<any>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchWalletData();
+  }, []);
+
+  const fetchWalletData = async () => {
+    try {
+      setLoading(true);
+      const [walletData, transactionsData] = await Promise.all([
+        walletService.getWallet(),
+        walletService.getTransactions(),
+      ]);
+      setWallet(walletData);
+      setTransactions(transactionsData);
+    } catch (error: any) {
+      console.error('Failed to fetch wallet data:', error);
+      Alert.alert('Error', error.message || 'Failed to load wallet data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddFunds = () => {
+    Alert.prompt(
+      'Add Funds',
+      'Enter amount to add:',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Add',
+          onPress: async (amount) => {
+            if (!amount || parseFloat(amount) <= 0) {
+              Alert.alert('Error', 'Please enter a valid amount');
+              return;
+            }
+            try {
+              await walletService.addFunds(parseFloat(amount));
+              Alert.alert('Success', 'Funds added successfully');
+              fetchWalletData();
+            } catch (error: any) {
+              Alert.alert('Error', error.message || 'Failed to add funds');
+            }
+          },
+        },
+      ],
+      'plain-text'
+    );
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const getTransactionTitle = (transaction: Transaction) => {
+    if (transaction.project?.title) {
+      return transaction.project.title;
+    }
+    return transaction.description || 'Transaction';
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+      </View>
+    );
+  }
+
+  if (!wallet) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={styles.errorText}>Failed to load wallet data</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -35,22 +102,22 @@ export default function Wallet() {
           <WalletIcon size={32} color="#3B82F6" strokeWidth={2} />
           <Text style={styles.balanceLabel}>Total Balance</Text>
         </View>
-        <Text style={styles.balanceAmount}>${WALLET_BALANCE.total.toFixed(2)}</Text>
+        <Text style={styles.balanceAmount}>${wallet.total.toFixed(2)}</Text>
 
         <View style={styles.balanceBreakdown}>
           <View style={styles.breakdownItem}>
             <Text style={styles.breakdownLabel}>Available</Text>
-            <Text style={styles.breakdownAmount}>${WALLET_BALANCE.available.toFixed(2)}</Text>
+            <Text style={styles.breakdownAmount}>${wallet.balance.toFixed(2)}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.breakdownItem}>
             <Text style={styles.breakdownLabel}>In Escrow</Text>
-            <Text style={[styles.breakdownAmount, styles.escrowAmount]}>${WALLET_BALANCE.escrow.toFixed(2)}</Text>
+            <Text style={[styles.breakdownAmount, styles.escrowAmount]}>${wallet.escrowBalance.toFixed(2)}</Text>
           </View>
         </View>
 
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.primaryButton}>
+          <TouchableOpacity style={styles.primaryButton} onPress={handleAddFunds}>
             <ArrowDownToLine size={20} color="#FFFFFF" strokeWidth={2} />
             <Text style={styles.primaryButtonText}>Add Funds</Text>
           </TouchableOpacity>
@@ -63,32 +130,45 @@ export default function Wallet() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Recent Transactions</Text>
-        {TRANSACTIONS.map((transaction) => (
-          <View key={transaction.id} style={styles.transactionCard}>
-            <View style={styles.transactionIcon}>
-              {transaction.type === 'escrow' && <Lock size={20} color="#F59E0B" strokeWidth={2} />}
-              {transaction.type === 'payment' && <ArrowUpFromLine size={20} color="#EF4444" strokeWidth={2} />}
-              {transaction.type === 'deposit' && <ArrowDownToLine size={20} color="#10B981" strokeWidth={2} />}
-            </View>
-            <View style={styles.transactionInfo}>
-              <Text style={styles.transactionTitle}>{transaction.title}</Text>
-              <View style={styles.transactionMeta}>
-                <Clock size={12} color="#6B7280" strokeWidth={2} />
-                <Text style={styles.transactionDate}>{transaction.date}</Text>
+        {transactions.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No transactions yet</Text>
+          </View>
+        ) : (
+          transactions.map((transaction) => (
+            <View key={transaction.id} style={styles.transactionCard}>
+              <View style={styles.transactionIcon}>
+                {transaction.type === 'escrow' && <Lock size={20} color="#F59E0B" strokeWidth={2} />}
+                {transaction.type === 'payment' && <ArrowUpFromLine size={20} color="#EF4444" strokeWidth={2} />}
+                {transaction.type === 'deposit' && <ArrowDownToLine size={20} color="#10B981" strokeWidth={2} />}
+                {transaction.type === 'withdrawal' && <ArrowUpFromLine size={20} color="#EF4444" strokeWidth={2} />}
+                {transaction.type === 'refund' && <ArrowDownToLine size={20} color="#10B981" strokeWidth={2} />}
+              </View>
+              <View style={styles.transactionInfo}>
+                <Text style={styles.transactionTitle}>{getTransactionTitle(transaction)}</Text>
+                <View style={styles.transactionMeta}>
+                  <Clock size={12} color="#6B7280" strokeWidth={2} />
+                  <Text style={styles.transactionDate}>{formatDate(transaction.createdAt)}</Text>
+                </View>
+              </View>
+              <View style={styles.transactionRight}>
+                <Text style={[styles.transactionAmount, transaction.amount > 0 ? styles.positiveAmount : styles.negativeAmount]}>
+                  {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
+                </Text>
+                {transaction.status === 'pending' && (
+                  <View style={styles.statusBadge}>
+                    <Text style={styles.statusText}>Pending</Text>
+                  </View>
+                )}
+                {transaction.type === 'escrow' && (
+                  <View style={styles.statusBadge}>
+                    <Text style={styles.statusText}>Locked</Text>
+                  </View>
+                )}
               </View>
             </View>
-            <View style={styles.transactionRight}>
-              <Text style={[styles.transactionAmount, transaction.amount > 0 ? styles.positiveAmount : styles.negativeAmount]}>
-                {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
-              </Text>
-              {transaction.status === 'locked' && (
-                <View style={styles.statusBadge}>
-                  <Text style={styles.statusText}>Locked</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        ))}
+          ))
+        )}
       </View>
 
       <View style={styles.infoBox}>
@@ -173,4 +253,19 @@ const styles = StyleSheet.create({
   infoContent: { flex: 1, marginLeft: 12 },
   infoTitle: { fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 },
   infoText: { fontSize: 12, color: '#6B7280', lineHeight: 18 },
+  emptyState: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#EF4444',
+  },
 });

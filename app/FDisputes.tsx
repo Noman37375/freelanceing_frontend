@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   ScrollView, 
   TouchableOpacity, 
-  Dimensions 
+  Dimensions,
+  ActivityIndicator
 } from 'react-native';
 import { 
   Clock, 
@@ -18,27 +19,35 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// --- Types ---
-interface Dispute {
-  id: string;
-  clientName: string;
-  projectTitle: string;
-  reason: string;
-  status: 'Pending' | 'Resolved' | 'Denied';
-  createdDate: string;
-  amount: string;
-}
-
-const DISPUTES_DATA: Dispute[] = [
-  { id: '1', clientName: 'Alice Brown', projectTitle: 'Landing Page Design', reason: 'Late payment after milestone completion', status: 'Pending', createdDate: 'Dec 12, 2025', amount: '$500' },
-  { id: '2', clientName: 'Mark Lee', projectTitle: 'React Native App', reason: 'Scope change without notice or agreement', status: 'Resolved', createdDate: 'Dec 8, 2025', amount: '$1,200' },
-  { id: '3', clientName: 'Jane Smith', projectTitle: 'Logo Design', reason: 'Feedback not applied as per initial brief', status: 'Denied', createdDate: 'Dec 5, 2025', amount: '$300' },
-];
+import { disputeService, Dispute } from '@/services/disputeService';
 
 export default function FDisputes() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<'All' | 'Pending' | 'Resolved' | 'Denied'>('All');
+  const [disputes, setDisputes] = useState<Dispute[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDisputes();
+  }, [activeFilter]);
+
+  const fetchDisputes = async () => {
+    try {
+      setLoading(true);
+      const status = activeFilter === 'All' ? undefined : activeFilter;
+      const data = await disputeService.getMyDisputes(status);
+      setDisputes(data);
+    } catch (error: any) {
+      console.error('Failed to fetch disputes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
   // --- Helpers ---
   const handleBack = () => {
@@ -59,8 +68,8 @@ export default function FDisputes() {
   };
 
   const filteredDisputes = activeFilter === 'All'
-    ? DISPUTES_DATA
-    : DISPUTES_DATA.filter(d => d.status === activeFilter);
+    ? disputes
+    : disputes.filter(d => d.status === activeFilter);
 
   return (
     <View style={styles.outerWrapper}>
@@ -105,56 +114,66 @@ export default function FDisputes() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
         >
-          {filteredDisputes.map(dispute => {
-            const stylesStatus = getStatusStyles(dispute.status);
-            return (
-              <TouchableOpacity
-                key={dispute.id}
-                style={styles.card}
-                activeOpacity={0.8}
-                onPress={() => router.push({
-                  pathname: '/FDisputeDetail' as any,
-                  params: { dispute: JSON.stringify(dispute) },
-                })}
-              >
-                <View style={styles.cardHeader}>
-                  <View style={styles.iconSquircle}>
-                    {stylesStatus.icon}
-                  </View>
-                  <View style={styles.headerText}>
-                    <Text style={styles.projectTitle} numberOfLines={1}>{dispute.projectTitle}</Text>
-                    <Text style={styles.clientName}>Client: {dispute.clientName}</Text>
-                  </View>
-                  <ChevronRight size={18} color="#94A3B8" />
-                </View>
-
-                <View style={styles.detailsRow}>
-                  <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>AMOUNT</Text>
-                    <Text style={styles.detailValue}>{dispute.amount}</Text>
-                  </View>
-                  <View style={styles.detailDivider} />
-                  <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>DATE</Text>
-                    <Text style={styles.detailValue}>{dispute.createdDate}</Text>
-                  </View>
-                  <View style={[styles.statusBadge, { backgroundColor: stylesStatus.bg }]}>
-                    <Text style={[styles.statusText, { color: stylesStatus.color }]}>{dispute.status}</Text>
-                  </View>
-                </View>
-
-                <Text style={styles.reasonText} numberOfLines={2}>
-                  {dispute.reason}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-
-          {filteredDisputes.length === 0 && (
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#6366F1" />
+            </View>
+          ) : filteredDisputes.length === 0 ? (
             <View style={styles.emptyState}>
               <ShieldAlert size={48} color="#CBD5E1" />
               <Text style={styles.emptyText}>No {activeFilter.toLowerCase()} disputes found.</Text>
             </View>
+          ) : (
+            filteredDisputes.map(dispute => {
+              const stylesStatus = getStatusStyles(dispute.status);
+              return (
+                <TouchableOpacity
+                  key={dispute.id}
+                  style={styles.card}
+                  activeOpacity={0.8}
+                  onPress={() => router.push({
+                    pathname: '/FDisputeDetail' as any,
+                    params: { dispute: JSON.stringify(dispute) },
+                  })}
+                >
+                  <View style={styles.cardHeader}>
+                    <View style={styles.iconSquircle}>
+                      {stylesStatus.icon}
+                    </View>
+                    <View style={styles.headerText}>
+                      <Text style={styles.projectTitle} numberOfLines={1}>
+                        {dispute.project?.title || 'Unknown Project'}
+                      </Text>
+                      <Text style={styles.clientName}>
+                        Client: {dispute.client?.userName || 'Unknown'}
+                      </Text>
+                    </View>
+                    <ChevronRight size={18} color="#94A3B8" />
+                  </View>
+
+                  <View style={styles.detailsRow}>
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>AMOUNT</Text>
+                      <Text style={styles.detailValue}>
+                        ${dispute.amount > 0 ? dispute.amount.toFixed(2) : '0.00'}
+                      </Text>
+                    </View>
+                    <View style={styles.detailDivider} />
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>DATE</Text>
+                      <Text style={styles.detailValue}>{formatDate(dispute.createdAt)}</Text>
+                    </View>
+                    <View style={[styles.statusBadge, { backgroundColor: stylesStatus.bg }]}>
+                      <Text style={[styles.statusText, { color: stylesStatus.color }]}>{dispute.status}</Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.reasonText} numberOfLines={2}>
+                    {dispute.reason}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })
           )}
         </ScrollView>
       </SafeAreaView>
@@ -239,6 +258,7 @@ const styles = StyleSheet.create({
 
   emptyState: { alignItems: 'center', marginTop: 60 },
   emptyText: { color: '#94A3B8', marginTop: 15, fontSize: 16, fontWeight: '600' },
+  loadingContainer: { padding: 60, alignItems: 'center', justifyContent: 'center' },
 
   fab: {
     position: 'absolute',

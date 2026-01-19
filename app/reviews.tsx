@@ -1,54 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   ScrollView, 
   Pressable,
-  TouchableOpacity
+  TouchableOpacity,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Star, MessageSquareQuote } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { reviewService, Review } from '@/services/reviewService';
 
 export default function ReviewsScreen() {
   const router = useRouter();
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Static reviews data
-  const [reviews] = useState([
-    {
-      id: 'r1',
-      projectTitle: 'React Native App Development',
-      rating: 4.5,
-      comment: 'Great work! Delivered on time with excellent quality.',
-      userName: 'Alice Johnson',
-      duration: '2 weeks ago',
-    },
-    {
-      id: 'r2',
-      projectTitle: 'Website Redesign',
-      rating: 5,
-      comment: 'Amazing design skills, very professional and communicative.',
-      userName: 'Michael Smith',
-      duration: '1 month ago',
-    },
-    {
-      id: 'r3',
-      projectTitle: 'API Integration',
-      rating: 4,
-      comment: 'Good job integrating APIs seamlessly into the project.',
-      userName: 'Sarah Lee',
-      duration: '3 weeks ago',
-    },
-    {
-      id: 'r4',
-      projectTitle: 'E-commerce Platform',
-      rating: 5,
-      comment: 'Exceeded expectations! Highly recommend.',
-      userName: 'David Brown',
-      duration: '1 week ago',
-    },
-  ]);
+  useEffect(() => {
+    fetchReviews();
+  }, []);
+
+  const fetchReviews = async () => {
+    try {
+      setLoading(true);
+      const data = await reviewService.getMyReviews();
+      setReviews(data);
+    } catch (error: any) {
+      console.error('Failed to fetch reviews:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDuration = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / 86400000);
+    const diffWeeks = Math.floor(diffDays / 7);
+    const diffMonths = Math.floor(diffDays / 30);
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffWeeks === 1) return '1 week ago';
+    if (diffWeeks < 4) return `${diffWeeks} weeks ago`;
+    if (diffMonths === 1) return '1 month ago';
+    if (diffMonths < 12) return `${diffMonths} months ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  };
 
   const renderStars = (count: number) => (
     <View style={{ flexDirection: 'row', gap: 2 }}>
@@ -77,7 +79,11 @@ export default function ReviewsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {reviews.length === 0 ? (
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4F46E5" />
+          </View>
+        ) : reviews.length === 0 ? (
           <View style={styles.emptyContainer}>
             <MessageSquareQuote size={48} color="#CBD5E1" />
             <Text style={styles.noReviews}>No reviews for completed projects yet.</Text>
@@ -94,25 +100,33 @@ export default function ReviewsScreen() {
             >
               <View style={styles.cardHeader}>
                 <View style={styles.titleInfo}>
-                  <Text style={styles.projectTitle} numberOfLines={1}>{review.projectTitle}</Text>
+                  <Text style={styles.projectTitle} numberOfLines={1}>
+                    {review.project?.title || 'Unknown Project'}
+                  </Text>
                   <View style={styles.ratingRow}>
-                    {renderStars(Number(review.rating))}
+                    {renderStars(review.rating)}
                     <Text style={styles.ratingValue}>{review.rating}</Text>
                   </View>
                 </View>
                 <View style={styles.userAvatar}>
-                  <Text style={styles.avatarText}>{review.userName[0]}</Text>
+                  <Text style={styles.avatarText}>
+                    {review.reviewer?.userName?.[0]?.toUpperCase() || 'U'}
+                  </Text>
                 </View>
               </View>
 
               <View style={styles.commentContainer}>
-                <Text numberOfLines={3} style={styles.comment}>"{review.comment}"</Text>
+                <Text numberOfLines={3} style={styles.comment}>
+                  "{review.comment || 'No comment provided'}"
+                </Text>
               </View>
 
               <View style={styles.cardFooter}>
-                <Text style={styles.userName}>{review.userName}</Text>
+                <Text style={styles.userName}>
+                  {review.reviewer?.userName || 'Unknown User'}
+                </Text>
                 <View style={styles.dot} />
-                <Text style={styles.duration}>{review.duration}</Text>
+                <Text style={styles.duration}>{formatDuration(review.createdAt)}</Text>
               </View>
             </Pressable>
           ))
@@ -205,4 +219,9 @@ const styles = StyleSheet.create({
   userName: { color: '#1E293B', fontSize: 13, fontWeight: '700' },
   dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#CBD5E1', marginHorizontal: 8 },
   duration: { color: '#94A3B8', fontSize: 12, fontWeight: '500' },
+  loadingContainer: {
+    padding: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

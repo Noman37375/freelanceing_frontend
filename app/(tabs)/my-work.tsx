@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  RefreshControl,
   TouchableOpacity,
   StatusBar,
   ActivityIndicator,
@@ -16,26 +17,6 @@ import { proposalService } from "@/services/projectService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Project } from "@/models/Project";
 import { Proposal } from "@/models/Project";
-
-interface Milestone {
-  title: string;
-  approvalStatus: "pending" | "approved" | "requested";
-  priceUSD?: string;
-}
-
-interface Project {
-  id: string;
-  title: string;
-  client: string; // Made mandatory to match detail screens
-  budget: string; // Made mandatory
-  deadline: string; 
-  location: string; // Added mandatory location
-  status: "available" | "proposal" | "inProgress" | "completed";
-  description?: string;
-  milestones?: Milestone[];
-  postedTime?: string;
-  proposalStatus?: "submitted" | "shortlisted" | "rejected";
-}
 
 export default function MyWorkScreen() {
   const { user } = useAuth();
@@ -167,8 +148,9 @@ export default function MyWorkScreen() {
           style={styles.scrollContainer} 
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
-          refreshing={loading}
-          onRefresh={fetchData}
+          refreshControl={
+            <RefreshControl refreshing={loading} onRefresh={fetchData} />
+          }
         >
           {loading ? (
             <View style={styles.loadingContainer}>

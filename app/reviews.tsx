@@ -96,7 +96,7 @@ export default function ReviewsScreen() {
                 styles.reviewCard,
                 pressed && { transform: [{ scale: 0.98 }], opacity: 0.9 }
               ]}
-              onPress={() => router.push({ pathname: '/reviewDetails', params: { id: review.id } })}
+              onPress={() => router.push({ pathname: '../reviewDetails', params: { id: review.id } })}
             >
               <View style={styles.cardHeader}>
                 <View style={styles.titleInfo}>

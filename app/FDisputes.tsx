@@ -55,7 +55,7 @@ export default function FDisputes() {
       router.back();
     } else {
       // If there's no history, redirect to the main messages or home tab
-      router.replace('/(tabs)/messages'); 
+      router.replace('./(tabs)/messages'); 
     }
   };
 

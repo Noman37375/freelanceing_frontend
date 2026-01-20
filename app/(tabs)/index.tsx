@@ -49,7 +49,7 @@ export default function HomeScreen() {
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
         if (parsedUser.role?.toLowerCase() !== "freelancer") {
-          router.replace("/(client-tabs)");
+          router.replace("../(client-tabs)");
         }
       }
     };
@@ -101,7 +101,7 @@ export default function HomeScreen() {
           <View style={styles.headerIcons}>
             <TouchableOpacity 
               style={styles.iconCircle}
-              onPress={() => router.push('/notifications')}
+              onPress={() => router.push('../notifications')}
               activeOpacity={0.7}
             >
               <Bell size={20} color="#FFF" />
@@ -118,7 +118,7 @@ export default function HomeScreen() {
           </View>
           <TouchableOpacity 
             style={styles.withdrawButton}
-            onPress={() => router.push('/wallet')}
+            onPress={() => router.push('../wallet')}
           >
             <Wallet size={16} color="#6366F1" />
             <Text style={styles.withdrawText}>Wallet</Text>
@@ -133,7 +133,7 @@ export default function HomeScreen() {
             value={`$${totalEarnings}`}
             subtitle="+12% this month"
             color="#10B981"
-            onPress={() => router.push('/earnings')}
+            onPress={() => router.push('../earnings')}
           />
           <StatsCard
             icon={<Star size={20} color="#F59E0B" />}
@@ -141,7 +141,7 @@ export default function HomeScreen() {
             value={avgRating}
             subtitle="Top Rated Status"
             color="#F59E0B"
-            onPress={() => router.push('/reviews')}
+            onPress={() => router.push('../reviews')}
           />
         </View>
 
@@ -149,7 +149,7 @@ export default function HomeScreen() {
         <View style={styles.actionContainer}>
            <TouchableOpacity 
             style={styles.primaryAction}
-            onPress={() => router.push('/find-projects')}
+            onPress={() => router.push('../find-projects')}
           >
             <Zap size={20} color="#FFF" fill="#FFF" />
             <Text style={styles.primaryActionText}>Browse Projects</Text>
@@ -173,7 +173,7 @@ export default function HomeScreen() {
         {/* Support Footer */}
         <TouchableOpacity 
           style={styles.supportCard}
-          onPress={() => router.push('/FDisputes')}
+          onPress={() => router.push('../FDisputes')}
         >
           <View style={styles.supportIconBox}>
             <AlertTriangle size={20} color="#EF4444" />

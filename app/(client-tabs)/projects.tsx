@@ -71,7 +71,7 @@ export default function Projects() {
         <Text style={styles.headerTitle}>My Projects</Text>
         <TouchableOpacity 
           style={styles.addButton}
-          onPress={() => router.push('/create-project')}
+          onPress={() => router.push('/create-project' as any)}
         >
           <Plus size={20} color="#FFFFFF" strokeWidth={2} />
         </TouchableOpacity>
@@ -148,9 +148,9 @@ export default function Projects() {
                   deadline={project.duration || 'Not specified'}
                   onPress={() =>
                     router.push({
-                      pathname: '/client/ProjectDetail',
+                      pathname: '/client/ProjectDetail' as any,
                       params: { id: project.id },
-                    })
+                    } as any)
                   }
                 />
               ))

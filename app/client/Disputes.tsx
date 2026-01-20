@@ -72,7 +72,7 @@ export default function Disputes() {
         <Text style={styles.headerTitle}>My Disputes</Text>
         <TouchableOpacity 
           style={styles.newDisputeButton} 
-          onPress={() => router.push('/NewDispute')}
+          onPress={() => router.push('/NewDispute' as any)}
         >
           <Plus size={18} color="#FFFFFF" strokeWidth={3} />
           <Text style={styles.newDisputeText}>New</Text>
@@ -107,9 +107,9 @@ export default function Disputes() {
                 key={dispute.id}
                 style={styles.disputeCard}
                 onPress={() => router.push({
-                  pathname: '/client/DisputeDetail',
+                  pathname: '/client/DisputeDetail' as any,
                   params: { disputeData: JSON.stringify(dispute) },
-                })}
+                } as any)}
               >
                 <View style={styles.disputeHeader}>
                   <View style={styles.disputeLeft}>

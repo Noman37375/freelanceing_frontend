@@ -103,7 +103,7 @@ export default function ClientHome() {
         <View style={styles.statsContainer}>
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => router.push('/(client-tabs)/projects')}
+            onPress={() => router.push('/(client-tabs)/projects' as any)}
           >
             <StatsCard
               title="Projects"
@@ -115,7 +115,7 @@ export default function ClientHome() {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => router.push('/client/Wallet')}
+            onPress={() => router.push('/client/Wallet' as any)}
           >
             <StatsCard
               title="Total Spent"
@@ -127,7 +127,7 @@ export default function ClientHome() {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => router.push('/(client-tabs)/messages')}
+            onPress={() => router.push('/(client-tabs)/messages' as any)}
           >
             <StatsCard
               title="Messages"
@@ -139,7 +139,7 @@ export default function ClientHome() {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => router.push('/client/Disputes')}
+            onPress={() => router.push('/client/Disputes' as any)}
           >
             <StatsCard
               title="Disputes"
@@ -157,7 +157,7 @@ export default function ClientHome() {
         <View style={styles.actionsContainer}>
           <TouchableOpacity 
             style={styles.actionButton}
-            onPress={() => router.push('/create-project')}
+            onPress={() => router.push('/create-project' as any)}
           >
             <View style={[styles.actionIconContainer, { backgroundColor: '#3B82F6' }]}>
               <Plus size={24} color="#FFFFFF" strokeWidth={2} />
@@ -168,7 +168,7 @@ export default function ClientHome() {
 
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => router.push('/(client-tabs)/freelancers')}
+            onPress={() => router.push('/(client-tabs)/freelancers' as any)}
           >
             <View style={[styles.actionIconContainer, { backgroundColor: '#10B981' }]}>
               <Search size={24} color="#FFFFFF" strokeWidth={2} />
@@ -183,7 +183,7 @@ export default function ClientHome() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Projects</Text>
-          <TouchableOpacity onPress={() => router.push('/(client-tabs)/projects')}>
+          <TouchableOpacity onPress={() => router.push('/(client-tabs)/projects' as any)}>
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
@@ -194,7 +194,7 @@ export default function ClientHome() {
             <Text style={styles.emptySubtext}>Create your first project to get started!</Text>
             <TouchableOpacity 
               style={styles.createButton}
-              onPress={() => router.push('/create-project')}
+              onPress={() => router.push('/create-project' as any)}
             >
               <Text style={styles.createButtonText}>Create Project</Text>
             </TouchableOpacity>
@@ -210,9 +210,9 @@ export default function ClientHome() {
               deadline={project.duration || 'Not specified'}
               onPress={() =>
                 router.push({
-                  pathname: '/client/ProjectDetail',
+                  pathname: '/client/ProjectDetail' as any,
                   params: { id: project.id },
-                })
+                } as any)
               }
             />
           ))

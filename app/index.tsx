@@ -6,7 +6,14 @@ export default function Index() {
 
   if (isLoading) return null; // wait until auth state loads
 
-  if (!user) return <Redirect href="/login" />; // not logged in → login page
+  if (!user) return <Redirect href={"/login" as any} />; // not logged in → login page
 
-  return <Redirect href="/(tabs)" />; // logged in → tabs
+  // Redirect based on user role
+  if (user.role === 'Admin') {
+    return <Redirect href={"/(admin)/dashboard" as any} />; // Admin → admin dashboard
+  } else if (user.role === 'Client') {
+    return <Redirect href={"/(client-tabs)" as any} />; // Client → client tabs
+  }
+
+  return <Redirect href={"/(tabs)" as any} />; // Freelancer → tabs
 }

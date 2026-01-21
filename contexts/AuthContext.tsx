@@ -38,7 +38,7 @@ interface User {
   isVerified: boolean;
   createdAt?: string;
   updatedAt?: string;
-  
+
   // Profile fields
   bio?: string;
   skills?: string[];
@@ -58,7 +58,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User | undefined>;
   signup: (userName: string, email: string, password: string, role?: 'Admin' | 'Client' | 'Freelancer') => Promise<{ user: User; accessToken: string; refreshToken: string }>;
   logout: () => Promise<void>;
   verifyEmail: (otp: string) => Promise<void>;
@@ -126,12 +126,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const response = await authService.signup({ userName, email, password, role });
-      
+
       if (response.user) {
         setUser(response.user);
         await storageSet("user", JSON.stringify(response.user));
       }
-      
+
       return response;
     } catch (error: any) {
       throw new Error(error.message || "Signup failed");
@@ -145,7 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const response = await authService.signin({ email, password });
-      
+
       if (response.user) {
         setUser(response.user);
         await storageSet("user", JSON.stringify(response.user));
@@ -162,7 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const response = await authService.verifyEmail({ otp });
-      
+
       // Refresh user data after verification
       await refreshUser();
     } catch (error: any) {
@@ -236,7 +236,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Call API with all profile data
       await authService.updateUser(userData);
-      
+
       // Refresh user data
       await refreshUser();
     } catch (error: any) {

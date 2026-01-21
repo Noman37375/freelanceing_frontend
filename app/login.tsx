@@ -50,16 +50,20 @@ export default function Login() {
 
     try {
       console.log('[Login] Attempting login for:', email);
-      await login(email, password);
-      console.log('[Login] Login successful');
-      
-      // After successful login, redirect to home
-      router.replace("/(tabs)" as any);
+      const user = await login(email, password);
+      console.log('[Login] Login successful', user);
+
+      // After successful login, redirect based on role
+      if (user?.role === 'Admin') {
+        router.replace("/(admin)/dashboard" as any);
+      } else {
+        router.replace("/(tabs)" as any);
+      }
     } catch (error: any) {
       console.error('[Login] Error:', error);
       // Better error handling
       let errorMsg = error.message || "Invalid email or password.";
-      
+
       // Show specific error messages
       if (errorMsg.includes("not found") || errorMsg.includes("Invalid") || errorMsg.includes("Unauthorized")) {
         errorMsg = "Invalid email or password. Please try again.";
@@ -75,7 +79,7 @@ export default function Login() {
       } else if (errorMsg.includes("Network") || errorMsg.includes("timeout") || errorMsg.includes("Failed to fetch")) {
         errorMsg = "Connection error. Please check your internet and ensure backend is running on port 3000.";
       }
-      
+
       setErrorMessage(errorMsg);
     } finally {
       setIsLoading(false);
@@ -92,12 +96,12 @@ export default function Login() {
         colors={['rgba(0, 0, 0, 0.7)', 'rgba(0, 0, 0, 0.5)', 'rgba(0, 0, 0, 0.8)']}
         style={styles.backgroundGradient}
       />
-      
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -109,7 +113,7 @@ export default function Login() {
               onPress={() => router.back()}
               style={styles.backButton}
             >
-                <View> <ArrowLeft size={20} color="#fff" /> </View>
+              <View> <ArrowLeft size={20} color="#fff" /> </View>
 
             </TouchableOpacity>
 
@@ -168,8 +172,8 @@ export default function Login() {
                     editable={!isLoading}
                   />
                   {email && (
-                    <TouchableOpacity 
-                      onPress={() => setEmail("")} 
+                    <TouchableOpacity
+                      onPress={() => setEmail("")}
                       style={styles.clearButton}
                     >
                       <View style={styles.clearButtonInner}>

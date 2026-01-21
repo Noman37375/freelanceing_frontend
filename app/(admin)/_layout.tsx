@@ -22,21 +22,22 @@ export default function AdminLayout() {
         <Stack
             screenOptions={{
                 headerStyle: {
-                    backgroundColor: '#111',
+                    backgroundColor: '#ffffff',
                 },
-                headerTintColor: '#fff',
+                headerTintColor: '#222325',
                 headerTitleStyle: {
                     fontWeight: 'bold',
                 },
+                headerShadowVisible: false,
                 contentStyle: {
-                    backgroundColor: '#000',
+                    backgroundColor: '#f7f7f7',
                 },
             }}
         >
             <Stack.Screen name="dashboard" options={{ headerShown: false }} />
-            <Stack.Screen name="manage-freelancers" options={{ title: 'Manage Freelancers' }} />
-            <Stack.Screen name="manage-clients" options={{ title: 'Manage Clients' }} />
-            <Stack.Screen name="manage-projects" options={{ title: 'Manage Projects' }} />
+            <Stack.Screen name="manage-freelancers" options={{ title: 'Freelancers' }} />
+            <Stack.Screen name="manage-clients" options={{ title: 'Clients' }} />
+            <Stack.Screen name="manage-projects" options={{ title: 'Projects' }} />
         </Stack>
     );
 }

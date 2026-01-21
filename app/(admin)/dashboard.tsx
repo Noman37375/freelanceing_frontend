@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Users, Shield, LogOut, Briefcase, UserCheck, TrendingUp, DollarSign, Activity, ArrowRight } from 'lucide-react-native';
+import { Users, Briefcase, UserCheck, TrendingUp, DollarSign, Activity, ArrowRight, LogOut } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { LinearGradient } from 'expo-linear-gradient';
 import { adminService, DashboardStats } from '@/services/adminService';
 
 export default function AdminDashboard() {
@@ -36,26 +35,23 @@ export default function AdminDashboard() {
         router.replace('/login' as any);
     };
 
-    const StatCard = ({ title, value, icon: Icon, color, subValue, delay }: any) => (
+    const StatCard = ({ title, value, icon: Icon, color, subValue }: any) => (
         <View style={styles.statCardWrapper}>
-            <LinearGradient
-                colors={['#1F1F1F', '#111']}
-                style={styles.statCard}
-            >
-                <View style={[styles.statHeader]}>
+            <View style={styles.statCard}>
+                <View style={styles.statHeader}>
                     <View style={[styles.iconBox, { backgroundColor: `${color}15` }]}>
                         <Icon size={20} color={color} />
                     </View>
                     {subValue && (
                         <View style={styles.trendBadge}>
-                            <TrendingUp size={12} color="#10B981" />
+                            <TrendingUp size={12} color="#1dbf73" />
                             <Text style={styles.trendText}>{subValue}</Text>
                         </View>
                     )}
                 </View>
                 <Text style={styles.statValue}>{value}</Text>
                 <Text style={styles.statLabel}>{title}</Text>
-            </LinearGradient>
+            </View>
         </View>
     );
 
@@ -65,12 +61,7 @@ export default function AdminDashboard() {
             onPress={() => router.push(route)}
             activeOpacity={0.7}
         >
-            <LinearGradient
-                colors={['#1A1A1A', '#0F0F0F']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.menuCardGradient}
-            >
+            <View style={styles.menuCardContent}>
                 <View style={[styles.menuIconContainer, { backgroundColor: `${color}15` }]}>
                     <Icon size={24} color={color} />
                 </View>
@@ -80,31 +71,30 @@ export default function AdminDashboard() {
                     <Text style={styles.menuDescription}>{count} Active Records</Text>
                 </View>
 
-                <View style={styles.arrowButton}>
-                    <ArrowRight size={20} color="#4B5563" />
+                <View style={styles.arrowContainer}>
+                    <ArrowRight size={20} color="#b5b6ba" />
                 </View>
-            </LinearGradient>
+            </View>
         </TouchableOpacity>
     );
 
     return (
         <View style={styles.container}>
-            <LinearGradient
-                colors={['#111', '#000']}
-                style={styles.header}
-            >
+            {/* Header */}
+            <View style={styles.header}>
                 <View>
                     <Text style={styles.greeting}>Admin Portal</Text>
                     <Text style={styles.adminName}>Dashboard</Text>
                 </View>
                 <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-                    <LogOut size={20} color="#EF4444" />
+                    <LogOut size={20} color="#62646a" />
                 </TouchableOpacity>
-            </LinearGradient>
+            </View>
 
             <ScrollView
                 contentContainerStyle={styles.content}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#A855F7" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1dbf73" />}
+                showsVerticalScrollIndicator={false}
             >
                 <Text style={styles.sectionTitle}>Overview</Text>
                 <View style={styles.statsGrid}>
@@ -112,7 +102,7 @@ export default function AdminDashboard() {
                         title="Total Revenue"
                         value={`$${stats?.totalRevenue.toLocaleString() || '0'}`}
                         icon={DollarSign}
-                        color="#10B981"
+                        color="#1dbf73"
                         subValue="+12%"
                     />
                     <StatCard
@@ -170,7 +160,7 @@ export default function AdminDashboard() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: '#f7f7f7',
     },
     header: {
         flexDirection: 'row',
@@ -179,34 +169,36 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingTop: 60,
         paddingBottom: 24,
+        backgroundColor: '#ffffff',
         borderBottomWidth: 1,
-        borderBottomColor: '#1A1A1A',
+        borderBottomColor: '#e4e5e7',
     },
     greeting: {
-        color: '#9CA3AF',
+        color: '#62646a',
         fontSize: 14,
         fontWeight: '500',
         marginBottom: 4,
     },
     adminName: {
-        color: '#fff',
+        color: '#222325',
         fontSize: 28,
         fontWeight: 'bold',
         letterSpacing: -0.5,
     },
     logoutButton: {
-        padding: 10,
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: 'rgba(239, 68, 68, 0.2)',
+        width: 40,
+        height: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f5f5f5',
+        borderRadius: 20,
     },
     content: {
         padding: 24,
         paddingBottom: 40,
     },
     sectionTitle: {
-        color: '#fff',
+        color: '#222325',
         fontSize: 20,
         fontWeight: '700',
         marginBottom: 16,
@@ -223,11 +215,17 @@ const styles = StyleSheet.create({
     },
     statCard: {
         padding: 16,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#222',
+        borderRadius: 12,
+        backgroundColor: '#ffffff',
         minHeight: 130,
         justifyContent: 'space-between',
+        borderWidth: 1,
+        borderColor: '#e4e5e7',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     statHeader: {
         flexDirection: 'row',
@@ -238,7 +236,7 @@ const styles = StyleSheet.create({
     iconBox: {
         width: 36,
         height: 36,
-        borderRadius: 10,
+        borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -246,36 +244,42 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 2,
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        backgroundColor: '#f2fbf6',
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 100,
     },
     trendText: {
-        color: '#10B981',
+        color: '#1dbf73',
         fontSize: 10,
         fontWeight: '600',
     },
     statValue: {
-        color: '#fff',
+        color: '#222325',
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 4,
     },
     statLabel: {
-        color: '#9CA3AF',
+        color: '#62646a',
         fontSize: 13,
     },
     menuGrid: {
         gap: 12,
     },
     menuCard: {
-        borderRadius: 20,
-        overflow: 'hidden',
+        borderRadius: 12,
+        backgroundColor: '#ffffff',
         borderWidth: 1,
-        borderColor: '#1F1F1F',
+        borderColor: '#e4e5e7',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+        overflow: 'hidden',
     },
-    menuCardGradient: {
+    menuCardContent: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
@@ -283,7 +287,7 @@ const styles = StyleSheet.create({
     menuIconContainer: {
         width: 52,
         height: 52,
-        borderRadius: 14,
+        borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 16,
@@ -292,16 +296,16 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     menuTitle: {
-        color: '#fff',
+        color: '#222325',
         fontSize: 17,
         fontWeight: '700',
         marginBottom: 4,
     },
     menuDescription: {
-        color: '#6B7280',
+        color: '#62646a',
         fontSize: 13,
     },
-    arrowButton: {
+    arrowContainer: {
         padding: 8,
     },
 });

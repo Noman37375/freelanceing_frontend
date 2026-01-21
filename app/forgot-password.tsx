@@ -9,9 +9,10 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Mail, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react-native";
+import { Mail, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function ForgotPassword() {
@@ -69,99 +70,94 @@ export default function ForgotPassword() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <View style={styles.content}>
-        {/* Back Button */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backButton}
-          disabled={isLoading}
         >
-          <ArrowLeft size={24} color="#6B7280" />
+          <ArrowLeft size={24} color="#222325" />
         </TouchableOpacity>
 
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.iconContainer}>
-            <Mail size={48} color="#3B82F6" />
-          </View>
-          <Text style={styles.title}>Forgot Password?</Text>
-          <Text style={styles.subtitle}>
-            Don't worry! Enter your email address and we'll send you a link to reset your password.
-          </Text>
-        </View>
-
-        {/* Success Message */}
-        {success ? (
-          <View style={styles.successContainer}>
-            <CheckCircle size={20} color="#10B981" />
-            <Text style={styles.successText}>
-              Password reset link sent! Please check your email.
+        <View style={styles.mainContent}>
+          <View style={styles.header}>
+            <View style={styles.iconContainer}>
+              <Mail size={40} color="#1dbf73" />
+            </View>
+            <Text style={styles.title}>Forgot Password?</Text>
+            <Text style={styles.subtitle}>
+              Enter your email and we'll send you a link to reset your password.
             </Text>
           </View>
-        ) : null}
 
-        {/* Error Message */}
-        {errorMessage ? (
-          <View style={styles.errorContainer}>
-            <AlertCircle size={18} color="#DC2626" />
-            <Text style={styles.errorText}>{errorMessage}</Text>
-          </View>
-        ) : null}
+          {success ? (
+            <View style={styles.successContainer}>
+              <CheckCircle2 size={20} color="#15803d" />
+              <Text style={styles.successText}>
+                Reset link sent! Check your email inbox.
+              </Text>
+            </View>
+          ) : null}
 
-        {/* Email Input */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>
-            <Mail size={16} color="#6B7280" /> Email Address
-          </Text>
-          <View style={[
-            styles.inputWrapper,
-            focusedInput && styles.inputWrapperFocused,
-            errorMessage && styles.inputWrapperError
-          ]}>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                setErrorMessage("");
-                setSuccess(false);
-              }}
-              onFocus={() => setFocusedInput(true)}
-              onBlur={() => setFocusedInput(false)}
-              editable={!isLoading}
-            />
+          {errorMessage ? (
+            <View style={styles.errorContainer}>
+              <AlertCircle size={18} color="#d9534f" />
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.formContainer}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Email Address</Text>
+              <View style={[
+                styles.inputWrapper,
+                focusedInput && styles.inputWrapperFocused
+              ]}>
+                <Mail size={20} color={focusedInput ? '#1dbf73' : '#62646a'} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="name@email.com"
+                  placeholderTextColor="#95979d"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setErrorMessage("");
+                    setSuccess(false);
+                  }}
+                  onFocus={() => setFocusedInput(true)}
+                  onBlur={() => setFocusedInput(false)}
+                  editable={!isLoading}
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.button, isLoading && styles.buttonDisabled]}
+              onPress={handleForgotPassword}
+              disabled={isLoading}
+              activeOpacity={0.8}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Send Reset Link</Text>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Remember your password? </Text>
+              <TouchableOpacity onPress={() => router.back()}>
+                <Text style={styles.loginLink}>Back to Login</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-
-        {/* Send Reset Link Button */}
-        <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonDisabled]}
-          onPress={handleForgotPassword}
-          disabled={isLoading}
-          activeOpacity={0.8}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.buttonText}>Send Reset Link</Text>
-          )}
-        </TouchableOpacity>
-
-        {/* Back to Login */}
-        <TouchableOpacity
-          onPress={() => router.back()}
-          disabled={isLoading}
-          style={styles.backToLoginButton}
-        >
-          <Text style={styles.backToLoginText}>
-            <ArrowLeft size={16} color="#3B82F6" /> Back to Login
-          </Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -169,29 +165,35 @@ export default function ForgotPassword() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#fff",
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     padding: 24,
-    paddingTop: 60,
-    justifyContent: "center",
   },
   backButton: {
-    alignSelf: "flex-start",
-    padding: 8,
-    marginBottom: 24,
-    borderRadius: 8,
+    marginTop: 40,
+    marginBottom: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+  },
+  mainContent: {
+    flex: 1,
+    maxWidth: 480,
+    width: '100%',
+    alignSelf: 'center',
+    paddingTop: 20,
   },
   header: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 32,
   },
   iconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: "#EFF6FF",
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#f2fbf6",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 24,
@@ -199,124 +201,124 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#111827",
+    color: "#222325",
     marginBottom: 12,
     textAlign: "center",
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6B7280",
+    color: "#62646a",
     textAlign: "center",
     lineHeight: 24,
-    paddingHorizontal: 8,
   },
   successContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "#f0fdf4",
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 8,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: "#BBF7D0",
+    borderColor: "#bbf7d0",
     gap: 10,
   },
   successText: {
     flex: 1,
-    color: "#10B981",
+    color: "#15803d",
     fontSize: 14,
     fontWeight: "500",
   },
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: "#fff0f0",
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 8,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: "#d9534f",
     gap: 10,
   },
   errorText: {
     flex: 1,
-    color: "#DC2626",
+    color: "#d9534f",
     fontSize: 14,
-    fontWeight: "500",
   },
-  inputContainer: {
+  formContainer: {
+    width: '100%',
+  },
+  inputGroup: {
     marginBottom: 24,
   },
-  label: {
+  inputLabel: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
+    fontWeight: '600',
+    color: '#222325',
     marginBottom: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
   },
   inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    backgroundColor: "#F9FAFB",
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e4e5e7',
+    borderRadius: 8,
     paddingHorizontal: 16,
-    minHeight: 56,
+    height: 50,
+    backgroundColor: '#fff',
+    gap: 12,
   },
   inputWrapperFocused: {
-    borderColor: "#3B82F6",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#3B82F6",
+    borderColor: '#1dbf73',
+    borderWidth: 1,
+    shadowColor: '#1dbf73',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowRadius: 4,
     elevation: 2,
-  },
-  inputWrapperError: {
-    borderColor: "#EF4444",
-    backgroundColor: "#FFFFFF",
   },
   input: {
     flex: 1,
     fontSize: 16,
-    color: "#111827",
-    paddingVertical: 0,
+    color: '#222325',
+    height: '100%',
+    ...Platform.select({
+      web: { outlineStyle: 'none' } as any,
+    }),
   },
   button: {
-    backgroundColor: "#3B82F6",
-    padding: 18,
-    borderRadius: 12,
+    backgroundColor: "#1dbf73",
+    height: 52,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#3B82F6",
+    shadowColor: "#1dbf73",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 4,
     marginBottom: 24,
   },
   buttonDisabled: {
     opacity: 0.7,
   },
   buttonText: {
-    color: "#FFFFFF",
+    color: "#fff",
     fontSize: 16,
-    fontWeight: "600",
-    letterSpacing: 0.5,
+    fontWeight: "700",
   },
-  backToLoginButton: {
-    alignItems: "center",
-    padding: 12,
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 8,
   },
-  backToLoginText: {
-    color: "#3B82F6",
+  footerText: {
+    color: '#62646a',
     fontSize: 14,
-    fontWeight: "600",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
+  },
+  loginLink: {
+    color: '#1dbf73',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

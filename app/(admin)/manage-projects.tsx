@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Platform } from 'react-native';
 import { Trash2, Edit2, X, Check } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
 import { Project } from '@/models/Project';
@@ -66,7 +66,6 @@ export default function ManageProjects() {
     const handleEdit = (project: Project) => {
         setEditingProject(project);
         setEditTitle(project.title);
-        // Assuming max is the primary budget indicator for display/editing
         setEditBudget(project.budget.max.toString());
         setEditStatus(project.status as any);
         setEditModalVisible(true);
@@ -77,7 +76,6 @@ export default function ManageProjects() {
         try {
             const updatedProject = await adminService.updateProject(editingProject.id, {
                 title: editTitle,
-                // Preserving the original budget structure, only updating the amounts
                 budget: { ...editingProject.budget, min: parseFloat(editBudget) * 0.5, max: parseFloat(editBudget) },
                 status: editStatus
             });
@@ -116,7 +114,7 @@ export default function ManageProjects() {
                         <Edit2 size={20} color="#3B82F6" />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleDelete(item.id, item.title)} style={styles.iconButton}>
-                        <Trash2 size={20} color="#EF4444" />
+                        <Trash2 size={20} color="#d9534f" />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -132,7 +130,7 @@ export default function ManageProjects() {
             </View>
 
             <View style={styles.cardFooter}>
-                <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}20` }]}>
+                <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}15` }]}>
                     <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
                         {formatStatus(item.status)}
                     </Text>
@@ -148,7 +146,7 @@ export default function ManageProjects() {
         <View style={styles.container}>
             {isLoading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#A855F7" />
+                    <ActivityIndicator size="large" color="#1dbf73" />
                 </View>
             ) : (
                 <FlatList
@@ -174,7 +172,7 @@ export default function ManageProjects() {
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Edit Project</Text>
                             <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                                <X size={24} color="#9CA3AF" />
+                                <X size={24} color="#62646a" />
                             </TouchableOpacity>
                         </View>
 
@@ -185,7 +183,7 @@ export default function ManageProjects() {
                                 value={editTitle}
                                 onChangeText={setEditTitle}
                                 placeholder="Project Title"
-                                placeholderTextColor="#666"
+                                placeholderTextColor="#95979d"
                             />
                         </View>
 
@@ -197,7 +195,7 @@ export default function ManageProjects() {
                                 onChangeText={setEditBudget}
                                 placeholder="500"
                                 keyboardType="numeric"
-                                placeholderTextColor="#666"
+                                placeholderTextColor="#95979d"
                             />
                         </View>
 
@@ -209,8 +207,7 @@ export default function ManageProjects() {
                                         key={status}
                                         style={[
                                             styles.statusOption,
-                                            editStatus === status && styles.statusOptionActive,
-                                            { borderColor: status === editStatus ? getStatusColor(status) : '#333' }
+                                            editStatus === status && { borderColor: getStatusColor(status), backgroundColor: `${getStatusColor(status)}10` }
                                         ]}
                                         onPress={() => setEditStatus(status as any)}
                                     >
@@ -241,7 +238,7 @@ export default function ManageProjects() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: '#f7f7f7',
     },
     loadingContainer: {
         flex: 1,
@@ -252,17 +249,22 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     emptyText: {
-        color: '#9CA3AF',
+        color: '#62646a',
         textAlign: 'center',
         marginTop: 32,
     },
     card: {
-        backgroundColor: '#111',
-        borderRadius: 16,
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
         padding: 16,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#222',
+        borderColor: '#e4e5e7',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     cardHeader: {
         flexDirection: 'row',
@@ -271,13 +273,13 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     title: {
-        color: '#fff',
+        color: '#222325',
         fontSize: 16,
         fontWeight: 'bold',
         marginBottom: 4,
     },
     subtitle: {
-        color: '#10B981',
+        color: '#1dbf73',
         fontWeight: '600',
         fontSize: 14,
     },
@@ -287,12 +289,15 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     iconButton: {
-        padding: 4,
+        padding: 6,
+        backgroundColor: '#f5f5f5',
+        borderRadius: 8,
     },
     description: {
-        color: '#D1D5DB',
+        color: '#62646a',
         fontSize: 14,
         marginBottom: 12,
+        lineHeight: 20,
     },
     tagsContainer: {
         flexDirection: 'row',
@@ -301,14 +306,15 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     tag: {
-        backgroundColor: '#333',
+        backgroundColor: '#f5f7f9',
         paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
     },
     tagText: {
-        color: '#E5E7EB',
+        color: '#62646a',
         fontSize: 12,
+        fontWeight: '500',
     },
     cardFooter: {
         flexDirection: 'row',
@@ -316,7 +322,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingTop: 12,
         borderTopWidth: 1,
-        borderTopColor: '#222',
+        borderTopColor: '#f0f0f0',
     },
     statusBadge: {
         paddingHorizontal: 8,
@@ -328,22 +334,25 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     dateText: {
-        color: '#6B7280',
+        color: '#95979d',
         fontSize: 12,
     },
     // Modal Styles
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.7)',
+        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         padding: 20,
     },
     modalContent: {
-        backgroundColor: '#1A1A1A',
-        borderRadius: 24,
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
         padding: 24,
-        borderWidth: 1,
-        borderColor: '#333',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        elevation: 10,
     },
     modalHeader: {
         flexDirection: 'row',
@@ -352,7 +361,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     modalTitle: {
-        color: '#fff',
+        color: '#222325',
         fontSize: 20,
         fontWeight: 'bold',
     },
@@ -360,23 +369,24 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     label: {
-        color: '#9CA3AF',
+        color: '#62646a',
         marginBottom: 8,
         fontSize: 14,
+        fontWeight: '600',
     },
     input: {
-        backgroundColor: '#000',
+        backgroundColor: '#fff',
         borderWidth: 1,
-        borderColor: '#333',
-        borderRadius: 12,
+        borderColor: '#e4e5e7',
+        borderRadius: 8,
         padding: 12,
-        color: '#fff',
+        color: '#222325',
         fontSize: 16,
     },
     saveButton: {
-        backgroundColor: '#A855F7',
+        backgroundColor: '#1dbf73',
         padding: 16,
-        borderRadius: 12,
+        borderRadius: 8,
         alignItems: 'center',
         marginTop: 8,
     },
@@ -394,14 +404,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 12,
         borderWidth: 1,
-        borderRadius: 12,
-        backgroundColor: '#000',
-    },
-    statusOptionActive: {
-        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderColor: '#e4e5e7',
+        borderRadius: 8,
+        backgroundColor: '#fff',
     },
     statusOptionText: {
-        color: '#9CA3AF',
+        color: '#62646a',
         fontSize: 14,
         fontWeight: '600',
     },

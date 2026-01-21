@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Switch, Platform } from 'react-native';
 import { Trash2, Edit2, X } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
-import { User, ClientProfile } from '@/models/User';
+import { ClientProfile } from '@/models/User';
 
 export default function ManageClients() {
     const [clients, setClients] = useState<ClientProfile[]>([]);
@@ -29,17 +29,13 @@ export default function ManageClients() {
     }, [loadClients]);
 
     const handleDelete = async (id: string, name: string) => {
-        console.log('[ManageClients] Requesting delete:', id, name);
         if (Platform.OS === 'web') {
             const confirmed = window.confirm(`Are you sure you want to delete ${name}?`);
             if (confirmed) {
                 try {
-                    console.log('[ManageClients] Confirmed delete (Web)');
                     await adminService.deleteUser(id);
                     setClients(prev => prev.filter(u => u.id !== id));
-                    console.log('[ManageClients] Local state updated after delete');
                 } catch (error) {
-                    console.error('[ManageClients] Delete error:', error);
                     Alert.alert('Error', 'Failed to delete client');
                 }
             }
@@ -48,13 +44,12 @@ export default function ManageClients() {
                 'Delete Client',
                 `Are you sure you want to delete ${name}?`,
                 [
-                    { text: 'Cancel', style: 'cancel', onPress: () => console.log('[ManageClients] Delete cancelled') },
+                    { text: 'Cancel', style: 'cancel' },
                     {
                         text: 'Delete',
                         style: 'destructive',
                         onPress: async () => {
                             try {
-                                console.log('[ManageClients] Confirmed delete (Native)');
                                 await adminService.deleteUser(id);
                                 setClients(prev => prev.filter(u => u.id !== id));
                             } catch (error) {
@@ -99,7 +94,7 @@ export default function ManageClients() {
                     </View>
                     <View>
                         <Text style={styles.name}>{item.name}</Text>
-                        <Text style={styles.role}>{item.email}</Text>
+                        <Text style={styles.email}>{item.email}</Text>
                     </View>
                 </View>
                 <View style={styles.actionButtons}>
@@ -107,13 +102,13 @@ export default function ManageClients() {
                         <Edit2 size={20} color="#3B82F6" />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleDelete(item.id, item.name)} style={styles.iconButton}>
-                        <Trash2 size={20} color="#EF4444" />
+                        <Trash2 size={20} color="#d9534f" />
                     </TouchableOpacity>
                 </View>
             </View>
 
             <View style={styles.cardBody}>
-                <Text style={styles.aboutText} numberOfLines={2}>
+                <Text style={styles.companyText}>
                     {item.companyName || 'No company info'}
                 </Text>
             </View>
@@ -132,7 +127,7 @@ export default function ManageClients() {
         <View style={styles.container}>
             {isLoading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#A855F7" />
+                    <ActivityIndicator size="large" color="#1dbf73" />
                 </View>
             ) : (
                 <FlatList
@@ -158,7 +153,7 @@ export default function ManageClients() {
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Edit Client</Text>
                             <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                                <X size={24} color="#9CA3AF" />
+                                <X size={24} color="#62646a" />
                             </TouchableOpacity>
                         </View>
 
@@ -169,7 +164,7 @@ export default function ManageClients() {
                                 value={editName}
                                 onChangeText={setEditName}
                                 placeholder="Enter name"
-                                placeholderTextColor="#666"
+                                placeholderTextColor="#95979d"
                             />
                         </View>
 
@@ -178,8 +173,8 @@ export default function ManageClients() {
                             <Switch
                                 value={editIsVerified}
                                 onValueChange={setEditIsVerified}
-                                trackColor={{ false: '#333', true: '#10B981' }}
-                                thumbColor={editIsVerified ? '#fff' : '#f4f3f4'}
+                                trackColor={{ false: '#e4e5e7', true: '#1dbf73' }}
+                                thumbColor={editIsVerified ? '#fff' : '#fff'}
                             />
                         </View>
 
@@ -196,7 +191,7 @@ export default function ManageClients() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: '#f7f7f7',
     },
     loadingContainer: {
         flex: 1,
@@ -207,17 +202,22 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     emptyText: {
-        color: '#9CA3AF',
+        color: '#62646a',
         textAlign: 'center',
         marginTop: 32,
     },
     card: {
-        backgroundColor: '#111',
-        borderRadius: 16,
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
         padding: 16,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#222',
+        borderColor: '#e4e5e7',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     cardHeader: {
         flexDirection: 'row',
@@ -234,10 +234,12 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: '#F59E0B20',
+        backgroundColor: '#fff7ed',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
+        borderWidth: 1,
+        borderColor: '#e4e5e7',
     },
     avatarText: {
         color: '#F59E0B',
@@ -245,12 +247,12 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     name: {
-        color: '#fff',
+        color: '#222325',
         fontSize: 16,
         fontWeight: 'bold',
     },
-    role: {
-        color: '#9CA3AF',
+    email: {
+        color: '#62646a',
         fontSize: 14,
     },
     actionButtons: {
@@ -258,19 +260,22 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     iconButton: {
-        padding: 4,
+        padding: 6,
+        backgroundColor: '#f5f5f5',
+        borderRadius: 8,
     },
     cardBody: {
         marginBottom: 12,
     },
-    aboutText: {
-        color: '#D1D5DB',
+    companyText: {
+        color: '#404145',
         fontSize: 14,
+        fontWeight: '500',
     },
     cardFooter: {
         paddingTop: 12,
         borderTopWidth: 1,
-        borderTopColor: '#222',
+        borderTopColor: '#f0f0f0',
     },
     statusBadge: {
         paddingHorizontal: 8,
@@ -279,34 +284,37 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start',
     },
     activeBadge: {
-        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+        backgroundColor: '#f0fdf4',
     },
     suspendedBadge: {
-        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+        backgroundColor: '#fff0f0',
     },
     statusText: {
         fontSize: 12,
         fontWeight: '600',
     },
     activeText: {
-        color: '#10B981',
+        color: '#15803d',
     },
     suspendedText: {
-        color: '#EF4444',
+        color: '#d9534f',
     },
     // Modal Styles
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.7)',
+        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         padding: 20,
     },
     modalContent: {
-        backgroundColor: '#1A1A1A',
-        borderRadius: 24,
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
         padding: 24,
-        borderWidth: 1,
-        borderColor: '#333',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        elevation: 10,
     },
     modalHeader: {
         flexDirection: 'row',
@@ -315,7 +323,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     modalTitle: {
-        color: '#fff',
+        color: '#222325',
         fontSize: 20,
         fontWeight: 'bold',
     },
@@ -323,17 +331,18 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     label: {
-        color: '#9CA3AF',
+        color: '#62646a',
         marginBottom: 8,
         fontSize: 14,
+        fontWeight: '600',
     },
     input: {
-        backgroundColor: '#000',
+        backgroundColor: '#fff',
         borderWidth: 1,
-        borderColor: '#333',
-        borderRadius: 12,
+        borderColor: '#e4e5e7',
+        borderRadius: 8,
         padding: 12,
-        color: '#fff',
+        color: '#222325',
         fontSize: 16,
     },
     switchContainer: {
@@ -341,11 +350,12 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 24,
+        paddingVertical: 8,
     },
     saveButton: {
-        backgroundColor: '#A855F7',
+        backgroundColor: '#1dbf73',
         padding: 16,
-        borderRadius: 12,
+        borderRadius: 8,
         alignItems: 'center',
     },
     saveButtonText: {

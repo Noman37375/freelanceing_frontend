@@ -4,7 +4,7 @@ export interface User {
   name: string;
   email: string;
   avatar?: string;
-  role: 'freelancer' | 'client';
+  role: 'freelancer' | 'client' | 'Admin';
   isVerified: boolean;
   createdAt: string;
   updatedAt: string;

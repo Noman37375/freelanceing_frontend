@@ -150,6 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(response.user);
         await storageSet("user", JSON.stringify(response.user));
       }
+      return response.user;
     } catch (error: any) {
       throw new Error(error.message || "Login failed");
     } finally {

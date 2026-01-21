@@ -9,15 +9,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ImageBackground,
   Dimensions,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Eye, EyeOff, Mail, Lock, ArrowLeft, AlertCircle, Briefcase, ArrowRight, X } from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { Eye, EyeOff, Lock, Mail, ArrowRight, CheckCircle2 } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -69,7 +68,6 @@ export default function Login() {
         errorMsg = "Invalid email or password. Please try again.";
       } else if (errorMsg.includes("verified") || errorMsg.includes("verify") || errorMsg.includes("NOT_VERIFY")) {
         errorMsg = "Please verify your email first. Check your inbox for OTP.";
-        // Optionally redirect to verify email screen
         setTimeout(() => {
           router.push({
             pathname: "/verify-email",
@@ -77,7 +75,7 @@ export default function Login() {
           } as any);
         }, 2000);
       } else if (errorMsg.includes("Network") || errorMsg.includes("timeout") || errorMsg.includes("Failed to fetch")) {
-        errorMsg = "Connection error. Please check your internet and ensure backend is running on port 3000.";
+        errorMsg = "Connection error. Please check your internet connection.";
       }
 
       setErrorMessage(errorMsg);
@@ -87,493 +85,297 @@ export default function Login() {
   };
 
   return (
-    <ImageBackground
-      source={{ uri: "https://images.unsplash.com/photo-1556761175-b413da4baf72?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2074&q=80" }}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
-      blurRadius={10}
     >
-      <LinearGradient
-        colors={['rgba(0, 0, 0, 0.7)', 'rgba(0, 0, 0, 0.5)', 'rgba(0, 0, 0, 0.8)']}
-        style={styles.backgroundGradient}
-      />
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.content}>
-            {/* Back Button */}
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={styles.backButton}
-            >
-              <View> <ArrowLeft size={20} color="#fff" /> </View>
+        <View style={styles.header}>
+          <Text style={styles.logoText}>FreelancePro</Text>
+        </View>
 
+        <View style={styles.mainContent}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Welcome back</Text>
+            <Text style={styles.subtitle}>Sign in to access your dashboard</Text>
+          </View>
+
+          {errorMessage ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.formContainer}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Email</Text>
+              <View style={[
+                styles.inputWrapper,
+                focusedInput === 'email' && styles.inputWrapperFocused
+              ]}>
+                <Mail size={20} color={focusedInput === 'email' ? '#1dbf73' : '#62646a'} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="name@email.com"
+                  placeholderTextColor="#95979d"
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setErrorMessage("");
+                  }}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  onFocus={() => setFocusedInput('email')}
+                  onBlur={() => setFocusedInput(null)}
+                  editable={!isLoading}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <View style={styles.passwordLabelContainer}>
+                <Text style={styles.inputLabel}>Password</Text>
+                <TouchableOpacity onPress={() => router.push("/forgot-password" as any)}>
+                  <Text style={styles.forgotPassword}>Forgot Password?</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={[
+                styles.inputWrapper,
+                focusedInput === 'password' && styles.inputWrapperFocused
+              ]}>
+                <Lock size={20} color={focusedInput === 'password' ? '#1dbf73' : '#62646a'} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  placeholderTextColor="#95979d"
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    setErrorMessage("");
+                  }}
+                  secureTextEntry={!showPassword}
+                  onFocus={() => setFocusedInput('password')}
+                  onBlur={() => setFocusedInput(null)}
+                  editable={!isLoading}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeIcon}
+                >
+                  {showPassword ? (
+                    <EyeOff size={20} color="#62646a" />
+                  ) : (
+                    <Eye size={20} color="#62646a" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={handleLogin}
+              disabled={isLoading}
+              activeOpacity={0.8}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.loginButtonText}>Continue</Text>
+              )}
             </TouchableOpacity>
 
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.brandContainer}>
-                <View style={styles.logoContainer}>
-                  <Briefcase size={28} color="#A855F7" />
-                </View>
-                <Text style={styles.brandText}>
-                  Freelance<Text style={styles.brandHighlight}>Pro</Text>
-                </Text>
-              </View>
-              <Text style={styles.welcomeText}>
-                Welcome Back 👋
-              </Text>
-              <Text style={styles.subtitle}>
-                Sign in to access your freelance dashboard, manage projects, and connect with clients.
-              </Text>
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
             </View>
 
-            {/* Login Card */}
-            <View style={styles.loginCard}>
-              {/* Error Message */}
-              {errorMessage ? (
-                <View style={styles.errorContainer}>
-                  <AlertCircle size={20} color="#F87171" />
-                  <Text style={styles.errorText}>{errorMessage}</Text>
-                </View>
-              ) : null}
-
-              {/* Email Input */}
-              <View style={styles.inputGroup}>
-                <View style={styles.labelContainer}>
-                  <Mail size={18} color="#A855F7" />
-                  <Text style={styles.inputLabel}>Email Address</Text>
-                </View>
-                <View style={[
-                  styles.inputWrapper,
-                  focusedInput === 'email' && styles.inputWrapperFocused
-                ]}>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="you@example.com"
-                    placeholderTextColor="#94A3B8"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    value={email}
-                    onChangeText={(text) => {
-                      setEmail(text);
-                      setErrorMessage("");
-                    }}
-                    onFocus={() => setFocusedInput('email')}
-                    onBlur={() => setFocusedInput(null)}
-                    editable={!isLoading}
-                  />
-                  {email && (
-                    <TouchableOpacity
-                      onPress={() => setEmail("")}
-                      style={styles.clearButton}
-                    >
-                      <View style={styles.clearButtonInner}>
-                        <X size={12} color="#FFFFFF" />
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-
-              {/* Password Input */}
-              <View style={styles.inputGroup}>
-                <View style={styles.labelContainer}>
-                  <Lock size={18} color="#A855F7" />
-                  <Text style={styles.inputLabel}>Password</Text>
-                </View>
-                <View style={[
-                  styles.inputWrapper,
-                  focusedInput === 'password' && styles.inputWrapperFocused
-                ]}>
-                  <TextInput
-                    style={[styles.textInput, { flex: 1 }]}
-                    placeholder="••••••••"
-                    placeholderTextColor="#94A3B8"
-                    secureTextEntry={!showPassword}
-                    value={password}
-                    onChangeText={(text) => {
-                      setPassword(text);
-                      setErrorMessage("");
-                    }}
-                    onFocus={() => setFocusedInput('password')}
-                    onBlur={() => setFocusedInput(null)}
-                    editable={!isLoading}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.eyeButton}
-                    disabled={isLoading}
-                  >
-                    {showPassword ? (
-                      <EyeOff size={22} color="#A855F7" />
-                    ) : (
-                      <Eye size={22} color="#A855F7" />
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Forgot Password Link */}
-              <TouchableOpacity
-                onPress={() => router.push("/forgot-password" as any)}
-                disabled={isLoading}
-                style={styles.forgotPasswordLink}
-              >
-                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-              </TouchableOpacity>
-
-              {/* Login Button */}
-              <TouchableOpacity
-                onPress={handleLogin}
-                disabled={isLoading}
-                style={styles.loginButtonContainer}
-              >
-                <LinearGradient
-                  colors={['#A855F7', '#7C3AED']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.loginButton}
-                >
-                  {isLoading ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
-                    <View style={styles.buttonContent}>
-                      <Text style={styles.buttonText}>Sign In</Text>
-                      <ArrowRight size={20} color="#fff" />
-                    </View>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-
-            {/* Sign Up Prompt */}
-            <View style={styles.signupContainer}>
-              <Text style={styles.signupPromptText}>New to freelancing?</Text>
-              <TouchableOpacity
-                onPress={() => router.push("/signup" as any)}
-                disabled={isLoading}
-                style={styles.signupButton}
-              >
-                <Text style={styles.signupButtonText}>Create Account</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Stats Bar */}
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>50K+</Text>
-                <Text style={styles.statLabel}>Freelancers</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>200K+</Text>
-                <Text style={styles.statLabel}>Projects</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>$10M+</Text>
-                <Text style={styles.statLabel}>Earned</Text>
-              </View>
-            </View>
-
-            {/* Bottom Info */}
-            <View style={styles.bottomInfoContainer}>
-              <Text style={styles.bottomInfoText}>
-                By signing in, you agree to our Terms of Service and Privacy Policy
-              </Text>
-            </View>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={() => router.push("/signup" as any)}
+            >
+              <Text style={styles.secondaryButtonText}>Create a new account</Text>
+            </TouchableOpacity>
           </View>
-        </ScrollView>
+        </View>
 
-        {/* Bottom Gradient */}
-        <LinearGradient
-          colors={['transparent', 'rgba(0, 0, 0, 0.8)']}
-          style={styles.bottomGradient}
-          pointerEvents="none"
-        />
-      </KeyboardAvoidingView>
-    </ImageBackground>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            © 2026 FreelancePro International Ltd.
+          </Text>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
-  },
-  backgroundGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
+    backgroundColor: "#fff",
   },
   scrollContent: {
     flexGrow: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 30,
+    justifyContent: 'space-between',
+    padding: 24,
   },
   header: {
-    marginBottom: 30,
+    paddingTop: 40,
+    marginBottom: 40,
   },
-  brandContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  logoContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: 'rgba(168, 85, 247, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  brandText: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#FFFFFF',
+  logoText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111',
     letterSpacing: -0.5,
   },
-  brandHighlight: {
-    color: '#A855F7',
+  mainContent: {
+    flex: 1,
+    maxWidth: 480,
+    width: '100%',
+    alignSelf: 'center',
   },
-  welcomeText: {
-    fontSize: 28,
+  titleContainer: {
+    marginBottom: 32,
+  },
+  title: {
+    fontSize: 32,
     fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 12,
+    color: '#222325',
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: '#E2E8F0',
-    lineHeight: 24,
-  },
-  loginCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    marginBottom: 24,
+    color: '#62646a',
   },
   errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    backgroundColor: '#fff0f0',
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
+    borderColor: '#d9534f',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 24,
   },
   errorText: {
-    flex: 1,
-    color: '#FECACA',
+    color: '#d9534f',
     fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 12,
+    textAlign: 'center',
+  },
+  formContainer: {
+    width: '100%',
   },
   inputGroup: {
     marginBottom: 20,
   },
-  labelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
-    marginLeft: 8,
+    color: '#222325',
+    marginBottom: 8,
+  },
+  passwordLabelContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  forgotPassword: {
+    fontSize: 14,
+    color: '#1dbf73',
+    fontWeight: '600',
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: '#e4e5e7',
+    borderRadius: 8,
     paddingHorizontal: 16,
-    height: 56,
+    height: 50,
+    backgroundColor: '#fff',
+    gap: 12,
   },
   inputWrapperFocused: {
-    borderColor: '#A855F7',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#1dbf73',
+    borderWidth: 1,
+    shadowColor: '#1dbf73',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  textInput: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    paddingVertical: 0,
+  input: {
     flex: 1,
+    fontSize: 16,
+    color: '#222325',
+    height: '100%',
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none',
+      } as any,
+    }),
   },
-  clearButton: {
+  eyeIcon: {
     padding: 4,
   },
-  clearButtonInner: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  eyeButton: {
-    padding: 8,
-    marginLeft: 8,
-  },
-  forgotPasswordLink: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-    marginTop: -4,
-  },
-  forgotPasswordText: {
-    color: '#D8B4FE',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  loginButtonContainer: {
-    marginBottom: 20,
-  },
   loginButton: {
-    height: 56,
-    borderRadius: 16,
+    backgroundColor: '#1dbf73',
+    height: 52,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#A855F7',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
+    marginTop: 8,
+    shadowColor: '#1dbf73',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
+  loginButtonText: {
+    color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
-    marginRight: 8,
+    fontWeight: '700',
   },
-  quickLoginContainer: {
-    marginBottom: 4,
-  },
-  quickLoginText: {
-    color: '#94A3B8',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  socialButtonsContainer: {
+  divider: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 24,
   },
-  socialButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e4e5e7',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: '#95979d',
+    fontSize: 14,
+  },
+  secondaryButton: {
+    backgroundColor: '#fff',
+    height: 52,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 8,
+    borderColor: '#e4e5e7',
   },
-  socialButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  signupContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  signupPromptText: {
-    color: '#94A3B8',
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  signupButton: {
-    height: 48,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  signupButtonText: {
-    color: '#FFFFFF',
+  secondaryButtonText: {
+    color: '#222325',
     fontSize: 16,
     fontWeight: '600',
   },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    marginBottom: 24,
-  },
-  statItem: {
+  footer: {
+    marginTop: 40,
     alignItems: 'center',
   },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  statLabel: {
+  footerText: {
+    color: '#95979d',
     fontSize: 12,
-    color: '#94A3B8',
-  },
-  bottomInfoContainer: {
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  bottomInfoText: {
-    color: '#94A3B8',
-    fontSize: 12,
-    textAlign: 'center',
-    lineHeight: 16,
-  },
-  bottomGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 80,
-    pointerEvents: 'none',
   },
 });

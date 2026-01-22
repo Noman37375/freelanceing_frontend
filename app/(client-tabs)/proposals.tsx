@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { FileText, CheckCircle, XCircle, Clock, DollarSign, User, Calendar } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { projectService, proposalService } from '@/services/projectService';
 import { Proposal } from '@/models/Project';
+import { COLORS } from '@/utils/constants';
+import ScreenHeader from '@/components/ScreenHeader';
 
 export default function Proposals() {
   const router = useRouter();
@@ -14,6 +16,7 @@ export default function Proposals() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'ACCEPTED' | 'REJECTED'>('ALL');
   const [updatingProposalId, setUpdatingProposalId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchProposals = async () => {
     if (!user?.id) {
@@ -22,6 +25,7 @@ export default function Proposals() {
     }
     try {
       setLoading(true);
+      setError(null);
       const allProposals = await proposalService.getClientProposals();
       
       // Sort by created date (newest first)
@@ -34,7 +38,7 @@ export default function Proposals() {
       setProposals(sortedProposals);
     } catch (error: any) {
       console.error('[Proposals] Failed to fetch proposals:', error);
-      Alert.alert('Error', error.message || 'Failed to load proposals');
+      setError(error?.message || 'Failed to load proposals');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -97,13 +101,13 @@ export default function Proposals() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ACCEPTED':
-        return '#10B981';
+        return COLORS.success;
       case 'REJECTED':
-        return '#EF4444';
+        return COLORS.error;
       case 'PENDING':
-        return '#F59E0B';
+        return COLORS.accent;
       default:
-        return '#6B7280';
+        return COLORS.gray500;
     }
   };
 
@@ -136,7 +140,7 @@ export default function Proposals() {
   if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <ActivityIndicator size="large" color={COLORS.primary} />
         <Text style={styles.loadingText}>Loading proposals...</Text>
       </View>
     );
@@ -144,12 +148,10 @@ export default function Proposals() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Proposals</Text>
-        <Text style={styles.headerSubtitle}>
-          {filteredProposals.length} proposal{filteredProposals.length !== 1 ? 's' : ''}
-        </Text>
-      </View>
+      <ScreenHeader
+        title="Proposals"
+        subtitle={`${filteredProposals.length} proposal${filteredProposals.length !== 1 ? 's' : ''}`}
+      />
 
       {/* Filter Tabs */}
       <View style={styles.filterContainer}>
@@ -170,41 +172,28 @@ export default function Proposals() {
       </View>
 
       {/* Proposals List */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        showsVerticalScrollIndicator={false}
-      >
-        {filteredProposals.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <FileText size={64} color="#9CA3AF" strokeWidth={1.5} />
-            <Text style={styles.emptyText}>No proposals found</Text>
-            <Text style={styles.emptySubtext}>
-              {activeFilter === 'ALL' 
-                ? 'You don\'t have any proposals yet'
-                : `No ${activeFilter.toLowerCase()} proposals`}
-            </Text>
-          </View>
-        ) : (
-          filteredProposals.map((proposal) => {
-            const StatusIcon = getStatusIcon(proposal.status);
-            return (
-              <TouchableOpacity
-                key={proposal.id}
-                style={styles.proposalCard}
-                onPress={() => router.push({
+      <FlatList
+        data={filteredProposals}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item: proposal }) => {
+          const StatusIcon = getStatusIcon(proposal.status);
+          return (
+            <TouchableOpacity
+              style={styles.proposalCard}
+              onPress={() =>
+                router.push({
                   pathname: '/proposal-details',
                   params: { id: proposal.id },
-                } as any)}
-              >
+                } as any)
+              }
+            >
                 <View style={styles.cardHeader}>
                   <View style={styles.projectInfo}>
                     <Text style={styles.projectTitle} numberOfLines={1}>
                       {proposal.project?.title || 'Unknown Project'}
                     </Text>
                     <View style={styles.metaRow}>
-                      <Calendar size={14} color="#6B7280" strokeWidth={2} />
+                      <Calendar size={14} color={COLORS.gray500} strokeWidth={2} />
                       <Text style={styles.metaText}>{formatDate(proposal.createdAt)}</Text>
                     </View>
                   </View>
@@ -217,7 +206,7 @@ export default function Proposals() {
                 </View>
 
                 <View style={styles.freelancerInfo}>
-                  <User size={16} color="#6B7280" strokeWidth={2} />
+                  <User size={16} color={COLORS.gray500} strokeWidth={2} />
                   <Text style={styles.freelancerName}>
                     {proposal.freelancer?.userName || proposal.freelancer?.name || 'Unknown Freelancer'}
                   </Text>
@@ -229,7 +218,7 @@ export default function Proposals() {
 
                 <View style={styles.cardFooter}>
                   <View style={styles.bidAmount}>
-                    <DollarSign size={18} color="#10B981" strokeWidth={2} />
+                    <DollarSign size={18} color={COLORS.success} strokeWidth={2} />
                     <Text style={styles.bidAmountText}>${proposal.bidAmount.toFixed(2)}</Text>
                   </View>
                   
@@ -282,10 +271,10 @@ export default function Proposals() {
                         disabled={updatingProposalId === proposal.id}
                       >
                         {updatingProposalId === proposal.id ? (
-                          <ActivityIndicator size="small" color="#EF4444" />
+                          <ActivityIndicator size="small" color={COLORS.error} />
                         ) : (
                           <>
-                            <XCircle size={16} color="#EF4444" strokeWidth={2} />
+                            <XCircle size={16} color={COLORS.error} strokeWidth={2} />
                             <Text style={styles.rejectButtonText}>Reject</Text>
                           </>
                         )}
@@ -337,10 +326,10 @@ export default function Proposals() {
                         disabled={updatingProposalId === proposal.id}
                       >
                         {updatingProposalId === proposal.id ? (
-                          <ActivityIndicator size="small" color="#10B981" />
+                          <ActivityIndicator size="small" color={COLORS.success} />
                         ) : (
                           <>
-                            <CheckCircle size={16} color="#10B981" strokeWidth={2} />
+                            <CheckCircle size={16} color={COLORS.success} strokeWidth={2} />
                             <Text style={styles.acceptButtonText}>Accept</Text>
                           </>
                         )}
@@ -350,9 +339,32 @@ export default function Proposals() {
                 </View>
               </TouchableOpacity>
             );
-          })
-        )}
-      </ScrollView>
+        }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorTitle}>Couldn’t load proposals</Text>
+              <Text style={styles.errorMessage}>{error}</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={fetchProposals} activeOpacity={0.85}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <FileText size={64} color={COLORS.gray400} strokeWidth={1.5} />
+              <Text style={styles.emptyText}>No proposals found</Text>
+              <Text style={styles.emptySubtext}>
+                {activeFilter === 'ALL'
+                  ? "You don't have any proposals yet"
+                  : `No ${activeFilter.toLowerCase()} proposals`}
+              </Text>
+            </View>
+          )
+        }
+      />
     </View>
   );
 }
@@ -360,44 +372,26 @@ export default function Proposals() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.gray50,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.gray50,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#6B7280',
-  },
-  header: {
-    backgroundColor: '#FFFFFF',
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.gray500,
   },
   filterContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: COLORS.gray200,
     gap: 8,
   },
   filterTab: {
@@ -407,15 +401,15 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   filterTabActive: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.gray100,
   },
   filterText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#6B7280',
+    color: COLORS.gray500,
   },
   filterTextActive: {
-    color: '#1F2937',
+    color: COLORS.gray800,
     fontWeight: '600',
   },
   filterIndicator: {
@@ -426,10 +420,7 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 2,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
+  listContent: {
     padding: 20,
     paddingBottom: 100,
   },
@@ -442,20 +433,37 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.gray800,
     marginTop: 16,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.gray500,
     marginTop: 8,
   },
+  errorContainer: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+  },
+  errorTitle: { fontSize: 16, fontWeight: '800', color: COLORS.gray800, marginBottom: 6, textAlign: 'center' },
+  errorMessage: { fontSize: 14, color: COLORS.gray600, lineHeight: 20, textAlign: 'center' },
+  retryButton: {
+    marginTop: 12,
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  retryButtonText: { color: COLORS.white, fontSize: 14, fontWeight: '800' },
   proposalCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -474,7 +482,7 @@ const styles = StyleSheet.create({
   projectTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.gray800,
     marginBottom: 4,
   },
   metaRow: {
@@ -484,7 +492,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.gray500,
   },
   statusBadge: {
     flexDirection: 'row',
@@ -506,12 +514,12 @@ const styles = StyleSheet.create({
   },
   freelancerName: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.gray500,
     fontWeight: '500',
   },
   coverLetter: {
     fontSize: 14,
-    color: '#374151',
+    color: COLORS.gray700,
     lineHeight: 20,
     marginBottom: 12,
   },
@@ -521,7 +529,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: COLORS.gray200,
   },
   bidAmount: {
     flexDirection: 'row',
@@ -531,7 +539,7 @@ const styles = StyleSheet.create({
   bidAmountText: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#10B981',
+    color: COLORS.success,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -546,20 +554,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   rejectButton: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: COLORS.errorLight,
   },
   rejectButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#EF4444',
+    color: COLORS.error,
   },
   acceptButton: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: COLORS.successLight,
   },
   acceptButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#10B981',
+    color: COLORS.success,
   },
   disabledButton: {
     opacity: 0.6,

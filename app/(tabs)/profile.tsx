@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -23,19 +24,29 @@ import {
   X,
   Plus,
   Save,
+  Briefcase,
+  MapPin,
+  Linkedin,
+  Github,
+  Globe,
+  Camera
 } from "lucide-react-native";
 import { useRouter } from "expo-router";
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from "@/contexts/AuthContext";
 import SkillTag from "@/components/SkillTag";
 import SectionCard from "@/components/SectionCard";
 
+const { width } = Dimensions.get('window');
+
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout, isLoading, updateProfile, refreshUser } = useAuth();
-  
+
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   // Form states
   const [editedUserName, setEditedUserName] = useState("");
   const [editedBio, setEditedBio] = useState("");
@@ -56,8 +67,8 @@ export default function ProfileScreen() {
   }, [editModalVisible, user]);
 
   // Default avatar logic
-  const defaultAvatar = user?.profileImage || 
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.userName || "User")}&background=6366F1&color=fff&size=200`;
+  const defaultAvatar = user?.profileImage ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.userName || "User")}&background=4F46E5&color=fff&size=200`;
 
   const handleLogout = async () => {
     await logout();
@@ -73,6 +84,33 @@ export default function ProfileScreen() {
 
   const handleRemoveSkill = (index: number) => {
     setEditedSkills(editedSkills.filter((_, i) => i !== index));
+  };
+
+  const handlePickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0].base64) {
+        setIsSaving(true);
+        const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
+
+        // Update profile with new image
+        await updateProfile({ profileImage: base64Img } as any);
+        await refreshUser();
+        Alert.alert("Success", "Profile photo updated!");
+      }
+    } catch (error) {
+      console.log(error);
+      Alert.alert("Error", "Failed to upload image. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -105,117 +143,139 @@ export default function ProfileScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6366F1" />
+        <ActivityIndicator size="large" color="#4F46E5" />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* STATIC HEADER (No Back Arrow) */}
-      <View style={styles.header}>
-        <View style={{ width: 40 }} /> 
-        <Text style={styles.headerTitle}>My Profile</Text>
-        <TouchableOpacity style={styles.iconButton}>
-          <Settings size={22} color="#1E293B" />
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      {/* Background Decor */}
+      <View style={styles.topBackground} />
 
-      {/* SCROLLABLE AREA */}
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Profile Hero Section */}
-        <View style={styles.heroSection}>
-          <View style={styles.avatarContainer}>
-            <Image source={{ uri: defaultAvatar }} style={styles.avatar} />
-            <TouchableOpacity 
-              style={styles.editButton}
-              onPress={() => setEditModalVisible(true)}
-            >
-              <Edit size={16} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          
-          <Text style={styles.userName}>{user?.userName || "User"}</Text>
-          
-          <View style={styles.verifiedBadge}>
-            <CheckCircle2 size={14} color="#6366F1" />
-            <Text style={styles.verifiedText}>Verified Professional</Text>
-          </View>
-
-          {/* Quick Stats Bar */}
-          <View style={styles.quickStats}>
-            <View style={styles.statItem}>
-              <Star size={18} color="#F59E0B" fill="#F59E0B" />
-              <Text style={styles.statValue}>4.9</Text>
-              <Text style={styles.statLabel}>Rating</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <CheckCircle2 size={18} color="#10B981" />
-              <Text style={styles.statValue}>24</Text>
-              <Text style={styles.statLabel}>Jobs</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <DollarSign size={18} color="#6366F1" />
-              <Text style={styles.statValue}>${user?.hourlyRate || '0'}</Text>
-              <Text style={styles.statLabel}>Hourly</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Info Cards */}
-        <View style={styles.sectionWrapper}>
-          {user?.bio && (
-            <SectionCard title="Professional Bio">
-              <Text style={styles.bioText}>{user.bio}</Text>
-            </SectionCard>
-          )}
-
-          {user?.skills && user.skills.length > 0 && (
-            <SectionCard title="Core Expertise">
-              <View style={styles.skillsContainer}>
-                {user.skills.map((skill, index) => (
-                  <SkillTag key={index} skill={skill} />
-                ))}
-              </View>
-            </SectionCard>
-          )}
-
-          <SectionCard title="Contact Information">
-            <View style={styles.contactRow}>
-              <Mail size={18} color="#64748B" />
-              <View style={styles.contactContent}>
-                <Text style={styles.contactLabel}>Email Address</Text>
-                <Text style={styles.contactValue}>{user?.email}</Text>
-              </View>
-            </View>
-            
-            {user?.phone && (
-              <View style={styles.contactRow}>
-                <Phone size={18} color="#64748B" />
-                <View style={styles.contactContent}>
-                  <Text style={styles.contactLabel}>Phone Number</Text>
-                  <Text style={styles.contactValue}>{user.phone}</Text>
-                </View>
-              </View>
-            )}
-          </SectionCard>
-
-          {/* Logout Button (Positioned at bottom of scroll) */}
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutButtonText}>Sign Out of Account</Text>
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Profile</Text>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => Alert.alert('Settings', 'Settings screen coming soon!')}
+          >
+            <Settings size={22} color="#1E293B" />
           </TouchableOpacity>
         </View>
-      </ScrollView>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Profile Card */}
+          <View style={styles.profileCard}>
+            <View style={styles.avatarWrapper}>
+              <Image source={{ uri: defaultAvatar }} style={styles.avatar} />
+              <TouchableOpacity style={styles.cameraButton} onPress={handlePickImage} disabled={isSaving}>
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Camera size={14} color="#FFF" />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.profileInfo}>
+              <Text style={styles.userName}>{user?.userName || "User"}</Text>
+              <Text style={styles.userRole}>{user?.role || "Freelancer"}</Text>
+
+              <TouchableOpacity
+                style={styles.editProfileButton}
+                onPress={() => setEditModalVisible(true)}
+              >
+                <Text style={styles.editProfileText}>Edit Profile</Text>
+                <Edit size={14} color="#4F46E5" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Stats Row */}
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>4.9<Text style={styles.statSub}>/5</Text></Text>
+                <Text style={styles.statLabel}>Rating</Text>
+              </View>
+              <View style={styles.verticalDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>${user?.hourlyRate || '0'}</Text>
+                <Text style={styles.statLabel}>Hourly</Text>
+              </View>
+              <View style={styles.verticalDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>12</Text>
+                <Text style={styles.statLabel}>Projects</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Details Sections */}
+          <View style={styles.detailsContainer}>
+            {user?.bio ? (
+              <SectionCard title="About Me">
+                <Text style={styles.bioText}>{user.bio}</Text>
+              </SectionCard>
+            ) : (
+              <SectionCard title="About Me">
+                <Text style={styles.placeholderText}>No bio added yet. Click edit to add a bio.</Text>
+              </SectionCard>
+            )}
+
+            <SectionCard title="Skills & Expertise">
+              {user?.skills && user.skills.length > 0 ? (
+                <View style={styles.skillsContainer}>
+                  {user.skills.map((skill, index) => (
+                    <SkillTag key={index} skill={skill} />
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.placeholderText}>No skills added yet.</Text>
+              )}
+            </SectionCard>
+
+            <SectionCard title="Contact Info">
+              <View style={styles.contactItem}>
+                <View style={styles.contactIcon}>
+                  <Mail size={18} color="#4F46E5" />
+                </View>
+                <View>
+                  <Text style={styles.contactLabel}>Email</Text>
+                  <Text style={styles.contactValue}>{user?.email}</Text>
+                </View>
+              </View>
+
+              {user?.phone && (
+                <View style={[styles.contactItem, { marginTop: 16 }]}>
+                  <View style={styles.contactIcon}>
+                    <Phone size={18} color="#4F46E5" />
+                  </View>
+                  <View>
+                    <Text style={styles.contactLabel}>Phone</Text>
+                    <Text style={styles.contactValue}>{user.phone}</Text>
+                  </View>
+                </View>
+              )}
+            </SectionCard>
+
+            {/* Logout Button */}
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Text style={styles.logoutButtonText}>Log Out</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.versionText}>Version 1.0.0 • Oct 2023</Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
 
       {/* Edit Profile Modal */}
-      <Modal 
-        visible={editModalVisible} 
-        transparent 
+      <Modal
+        visible={editModalVisible}
+        transparent
         animationType="slide"
         onRequestClose={() => setEditModalVisible(false)}
       >
@@ -229,58 +289,71 @@ export default function ProfileScreen() {
             </View>
 
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              <Text style={styles.inputLabel}>Display Name</Text>
-              <TextInput
-                style={styles.input}
-                value={editedUserName}
-                onChangeText={setEditedUserName}
-                placeholder="Your Name"
-              />
-
-              <Text style={styles.inputLabel}>Bio</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={editedBio}
-                onChangeText={setEditedBio}
-                multiline
-                numberOfLines={4}
-                placeholder="Tell us about yourself..."
-              />
-
-              <Text style={styles.inputLabel}>Hourly Rate ($)</Text>
-              <TextInput
-                style={styles.input}
-                value={editedHourlyRate}
-                onChangeText={setEditedHourlyRate}
-                keyboardType="decimal-pad"
-              />
-
-              <Text style={styles.inputLabel}>Skills</Text>
-              <View style={styles.addSkillRow}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Full Name</Text>
                 <TextInput
-                  style={[styles.input, { flex: 1, marginBottom: 0 }]}
-                  value={newSkill}
-                  onChangeText={setNewSkill}
-                  placeholder="Add skill"
+                  style={styles.input}
+                  value={editedUserName}
+                  onChangeText={setEditedUserName}
+                  placeholder="Your Name"
+                  placeholderTextColor="#94A3B8"
                 />
-                <TouchableOpacity onPress={handleAddSkill} style={styles.addSkillButton}>
-                  <Plus size={20} color="#6366F1" />
-                </TouchableOpacity>
-              </View>
-              
-              <View style={styles.modalSkillsList}>
-                {editedSkills.map((skill, index) => (
-                  <SkillTag 
-                    key={index} 
-                    skill={skill} 
-                    editable 
-                    onRemove={() => handleRemoveSkill(index)} 
-                  />
-                ))}
               </View>
 
-              <TouchableOpacity 
-                style={[styles.saveButton, isSaving && { opacity: 0.7 }]} 
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Bio</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={editedBio}
+                  onChangeText={setEditedBio}
+                  multiline
+                  numberOfLines={4}
+                  placeholder="Tell us about your experience..."
+                  placeholderTextColor="#94A3B8"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Hourly Rate ($)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editedHourlyRate}
+                  onChangeText={setEditedHourlyRate}
+                  keyboardType="decimal-pad"
+                  placeholder="0.00"
+                  placeholderTextColor="#94A3B8"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Skills</Text>
+                <View style={styles.addSkillRow}>
+                  <TextInput
+                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                    value={newSkill}
+                    onChangeText={setNewSkill}
+                    placeholder="Add a new skill"
+                    placeholderTextColor="#94A3B8"
+                  />
+                  <TouchableOpacity onPress={handleAddSkill} style={styles.addSkillButton}>
+                    <Plus size={20} color="#FFF" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.modalSkillsList}>
+                  {editedSkills.map((skill, index) => (
+                    <SkillTag
+                      key={index}
+                      skill={skill}
+                      editable
+                      onRemove={() => handleRemoveSkill(index)}
+                    />
+                  ))}
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.saveButton, isSaving && { opacity: 0.7 }]}
                 onPress={handleSaveProfile}
                 disabled={isSaving}
               >
@@ -288,162 +361,201 @@ export default function ProfileScreen() {
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <>
-                    <Save size={18} color="#fff" style={{marginRight: 8}} />
-                    <Text style={styles.saveButtonText}>Apply Changes</Text>
+                    <Text style={styles.saveButtonText}>Save Changes</Text>
                   </>
                 )}
               </TouchableOpacity>
+              <View style={{ height: 40 }} />
             </ScrollView>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8FAFC" },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F8FAFC" },
-  
-  header: { 
-    flexDirection: "row", 
-    justifyContent: "space-between", 
-    alignItems: "center", 
-    paddingHorizontal: 20, 
-    height: 60,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9"
-  },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: "#1E293B" },
-  iconButton: { padding: 8 },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
 
-  // Added large paddingBottom to ensure logout button clears the tab bar
-  scrollContent: { 
-    flexGrow: 1, 
-    paddingBottom: 130 
+  topBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 150,
+    backgroundColor: '#EEF2FF', // Very light indigo
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
 
-  heroSection: {
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 35,
-    backgroundColor: "#FFFFFF",
-    borderBottomLeftRadius: 35,
-    borderBottomRightRadius: 35,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
   },
-  avatarContainer: { position: "relative", marginBottom: 15 },
-  avatar: { width: 110, height: 110, borderRadius: 55, borderWidth: 3, borderColor: "#EEF2FF" },
-  editButton: {
-    position: "absolute",
+  headerTitle: { fontSize: 28, fontWeight: "800", color: "#1E293B" },
+  settingsButton: { padding: 4 },
+
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 100
+  },
+
+  profileCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 5,
+    marginBottom: 24,
+  },
+  avatarWrapper: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 4,
+    borderColor: '#F8FAFC'
+  },
+  cameraButton: {
+    position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: "#6366F1",
-    borderRadius: 15,
-    width: 34,
-    height: 34,
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#4F46E5',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 3,
-    borderColor: "#fff",
+    borderColor: '#FFFFFF',
   },
-  userName: { fontSize: 26, fontWeight: "900", color: "#1E293B" },
-  verifiedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+  profileInfo: { alignItems: 'center', marginBottom: 24 },
+  userName: { fontSize: 22, fontWeight: "800", color: "#1E293B", marginBottom: 4 },
+  userRole: { fontSize: 14, color: "#64748B", fontWeight: "600", marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  editProfileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
-    backgroundColor: "#EEF2FF",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#EEF2FF',
     borderRadius: 20,
-    marginTop: 10,
-    marginBottom: 20
   },
-  verifiedText: { fontSize: 12, color: "#6366F1", fontWeight: "700" },
-  
-  quickStats: {
-    flexDirection: "row",
-    backgroundColor: "#F1F5F9",
-    padding: 18,
-    borderRadius: 22,
-    width: '90%',
-  },
-  statItem: { flex: 1, alignItems: "center" },
-  statValue: { fontSize: 18, fontWeight: "800", color: "#1E293B" },
-  statLabel: { fontSize: 10, color: "#64748B", fontWeight: "700", textTransform: "uppercase", marginTop: 2 },
-  statDivider: { width: 1, height: 30, backgroundColor: "#CBD5E1" },
+  editProfileText: { color: "#4F46E5", fontWeight: "700", fontSize: 13 },
 
-  sectionWrapper: { paddingHorizontal: 20, marginTop: 25 },
-  bioText: { fontSize: 15, color: "#475569", lineHeight: 22 },
+  statsRow: {
+    flexDirection: 'row',
+    width: '100%',
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  statItem: { flex: 1, alignItems: 'center' },
+  statNumber: { fontSize: 18, fontWeight: "800", color: "#1E293B" },
+  statSub: { fontSize: 12, color: "#94A3B8", fontWeight: "600" },
+  statLabel: { fontSize: 12, color: "#64748B", marginTop: 4 },
+  verticalDivider: { width: 1, height: '80%', backgroundColor: '#E2E8F0' },
+
+  detailsContainer: { gap: 8 },
+  bioText: { fontSize: 15, color: "#475569", lineHeight: 24 },
+  placeholderText: { fontSize: 14, color: "#94A3B8", fontStyle: "italic" },
   skillsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  
-  contactRow: { flexDirection: "row", alignItems: "center", marginBottom: 18 },
-  contactContent: { marginLeft: 15 },
-  contactLabel: { fontSize: 12, color: "#94A3B8", fontWeight: "600" },
-  contactValue: { fontSize: 15, fontWeight: "700", color: "#1E293B" },
+
+  contactItem: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  contactIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contactLabel: { fontSize: 12, color: "#64748B", marginBottom: 2 },
+  contactValue: { fontSize: 15, color: "#1E293B", fontWeight: "600" },
 
   logoutButton: {
-    backgroundColor: "#FFF1F2",
-    paddingVertical: 18,
-    borderRadius: 18,
-    alignItems: "center",
-    marginTop: 30,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 24,
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: '#FEE2E2',
   },
-  logoutButtonText: { color: "#E11D48", fontSize: 16, fontWeight: "800" },
+  logoutButtonText: { color: '#EF4444', fontWeight: "700", fontSize: 16 },
 
-  // Modal Styling
-  modalOverlay: { flex: 1, backgroundColor: "rgba(15, 23, 42, 0.85)", justifyContent: "flex-end" },
-  modalContent: { 
-    backgroundColor: "#fff", 
-    borderTopLeftRadius: 30, 
-    borderTopRightRadius: 30, 
-    padding: 24, 
-    maxHeight: '85%' 
+  versionText: {
+    textAlign: 'center',
+    color: '#CBD5E1',
+    fontSize: 12,
+    marginBottom: 20,
+  },
+
+  // Modal Styles
+  modalOverlay: { flex: 1, backgroundColor: "rgba(15, 23, 42, 0.9)", justifyContent: "flex-end" },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 24,
+    maxHeight: '90%'
   },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 25 },
-  modalTitle: { fontSize: 22, fontWeight: "800", color: "#1E293B" },
+  modalTitle: { fontSize: 24, fontWeight: "800", color: "#1E293B" },
   closeButton: { padding: 4 },
-  modalBody: { marginBottom: 20 },
-  inputLabel: { fontWeight: "700", marginBottom: 8, color: "#475569", fontSize: 14 },
-  input: { 
-    backgroundColor: "#F8FAFC", 
-    borderRadius: 12, 
-    padding: 14, 
-    marginBottom: 18, 
-    borderWidth: 1, 
+  modalBody: { flexGrow: 1 },
+
+  inputGroup: { marginBottom: 20 },
+  inputLabel: { fontWeight: "700", marginBottom: 8, color: "#334155", fontSize: 14 },
+  input: {
+    backgroundColor: "#F8FAFC",
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
     borderColor: "#E2E8F0",
     fontSize: 16,
     color: "#1E293B"
   },
-  textArea: { height: 100, textAlignVertical: "top" },
+  textArea: { height: 120, textAlignVertical: "top" },
   addSkillRow: { flexDirection: "row", gap: 10, marginBottom: 15, alignItems: "center" },
-  addSkillButton: { 
-    backgroundColor: "#EEF2FF", 
-    width: 50, 
-    height: 50, 
-    borderRadius: 12, 
-    justifyContent: "center", 
+  addSkillButton: {
+    backgroundColor: "#4F46E5",
+    width: 54,
+    height: 54,
+    borderRadius: 14,
+    justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#C7D2FE"
-  },
-  modalSkillsList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 25 },
-  saveButton: { 
-    backgroundColor: "#6366F1", 
-    padding: 18, 
-    borderRadius: 18, 
-    alignItems: "center", 
-    flexDirection: 'row', 
-    justifyContent: 'center',
-    shadowColor: "#6366F1",
+    shadowColor: "#4F46E5",
     shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  modalSkillsList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+
+  saveButton: {
+    backgroundColor: "#4F46E5",
+    padding: 18,
+    borderRadius: 16,
+    alignItems: "center",
+    shadowColor: "#4F46E5",
+    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 6 },
     shadowRadius: 10,
-    elevation: 5
+    elevation: 8,
+    marginTop: 10,
   },
   saveButtonText: { color: "#fff", fontWeight: "800", fontSize: 16 }
 });

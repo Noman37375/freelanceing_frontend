@@ -1,5 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { LucideIcon } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { COLORS, SHADOWS, BORDER_RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 
 interface ClientStatsCardProps {
   title: string;
@@ -18,8 +20,8 @@ export default function ClientStatsCard({
 }: ClientStatsCardProps) {
   return (
     <View style={[styles.card, { backgroundColor }]}>
-      <View style={styles.iconContainer}>
-        <Icon size={24} color={iconColor} strokeWidth={2} />
+      <View style={[styles.iconContainer, { backgroundColor: `${iconColor}15` }]}>
+        <Icon size={24} color={iconColor} strokeWidth={2.5} />
       </View>
       <Text style={styles.value}>{value}</Text>
       <Text style={styles.title}>{title}</Text>
@@ -31,28 +33,33 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     minWidth: 150,
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    padding: SPACING.l,
+    borderRadius: BORDER_RADIUS.l,
+    ...SHADOWS.medium,
     alignItems: 'center',
-    margin: 8,
+    margin: SPACING.s,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   iconContainer: {
-    marginBottom: 12,
+    width: 56,
+    height: 56,
+    borderRadius: BORDER_RADIUS.l,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.m,
   },
   value: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontSize: TYPOGRAPHY.fontSize['4xl'],
+    fontWeight: TYPOGRAPHY.fontWeight.extrabold,
+    color: '#1E293B',
     marginBottom: 4,
   },
   title: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '500',
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: '#64748B',
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });

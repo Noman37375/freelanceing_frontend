@@ -2,15 +2,16 @@
 
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, Platform } from 'react-native';
-import { Home, Briefcase, Users, MessageCircle, User, FileText } from 'lucide-react-native';
+import { Home, Briefcase, Users, User, FileText } from 'lucide-react-native';
+import { COLORS } from '@/utils/constants';
 
 export default function ClientTabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#4F46E5', // Electric Indigo
-        tabBarInactiveTintColor: '#94A3B8', // Slate-400
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.gray400,
         tabBarShowLabel: true,
         tabBarLabelStyle: {
           fontSize: 11,
@@ -19,10 +20,10 @@ export default function ClientTabLayout() {
         },
         tabBarStyle: {
           position: 'absolute',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: COLORS.white,
           borderTopWidth: 0,
           elevation: 20,
-          shadowColor: '#000',
+          shadowColor: COLORS.black,
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.05,
           shadowRadius: 10,
@@ -80,18 +81,6 @@ export default function ClientTabLayout() {
       />
 
       <Tabs.Screen
-        name="messages"
-        options={{
-          title: 'Chat',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.activeIconBg]}>
-              <MessageCircle size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-            </View>
-          ),
-        }}
-      />
-
-      <Tabs.Screen
         name="profile"
         options={{
           title: 'Account',
@@ -130,6 +119,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   activeIconBg: {
-    backgroundColor: '#EEF2FF', // Very light indigo tint for active state
+    backgroundColor: COLORS.gray100,
   },
 });

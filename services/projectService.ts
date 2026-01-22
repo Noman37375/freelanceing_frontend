@@ -126,6 +126,27 @@ export const projectService = {
 
 export const proposalService = {
   /**
+   * Get proposal by ID
+   */
+  getProposalById: async (id: string): Promise<Proposal> => {
+    const response = await apiCall(`/api/v1/proposals/${id}`, {
+      method: 'GET',
+    });
+
+    const proposal =
+      response?.data?.proposal ??
+      response?.data ??
+      response?.proposal ??
+      response;
+
+    if (!proposal) {
+      throw new Error('Proposal not found');
+    }
+
+    return proposal as Proposal;
+  },
+
+  /**
    * Get all proposals for a project
    */
   getProjectProposals: async (projectId: string): Promise<Proposal[]> => {

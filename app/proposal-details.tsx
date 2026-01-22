@@ -1,233 +1,240 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  StatusBar,
-  ActivityIndicator,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import axios from "axios";
-import { API_BASE_URL } from "@/config";
-import { 
-  ArrowLeft, 
-  CheckCircle, 
-  Clock, 
-  Info, 
-  User, 
-  DollarSign, 
-  MapPin, 
-  Calendar, 
-  Trash2,
-  XCircle 
-} from "lucide-react-native";
-
-// --- FAKE DATA FALLBACK ---
-const MOCK_PROJECT: Project = {
-  id: "3",
-  title: "Landing Page Proposal",
-  client: "Soylent Corp",
-  budget: "$500",
-  deadline: "Dec 2025",
-  location: "Remote",
-  proposalStatus: "shortlisted",
-  description: "This is a fallback description shown because the database ID was not found. We need a high-converting landing page for our new organic supplement line.",
-  milestones: [],
-};
-
-interface Milestone {
-  title: string;
-  duration: string;
-  details: string;
-  pricePKR: string;
-  priceUSD: string;
-  approvalStatus: "pending" | "approved" | "inReview" | "requested" | "rejected";
-}
-
-interface Project {
-  id: string;
-  title: string;
-  budget: string;
-  deadline: string;
-  client: string;
-  description: string;
-  location: string;
-  proposalStatus: "pending" | "viewed" | "shortlisted" | "rejected" | "accepted" | "withdrawn";
-  milestones: Milestone[];
-}
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ArrowLeft, DollarSign, FileText, User } from 'lucide-react-native';
+import { Proposal } from '@/models/Project';
+import { proposalService } from '@/services/projectService';
+import { COLORS } from '@/utils/constants';
 
 export default function ProposalDetailsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const [project, setProject] = useState<Project | null>(null);
+  const { id } = useLocalSearchParams<{ id: string }>();
+
+  const [proposal, setProposal] = useState<Proposal | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchProjectDetails();
-  }, [id]);
+  const fetchProposal = useCallback(async () => {
+    if (!id) {
+      setProposal(null);
+      setError('Missing proposal id.');
+      setLoading(false);
+      return;
+    }
 
-  const fetchProjectDetails = async () => {
     try {
-      // Try to get real data from the server
-      const response = await axios.get(`${API_BASE_URL}/projects/${id}`);
-      setProject(response.data);
-    } catch (error) {
-      console.log("Database ID not found, using Mock Data for UI testing.");
-      // If the server fails or ID doesn't exist, use the Fake Data
-      setProject(MOCK_PROJECT);
+      setLoading(true);
+      setError(null);
+      const fetched = await proposalService.getProposalById(id);
+      setProposal(fetched);
+    } catch (e: any) {
+      setProposal(null);
+      setError(e?.message || 'Failed to load proposal.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const handleWithdrawProposal = async () => {
-    Alert.alert(
-      "Withdraw Proposal",
-      "Are you sure you want to withdraw? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Withdraw",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setIsWithdrawing(true);
-              await axios.patch(`${API_BASE_URL}/projects/${id}`, {
-                proposalStatus: "withdrawn",
-              });
-              setProject((prev) => (prev ? { ...prev, proposalStatus: "withdrawn" } : null));
-              Alert.alert("Success", "Proposal withdrawn.");
-            } catch (e) {
-              Alert.alert("Error", "Failed to withdraw.");
-            } finally {
-              setIsWithdrawing(false);
-            }
-          },
-        },
-      ]
-    );
-  };
+  useEffect(() => {
+    void fetchProposal();
+  }, [fetchProposal]);
+
+  const createdLabel = useMemo(() => {
+    if (!proposal?.createdAt) return null;
+    const d = new Date(proposal.createdAt);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleDateString();
+  }, [proposal?.createdAt]);
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#6366F1" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading proposal...</Text>
       </View>
     );
   }
 
-  // Final safety check: if both API and Mock fail, show an error UI instead of a white screen
-  if (!project) {
+  if (error) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <XCircle color="#DC2626" size={40} />
-        <Text style={{color: '#FFF', marginTop: 10}}>Project not found</Text>
+      <View style={styles.errorContainer}>
+        <View style={styles.errorCard}>
+          <Text style={styles.errorTitle}>Couldn’t load proposal</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
+          <View style={styles.errorActions}>
+            <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()} activeOpacity={0.85}>
+              <Text style={styles.secondaryButtonText}>Go Back</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.primaryButton} onPress={fetchProposal} activeOpacity={0.85}>
+              <Text style={styles.primaryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     );
   }
 
-  const isWithdrawn = project.proposalStatus === "withdrawn";
+  if (!proposal) {
+    return (
+      <View style={styles.errorContainer}>
+        <View style={styles.errorCard}>
+          <Text style={styles.errorTitle}>Proposal not found</Text>
+          <Text style={styles.errorMessage}>The proposal may have been removed.</Text>
+          <TouchableOpacity style={styles.primaryButton} onPress={() => router.back()} activeOpacity={0.85}>
+            <Text style={styles.primaryButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  const title = proposal.project?.title || 'Proposal Details';
+  const freelancerName = proposal.freelancer?.userName || proposal.freelancer?.name || 'Freelancer';
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-
-      {/* HEADER SECTION */}
-      <View style={styles.darkHeader}>
-        <SafeAreaView>
-          <View style={styles.navRow}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <ArrowLeft color="#F8FAFC" size={22} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle} numberOfLines={1}>{project.title}</Text>
-          </View>
-
-          <View style={styles.summaryGrid}>
-            <View style={styles.summaryItem}><User size={14} color="#C7D2FE" /><Text style={styles.summaryText}>{project.client}</Text></View>
-            <View style={styles.summaryItem}><DollarSign size={14} color="#C7D2FE" /><Text style={styles.summaryText}>{project.budget}</Text></View>
-            <View style={styles.summaryItem}><MapPin size={14} color="#C7D2FE" /><Text style={styles.summaryText}>{project.location}</Text></View>
-            <View style={styles.summaryItem}><Calendar size={14} color="#C7D2FE" /><Text style={styles.summaryText}>{project.deadline}</Text></View>
-          </View>
-        </SafeAreaView>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.85}>
+          <ArrowLeft size={22} color={COLORS.gray800} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {title}
+        </Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      {/* CONTENT AREA */}
-      <ScrollView
-        style={styles.contentBody}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
-      >
-        {/* Status Alert Banner */}
-        {isWithdrawn && (
-          <View style={styles.withdrawnBanner}>
-            <XCircle color="#DC2626" size={18} />
-            <Text style={styles.withdrawnBannerText}>This proposal has been withdrawn.</Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <User size={18} color={COLORS.gray500} />
+            <Text style={styles.rowLabel}>Freelancer</Text>
+            <Text style={styles.rowValue} numberOfLines={1}>
+              {freelancerName}
+            </Text>
           </View>
-        )}
 
-        <Text style={styles.sectionTitle}>Project Overview</Text>
-        <View style={styles.descriptionCard}>
-          <Text style={styles.descriptionText}>{project.description}</Text>
-          
-          {!isWithdrawn && project.proposalStatus !== "accepted" && (
-            <TouchableOpacity 
-                style={styles.withdrawButton} 
-                onPress={handleWithdrawProposal}
-                disabled={isWithdrawing}
-            >
-              {isWithdrawing ? (
-                <ActivityIndicator size="small" color="#DC2626" />
-              ) : (
-                <>
-                  <Trash2 size={16} color="#DC2626" />
-                  <Text style={styles.withdrawText}>Withdraw Proposal</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          )}
+          <View style={styles.row}>
+            <DollarSign size={18} color={COLORS.gray500} />
+            <Text style={styles.rowLabel}>Bid</Text>
+            <Text style={styles.rowValue}>${proposal.bidAmount.toFixed(2)}</Text>
+          </View>
+
+          <View style={styles.row}>
+            <FileText size={18} color={COLORS.gray500} />
+            <Text style={styles.rowLabel}>Status</Text>
+            <Text style={styles.rowValue}>{proposal.status}</Text>
+          </View>
+
+          {createdLabel && <Text style={styles.metaText}>Submitted {createdLabel}</Text>}
         </View>
 
+        <Text style={styles.sectionTitle}>Cover Letter</Text>
+        <View style={styles.card}>
+          <Text style={styles.paragraph}>
+            {proposal.coverLetter?.trim() ? proposal.coverLetter : 'No cover letter provided.'}
+          </Text>
+        </View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0F172A" },
-  center: { justifyContent: "center", alignItems: "center" },
-  darkHeader: { paddingHorizontal: 20, paddingBottom: 25 },
-  navRow: { flexDirection: "row", alignItems: "center", marginTop: 10, gap: 12 },
-  backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: "#1E293B", justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#334155" },
-  headerTitle: { fontSize: 22, fontWeight: "800", color: "#F8FAFC", flex: 1 },
-  summaryGrid: { flexDirection: "row", flexWrap: "wrap", marginTop: 20, gap: 10 },
-  summaryItem: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#1E293B", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: "#334155" },
-  summaryText: { color: "#F8FAFC", fontSize: 12, fontWeight: "600" },
-  contentBody: { flex: 1, backgroundColor: "#F8FAFC", borderTopLeftRadius: 32, borderTopRightRadius: 32 },
-  sectionTitle: { fontSize: 18, fontWeight: "800", color: "#1E293B", marginBottom: 12, marginTop: 10 },
-  descriptionCard: { backgroundColor: "#FFF", padding: 16, borderRadius: 20, marginBottom: 25, borderWidth: 1, borderColor: "#E2E8F0" },
-  descriptionText: { fontSize: 14, color: "#475569", lineHeight: 22 },
-  withdrawButton: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 15, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  withdrawText: { color: "#DC2626", fontWeight: "700", fontSize: 13 },
-  withdrawnBanner: { backgroundColor: "#FEF2F2", padding: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 15, borderWidth: 1, borderColor: '#FEE2E2' },
-  withdrawnBannerText: { color: "#DC2626", fontWeight: "700", fontSize: 13 },
-  milestoneCard: { backgroundColor: "#FFF", borderRadius: 20, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: "#E2E8F0" },
-  milestoneHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  milestoneIconTitle: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
-  milestoneTitle: { fontSize: 16, fontWeight: "700", color: "#1E293B" },
-  milestonePrice: { fontSize: 16, fontWeight: "800", color: "#6366F1" },
-  approvedText: { textDecorationLine: "line-through", color: "#94A3B8" },
-  milestoneBody: { marginBottom: 15 },
-  milestoneSubtext: { fontSize: 13, color: "#64748B", fontWeight: "600", marginBottom: 6 },
-  detailRow: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
-  detailDescription: { fontSize: 13, color: "#94A3B8", flex: 1, lineHeight: 18 },
-  statusTag: { paddingVertical: 8, borderRadius: 10 },
-  statusText: { textAlign: "center", fontWeight: "800", fontSize: 11, letterSpacing: 0.5 },
-  approvedCardBorder: { borderLeftWidth: 5, borderLeftColor: "#10B981" },
-  activeCardBorder: { borderLeftWidth: 5, borderLeftColor: "#6366F1" },
-  rejectedCardBorder: { borderLeftWidth: 5, borderLeftColor: "#DC2626" },
+  container: { flex: 1, backgroundColor: COLORS.gray100 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray200,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: COLORS.gray100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.gray800,
+    marginHorizontal: 12,
+  },
+  content: { padding: 20, paddingBottom: 40 },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.gray800,
+    marginBottom: 10,
+    marginTop: 14,
+  },
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+  },
+  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
+  rowLabel: { color: COLORS.gray500, fontSize: 12, fontWeight: '700', width: 70 },
+  rowValue: {
+    flex: 1,
+    color: COLORS.gray800,
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'right',
+  },
+  metaText: { marginTop: 6, color: COLORS.gray500, fontSize: 12, fontWeight: '600' },
+  paragraph: { color: COLORS.gray700, fontSize: 14, lineHeight: 20 },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: COLORS.gray100,
+  },
+  loadingText: { marginTop: 10, color: COLORS.gray500, fontSize: 14, fontWeight: '600' },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: COLORS.gray100,
+  },
+  errorCard: {
+    width: '100%',
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+  },
+  errorTitle: { fontSize: 18, fontWeight: '800', color: COLORS.gray800, marginBottom: 6 },
+  errorMessage: { fontSize: 14, color: COLORS.gray600, lineHeight: 20 },
+  errorActions: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  primaryButton: {
+    flex: 1,
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  primaryButtonText: { color: COLORS.white, fontSize: 14, fontWeight: '800' },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: COLORS.gray100,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+  },
+  secondaryButtonText: { color: COLORS.gray800, fontSize: 14, fontWeight: '800' },
 });

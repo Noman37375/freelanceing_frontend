@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Clock, DollarSign, User, Zap, Bookmark } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Project, getProjectDisplayStatus } from '@/models/Project';
+import { COLORS, SHADOWS, BORDER_RADIUS, SPACING, TYPOGRAPHY, GRADIENTS } from '@/constants/theme';
 
 const timeAgo = (timestamp?: string) => {
   if (!timestamp) return 'Not specified';
@@ -26,19 +28,42 @@ interface ProjectCardProps {
 export default function ProjectCard({ project }: ProjectCardProps) {
   const router = useRouter();
 
+  const statusDisplay = getProjectDisplayStatus(project);
+  const isActive = statusDisplay === 'Active';
+  const isInProgress = statusDisplay === 'In Progress';
+
   return (
     <TouchableOpacity
       style={styles.container}
       onPress={() => router.push(`/project-details?id=${project.id}`)}
-      activeOpacity={0.9}
+      activeOpacity={0.95}
     >
-      {/* Title */}
-      <Text style={styles.title}>{project.title}</Text>
+      {/* Header with Status Badge */}
+      <View style={styles.headerRow}>
+        <Text style={styles.title} numberOfLines={2}>{project.title}</Text>
+        {project.status && (
+          <View style={[
+            styles.statusBadge,
+            isActive && styles.statusActive,
+            isInProgress && styles.statusInProgress
+          ]}>
+            <Text style={[
+              styles.statusText,
+              isActive && styles.statusTextActive,
+              isInProgress && styles.statusTextInProgress
+            ]}>
+              {statusDisplay}
+            </Text>
+          </View>
+        )}
+      </View>
 
       {/* Posted by */}
       {project.client && (
         <View style={styles.row}>
-          <User size={14} color="#6B7280" />
+          <View style={styles.iconBg}>
+            <User size={12} color="#64748B" />
+          </View>
           <Text style={styles.metaText}>
             Posted by {project.client.userName || 'Unknown'}
           </Text>
@@ -53,16 +78,22 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       {/* Meta Information Badges */}
       <View style={styles.infoRow}>
         <View style={styles.infoItem}>
-          <DollarSign size={16} color="#10B981" />
-          <Text style={styles.budget}>
-            ${project.budget || 'Not specified'}
-          </Text>
+          <View style={[styles.infoBadge, { backgroundColor: '#ECFDF5' }]}>
+            <DollarSign size={14} color={COLORS.success} />
+            <Text style={[styles.infoText, { color: COLORS.success }]}>
+              ${project.budget || 'Not specified'}
+            </Text>
+          </View>
         </View>
 
         {project.createdAt && (
           <View style={styles.infoItem}>
-            <Clock size={16} color="#F59E0B" />
-            <Text style={styles.postedTime}>{timeAgo(project.createdAt)}</Text>
+            <View style={[styles.infoBadge, { backgroundColor: '#FEF3C7' }]}>
+              <Clock size={14} color={COLORS.warning} />
+              <Text style={[styles.infoText, { color: COLORS.warning }]}>
+                {timeAgo(project.createdAt)}
+              </Text>
+            </View>
           </View>
         )}
       </View>
@@ -81,32 +112,33 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         </View>
       )}
 
-      {/* Status Badge */}
-      {project.status && (
-        <View style={[styles.statusBadge, getProjectDisplayStatus(project) === 'Active' && styles.statusActive, getProjectDisplayStatus(project) === 'In Progress' && styles.statusInProgress]}>
-          <Text style={[styles.statusText, getProjectDisplayStatus(project) === 'Active' && styles.statusTextActive, getProjectDisplayStatus(project) === 'In Progress' && styles.statusTextInProgress]}>
-            {getProjectDisplayStatus(project)}
-          </Text>
-        </View>
-      )}
-
       {/* Action Footer */}
       <View style={styles.footer}>
         <TouchableOpacity
-          style={styles.applyButton}
+          style={styles.applyButtonContainer}
           onPress={(e) => {
             e.stopPropagation();
             router.push(`/Bid-now?id=${project.id}`);
           }}
+          activeOpacity={0.9}
         >
-          <Text style={styles.applyButtonText}>Place a Bid</Text>
+          <LinearGradient
+            colors={GRADIENTS.primary as any}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.applyButton}
+          >
+            <Zap size={16} color="#FFFFFF" fill="#FFFFFF" />
+            <Text style={styles.applyButtonText}>Place a Bid</Text>
+          </LinearGradient>
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.saveButton}
           onPress={(e) => e.stopPropagation()}
+          activeOpacity={0.7}
         >
-          <Text style={styles.saveButtonText}>Save</Text>
+          <Bookmark size={16} color="#64748B" />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -115,44 +147,146 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 4,
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.l,
+    padding: SPACING.l,
+    marginBottom: SPACING.m,
+    ...SHADOWS.medium,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  title: { fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 6 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
-  metaText: { fontSize: 13, color: '#6B7280' },
-  description: { fontSize: 14, color: '#4B5563', marginBottom: 10, lineHeight: 20 },
-  infoRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', gap: 16, marginBottom: 12 },
-  infoItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  budget: { fontSize: 14, fontWeight: '600', color: '#10B981' },
-  postedTime: { fontSize: 13, fontWeight: '500', color: '#F59E0B' },
-  skills: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14, alignItems: 'center' },
-  skillTag: { backgroundColor: '#F3F4F6', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 14 },
-  skillText: { fontSize: 12, fontWeight: '500', color: '#374151' },
-  moreTags: { fontSize: 12, color: '#6B7280', fontStyle: 'italic' },
-  statusBadge: { 
-    alignSelf: 'flex-start', 
-    paddingHorizontal: 8, 
-    paddingVertical: 4, 
-    borderRadius: 12, 
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: SPACING.s,
+    gap: SPACING.m,
+  },
+  title: {
+    flex: 1,
+    fontSize: TYPOGRAPHY.fontSize.lg,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: '#111827',
+    lineHeight: TYPOGRAPHY.lineHeight.tight * TYPOGRAPHY.fontSize.lg,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.s,
+    marginBottom: SPACING.s
+  },
+  iconBg: {
+    width: 20,
+    height: 20,
+    borderRadius: BORDER_RADIUS.s,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  metaText: {
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: '#6B7280',
+    fontWeight: TYPOGRAPHY.fontWeight.medium,
+  },
+  description: {
+    fontSize: TYPOGRAPHY.fontSize.base,
+    color: '#4B5563',
+    marginBottom: SPACING.m,
+    lineHeight: TYPOGRAPHY.lineHeight.relaxed * TYPOGRAPHY.fontSize.base,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.s,
+    marginBottom: SPACING.m
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  infoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: SPACING.m,
+    paddingVertical: 6,
+    borderRadius: BORDER_RADIUS.m,
+  },
+  infoText: {
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
+  },
+  skills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.s,
+    marginBottom: SPACING.m,
+    alignItems: 'center'
+  },
+  skillTag: {
     backgroundColor: '#F3F4F6',
-    marginBottom: 8,
+    paddingHorizontal: SPACING.m,
+    paddingVertical: 6,
+    borderRadius: BORDER_RADIUS.m,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  skillText: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
+    color: '#374151'
+  },
+  moreTags: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: '#6B7280',
+    fontStyle: 'italic',
+    fontWeight: TYPOGRAPHY.fontWeight.medium,
+  },
+  statusBadge: {
+    paddingHorizontal: SPACING.m,
+    paddingVertical: 4,
+    borderRadius: BORDER_RADIUS.m,
+    backgroundColor: '#F3F4F6',
   },
   statusActive: { backgroundColor: '#D1FAE5' },
   statusInProgress: { backgroundColor: '#DBEAFE' },
-  statusText: { fontSize: 11, fontWeight: '600', color: '#6B7280' },
-  statusTextActive: { color: '#10B981' },
-  statusTextInProgress: { color: '#3B82F6' },
-  footer: { flexDirection: 'row', gap: 12 },
-  applyButton: { flex: 1, backgroundColor: '#2563EB', paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
-  applyButtonText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
-  saveButton: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10, borderWidth: 1, borderColor: '#D1D5DB', alignItems: 'center' },
-  saveButtonText: { fontSize: 14, fontWeight: '500', color: '#374151' },
+  statusText: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: '#6B7280'
+  },
+  statusTextActive: { color: COLORS.success },
+  statusTextInProgress: { color: COLORS.info },
+  footer: {
+    flexDirection: 'row',
+    gap: SPACING.m,
+    marginTop: SPACING.s,
+  },
+  applyButtonContainer: {
+    flex: 1,
+    borderRadius: BORDER_RADIUS.m,
+    overflow: 'hidden',
+  },
+  applyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.s,
+    paddingVertical: 12,
+  },
+  applyButtonText: {
+    fontSize: TYPOGRAPHY.fontSize.base,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: COLORS.white
+  },
+  saveButton: {
+    paddingVertical: 12,
+    paddingHorizontal: SPACING.l,
+    borderRadius: BORDER_RADIUS.m,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FAFAFA',
+  },
 });

@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  StyleSheet, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
   FlatList,
   ActivityIndicator,
   RefreshControl,
-  Alert
+  Alert,
+  StatusBar
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Search, Filter } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import ProjectCard from '@/components/ProjectCard';
 import { projectService } from '@/services/projectService';
@@ -72,99 +73,197 @@ export default function FindProjectsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* 🔙 Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Find Projects</Text>
-      </View>
-
-      {/* 🔎 Search Bar */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          placeholder="Search projects..."
-          value={searchText}
-          onChangeText={setSearchText}
-          style={styles.searchInput}
-        />
-      </View>
-
-      {/* 🎯 Filter Buttons */}
-      <View style={styles.filterContainer}>
-        {['All', 'Web Development', 'UI/UX Design', 'Mobile App', 'Backend'].map((type) => (
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* 🔙 Header */}
+        <View style={styles.header}>
           <TouchableOpacity
-            key={type}
-            style={[
-              styles.filterButton,
-              filterType === type && styles.filterButtonActive,
-            ]}
-            onPress={() => setFilterType(type)}
+            onPress={() => router.back()}
+            style={styles.backButton}
           >
-            <Text
-              style={[
-                styles.filterButtonText,
-                filterType === type && styles.filterButtonTextActive,
-              ]}
-            >
-              {type}
-            </Text>
+            <ArrowLeft size={24} color="#1E293B" />
           </TouchableOpacity>
-        ))}
-      </View>
+          <Text style={styles.headerTitle}>Find Projects</Text>
+          <View style={{ width: 40 }} />
+        </View>
 
-      {/* 🧩 Project List */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loadingText}>Loading projects...</Text>
+        {/* 🔎 Search Bar */}
+        <View style={styles.searchSection}>
+          <View style={styles.searchBarWrapper}>
+            <Search size={20} color="#94A3B8" />
+            <TextInput
+              placeholder="Search projects..."
+              placeholderTextColor="#94A3B8"
+              value={searchText}
+              onChangeText={setSearchText}
+              style={styles.searchInput}
+            />
+          </View>
         </View>
-      ) : filteredProjects.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No projects found</Text>
-          <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+
+        {/* 🎯 Filter Buttons (Horizontal Scroll) */}
+        <View style={styles.filterSection}>
+          <FlatList
+            horizontal
+            data={['All', 'Web Development', 'UI/UX Design', 'Mobile App', 'Backend', 'Data Science']}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterListContent}
+            keyExtractor={(item) => item}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  filterType === item && styles.filterButtonActive,
+                ]}
+                onPress={() => setFilterType(item)}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    filterType === item && styles.filterButtonTextActive,
+                  ]}
+                >
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
         </View>
-      ) : (
-        <FlatList
-          data={filteredProjects}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => router.push(`/project-details?id=${item.id}` as any)}>
-              <ProjectCard project={item} />
-            </TouchableOpacity>
-          )}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        />
-      )}
-    </SafeAreaView>
+
+        {/* 🧩 Project List */}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4F46E5" />
+            <Text style={styles.loadingText}>Searching available projects...</Text>
+          </View>
+        ) : filteredProjects.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIcon}>
+              <Search size={40} color="#CBD5E1" />
+            </View>
+            <Text style={styles.emptyText}>No projects found</Text>
+            <Text style={styles.emptySubtext}>Try adjusting your search or filters</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredProjects}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
+                <ProjectCard project={item} />
+              </View>
+            )}
+            contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#4F46E5']}
+                tintColor="#4F46E5"
+              />
+            }
+          />
+        )}
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#111827' },
-  searchContainer: { marginHorizontal: 16, marginBottom: 12 },
-  searchInput: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    justifyContent: 'space-between',
   },
-  filterContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, marginBottom: 16 },
-  filterButton: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: '#FFFFFF' },
-  filterButtonActive: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' },
-  filterButtonText: { color: '#374151', fontWeight: '600' },
-  filterButtonTextActive: { color: '#FFFFFF' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 },
-  loadingText: { marginTop: 12, color: '#6B7280', fontSize: 14 },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
-  emptyText: { fontSize: 18, fontWeight: '600', color: '#374151', marginBottom: 8 },
-  emptySubtext: { fontSize: 14, color: '#6B7280' },
+  backButton: {
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B' },
+
+  searchSection: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  searchBarWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 16,
+    color: '#1E293B',
+  },
+
+  filterSection: {
+    marginBottom: 10,
+    height: 44,
+  },
+  filterListContent: {
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  filterButton: {
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginRight: 8,
+  },
+  filterButtonActive: {
+    backgroundColor: '#4F46E5',
+    borderColor: '#4F46E5'
+  },
+  filterButtonText: {
+    color: '#64748B',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  filterButtonTextActive: {
+    color: '#FFFFFF'
+  },
+
+  listContent: {
+    paddingTop: 10,
+    paddingBottom: 40,
+  },
+
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 16, color: '#64748B', fontSize: 14, fontWeight: '500' },
+
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -40 },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emptyText: { fontSize: 18, fontWeight: '700', color: '#1E293B', marginBottom: 8 },
+  emptySubtext: { fontSize: 14, color: '#94A3B8' },
 });

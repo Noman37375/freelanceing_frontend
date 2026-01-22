@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -11,16 +11,23 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, X } from "lucide-react-native";
+import ScreenHeader from "@/components/ScreenHeader";
 import { useRouter } from "expo-router";
 import { projectService } from "@/services/projectService";
 import { useAuth } from "@/contexts/AuthContext";
+import { COLORS, PROJECT_CATEGORIES } from "@/utils/constants";
 
 export default function CreateProjectScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+
+  const descriptionRef = useRef<TextInput>(null);
+  const budgetRef = useRef<TextInput>(null);
+  const locationRef = useRef<TextInput>(null);
+  const durationRef = useRef<TextInput>(null);
+  const tagsRef = useRef<TextInput>(null);
 
   // Form fields
   const [title, setTitle] = useState("");
@@ -32,14 +39,12 @@ export default function CreateProjectScreen() {
   const [tags, setTags] = useState("");
   const [tagsArray, setTagsArray] = useState<string[]>([]);
 
-  const categories = [
-    "Design",
-    "Development",
-    "Writing",
-    "Marketing",
-    "Data",
-    "Other",
-  ];
+  const categories = PROJECT_CATEGORIES;
+
+  const budgetValue = useMemo(() => parseFloat(budget), [budget]);
+  const isBudgetValid = Number.isFinite(budgetValue) && budgetValue > 0;
+  const isFormValid = title.trim().length > 0 && description.trim().length > 0 && isBudgetValid;
+  const canSubmit = !loading && isFormValid && user?.role === "Client";
 
   // Convert tags string to array
   const handleTagsChange = (text: string) => {
@@ -51,7 +56,14 @@ export default function CreateProjectScreen() {
     setTagsArray(tagList);
   };
 
+  const handleBudgetChange = (text: string) => {
+    // Keep only digits and '.' (simple, mobile-friendly)
+    const sanitized = text.replace(/[^0-9.]/g, "");
+    setBudget(sanitized);
+  };
+
   const handleSubmit = async () => {
+    setAttemptedSubmit(true);
     // Validation
     if (!title.trim()) {
       return Alert.alert("Error", "Please enter a project title");
@@ -75,7 +87,7 @@ export default function CreateProjectScreen() {
       const projectData = {
         title: title.trim(),
         description: description.trim(),
-        budget: parseFloat(budget),
+        budget: budgetValue,
         location: location.trim() || undefined,
         category: category || undefined,
         duration: duration.trim() || undefined,
@@ -87,7 +99,13 @@ export default function CreateProjectScreen() {
       Alert.alert("Success", "Project created successfully!", [
         {
           text: "OK",
-          onPress: () => router.replace(`/project-details?id=${newProject.id}`),
+          onPress: () =>
+            router.replace(
+              {
+                pathname: "/project-details",
+                params: { id: newProject.id },
+              } as any
+            ),
         },
       ]);
     } catch (error: any) {
@@ -99,19 +117,9 @@ export default function CreateProjectScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <ArrowLeft size={24} color="#111827" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Create Project</Text>
-          <View style={{ width: 24 }} />
-        </View>
+    <View style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+        <ScreenHeader title="Create Project" showBackButton />
 
         <ScrollView
           style={styles.scrollView}
@@ -127,13 +135,19 @@ export default function CreateProjectScreen() {
               value={title}
               onChangeText={setTitle}
               maxLength={100}
+              returnKeyType="next"
+              onSubmitEditing={() => descriptionRef.current?.focus()}
             />
+            {attemptedSubmit && title.trim().length === 0 && (
+              <Text style={styles.helperError}>Title is required.</Text>
+            )}
           </View>
 
           {/* Description */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Description *</Text>
             <TextInput
+              ref={descriptionRef}
               style={[styles.input, styles.textArea]}
               placeholder="Describe your project in detail..."
               value={description}
@@ -142,18 +156,27 @@ export default function CreateProjectScreen() {
               numberOfLines={6}
               textAlignVertical="top"
             />
+            {attemptedSubmit && description.trim().length === 0 && (
+              <Text style={styles.helperError}>Description is required.</Text>
+            )}
           </View>
 
           {/* Budget */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Budget (USD) *</Text>
             <TextInput
+              ref={budgetRef}
               style={styles.input}
               placeholder="e.g. 500"
               value={budget}
-              onChangeText={setBudget}
-              keyboardType="numeric"
+              onChangeText={handleBudgetChange}
+              keyboardType={Platform.OS === "ios" ? "decimal-pad" : "numeric"}
+              returnKeyType="next"
+              onSubmitEditing={() => locationRef.current?.focus()}
             />
+            {attemptedSubmit && !isBudgetValid && (
+              <Text style={styles.helperError}>Enter a budget greater than 0.</Text>
+            )}
           </View>
 
           {/* Category */}
@@ -186,10 +209,13 @@ export default function CreateProjectScreen() {
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Location</Text>
             <TextInput
+              ref={locationRef}
               style={styles.input}
               placeholder="e.g. Remote, Karachi, Lahore"
               value={location}
               onChangeText={setLocation}
+              returnKeyType="next"
+              onSubmitEditing={() => durationRef.current?.focus()}
             />
           </View>
 
@@ -197,10 +223,13 @@ export default function CreateProjectScreen() {
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Estimated Duration</Text>
             <TextInput
+              ref={durationRef}
               style={styles.input}
               placeholder="e.g. 2 weeks, 1 month"
               value={duration}
               onChangeText={setDuration}
+              returnKeyType="next"
+              onSubmitEditing={() => tagsRef.current?.focus()}
             />
           </View>
 
@@ -208,10 +237,12 @@ export default function CreateProjectScreen() {
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Skills/Tags (comma-separated)</Text>
             <TextInput
+              ref={tagsRef}
               style={styles.input}
               placeholder="e.g. React Native, JavaScript, UI/UX"
               value={tags}
               onChangeText={handleTagsChange}
+              returnKeyType="done"
             />
             {tagsArray.length > 0 && (
               <View style={styles.tagsContainer}>
@@ -226,41 +257,35 @@ export default function CreateProjectScreen() {
 
           {/* Submit Button */}
           <TouchableOpacity
-            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+            style={[
+              styles.submitButton,
+              (!canSubmit || loading) && styles.submitButtonDisabled,
+            ]}
             onPress={handleSubmit}
-            disabled={loading}
+            disabled={!canSubmit}
           >
             {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={COLORS.white} />
             ) : (
               <Text style={styles.submitButtonText}>Create Project</Text>
             )}
           </TouchableOpacity>
+
+          {user?.role && user.role !== "Client" && (
+            <Text style={styles.helperInfo}>
+              Only Client accounts can create projects.
+            </Text>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#111827",
+    backgroundColor: COLORS.gray50,
   },
   scrollView: {
     flex: 1,
@@ -275,17 +300,30 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#374151",
+    color: COLORS.gray700,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: COLORS.gray200,
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
-    color: "#111827",
+    color: COLORS.gray900,
+  },
+  helperError: {
+    marginTop: 6,
+    color: COLORS.error,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  helperInfo: {
+    marginTop: 12,
+    color: COLORS.gray500,
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
   },
   textArea: {
     height: 120,
@@ -300,21 +338,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: COLORS.gray100,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: COLORS.gray200,
   },
   categoryButtonActive: {
-    backgroundColor: "#3B82F6",
-    borderColor: "#3B82F6",
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   categoryText: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#374151",
+    color: COLORS.gray700,
   },
   categoryTextActive: {
-    color: "#FFFFFF",
+    color: COLORS.white,
   },
   tagsContainer: {
     flexDirection: "row",
@@ -323,23 +361,23 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   tag: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: COLORS.gray100,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
   tagText: {
     fontSize: 12,
-    color: "#2563EB",
+    color: COLORS.primaryDark,
     fontWeight: "500",
   },
   submitButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: COLORS.primary,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
     marginTop: 20,
-    shadowColor: "#3B82F6",
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -349,7 +387,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   submitButtonText: {
-    color: "#FFFFFF",
+    color: COLORS.white,
     fontSize: 16,
     fontWeight: "600",
   },

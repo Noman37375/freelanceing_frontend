@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { projectService } from '@/services/projectService';
 import { Project, getProjectDisplayStatus } from '@/models/Project';
 import { disputeService } from '@/services/disputeService';
+import { COLORS } from '@/utils/constants';
 
 export default function ClientHome() {
   const router = useRouter();
@@ -74,7 +75,7 @@ export default function ClientHome() {
   if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <ActivityIndicator size="large" color={COLORS.primary} />
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
@@ -109,7 +110,7 @@ export default function ClientHome() {
               title="Projects"
               value={stats.total.toString()}
               icon={Briefcase}
-              iconColor="#3B82F6"
+              iconColor={COLORS.primary}
             />
           </TouchableOpacity>
 
@@ -121,21 +122,18 @@ export default function ClientHome() {
               title="Total Spent"
               value={`$${(stats.totalSpent / 1000).toFixed(1)}K`}
               icon={DollarSign}
-              iconColor="#10B981"
+              iconColor={COLORS.success}
             />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => router.push('/(client-tabs)/messages' as any)}
-          >
+          <View style={{ opacity: 0.55 }}>
             <StatsCard
               title="Messages"
               value={stats.messages.toString()}
               icon={MessageSquare}
-              iconColor="#F59E0B"
+              iconColor={COLORS.accent}
             />
-          </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
             activeOpacity={0.8}
@@ -145,7 +143,7 @@ export default function ClientHome() {
               title="Disputes"
               value={stats.disputes.toString()}
               icon={AlertCircle}
-              iconColor="#EF4444"
+              iconColor={COLORS.error}
             />
           </TouchableOpacity>
         </View>
@@ -159,8 +157,8 @@ export default function ClientHome() {
             style={styles.actionButton}
             onPress={() => router.push('/create-project' as any)}
           >
-            <View style={[styles.actionIconContainer, { backgroundColor: '#3B82F6' }]}>
-              <Plus size={24} color="#FFFFFF" strokeWidth={2} />
+            <View style={[styles.actionIconContainer, { backgroundColor: COLORS.primary }]}>
+              <Plus size={24} color={COLORS.white} strokeWidth={2} />
             </View>
             <Text style={styles.actionTitle}>Post Project</Text>
             <Text style={styles.actionSubtitle}>Find the right talent</Text>
@@ -170,8 +168,8 @@ export default function ClientHome() {
             style={styles.actionButton}
             onPress={() => router.push('/(client-tabs)/freelancers' as any)}
           >
-            <View style={[styles.actionIconContainer, { backgroundColor: '#10B981' }]}>
-              <Search size={24} color="#FFFFFF" strokeWidth={2} />
+            <View style={[styles.actionIconContainer, { backgroundColor: COLORS.success }]}>
+              <Search size={24} color={COLORS.white} strokeWidth={2} />
             </View>
             <Text style={styles.actionTitle}>Find Freelancers</Text>
             <Text style={styles.actionSubtitle}>Browse top talent</Text>
@@ -224,56 +222,56 @@ export default function ClientHome() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
+  container: { flex: 1, backgroundColor: COLORS.gray100 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
     paddingTop: 60,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     elevation: 3,
   },
-  greeting: { fontSize: 14, color: '#6B7280', fontWeight: '500' },
-  userName: { fontSize: 24, fontWeight: '700', color: '#1F2937', marginTop: 4 },
+  greeting: { fontSize: 14, color: COLORS.gray500, fontWeight: '500' },
+  userName: { fontSize: 24, fontWeight: '700', color: COLORS.gray800, marginTop: 4 },
   section: { padding: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: COLORS.gray800, marginBottom: 16 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  viewAllText: { fontSize: 14, color: '#3B82F6', fontWeight: '600' },
+  viewAllText: { fontSize: 14, color: COLORS.primary, fontWeight: '600' },
   statsContainer: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -8 },
   actionsContainer: { flexDirection: 'row', gap: 12 },
   actionButton: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderRadius: 12,
     padding: 20,
     alignItems: 'center',
     elevation: 3,
   },
   actionIconContainer: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  actionTitle: { fontSize: 16, fontWeight: '600', color: '#1F2937', marginBottom: 4, textAlign: 'center' },
-  actionSubtitle: { fontSize: 12, color: '#6B7280', textAlign: 'center' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' },
-  loadingText: { marginTop: 12, color: '#6B7280', fontSize: 14 },
+  actionTitle: { fontSize: 16, fontWeight: '600', color: COLORS.gray800, marginBottom: 4, textAlign: 'center' },
+  actionSubtitle: { fontSize: 12, color: COLORS.gray500, textAlign: 'center' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.gray100 },
+  loadingText: { marginTop: 12, color: COLORS.gray500, fontSize: 14 },
   emptyContainer: { 
-    backgroundColor: '#FFFFFF', 
+    backgroundColor: COLORS.white, 
     borderRadius: 12, 
     padding: 24, 
     alignItems: 'center',
     marginTop: 8,
   },
-  emptyText: { fontSize: 16, fontWeight: '600', color: '#374151', marginBottom: 4 },
-  emptySubtext: { fontSize: 14, color: '#6B7280', marginBottom: 16, textAlign: 'center' },
+  emptyText: { fontSize: 16, fontWeight: '600', color: COLORS.gray700, marginBottom: 4 },
+  emptySubtext: { fontSize: 14, color: COLORS.gray500, marginBottom: 16, textAlign: 'center' },
   createButton: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   createButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.white,
     fontSize: 14,
     fontWeight: '600',
   },

@@ -3,20 +3,22 @@ import {
   View, 
   Text, 
   StyleSheet, 
-  ScrollView, 
+  FlatList,
   Pressable,
   TouchableOpacity,
   ActivityIndicator
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Star, MessageSquareQuote } from 'lucide-react-native';
+import { Star, MessageSquareQuote } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { reviewService, Review } from '@/services/reviewService';
+import { COLORS } from '@/utils/constants';
+import ScreenHeader from '@/components/ScreenHeader';
 
 export default function ReviewsScreen() {
   const router = useRouter();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReviews();
@@ -25,10 +27,12 @@ export default function ReviewsScreen() {
   const fetchReviews = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await reviewService.getMyReviews();
       setReviews(data);
     } catch (error: any) {
       console.error('Failed to fetch reviews:', error);
+      setError(error?.message || 'Failed to load reviews');
     } finally {
       setLoading(false);
     }
@@ -58,45 +62,58 @@ export default function ReviewsScreen() {
         <Star 
           key={i} 
           size={14} 
-          color={i < Math.floor(count) ? "#4F46E5" : "#E2E8F0"} 
-          fill={i < Math.floor(count) ? "#4F46E5" : "transparent"} 
+          color={i < Math.floor(count) ? COLORS.primary : COLORS.gray200} 
+          fill={i < Math.floor(count) ? COLORS.primary : "transparent"} 
         />
       ))}
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={22} color="#1E293B" />
-        </TouchableOpacity>
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>Client Reviews</Text>
-          <Text style={styles.headerSubtitle}>{reviews.length} Feedbacks received</Text>
-        </View>
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader
+        title="Client Reviews"
+        subtitle={`${reviews.length} Feedbacks received`}
+        showBackButton
+      />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#4F46E5" />
-          </View>
-        ) : reviews.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <MessageSquareQuote size={48} color="#CBD5E1" />
-            <Text style={styles.noReviews}>No reviews for completed projects yet.</Text>
-          </View>
-        ) : (
-          reviews.map((review) => (
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Couldn’t load reviews</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchReviews} activeOpacity={0.85}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={reviews}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          renderItem={({ item: review }) => (
             <Pressable
-              key={review.id}
               style={({ pressed }) => [
                 styles.reviewCard,
-                pressed && { transform: [{ scale: 0.98 }], opacity: 0.9 }
+                pressed && { transform: [{ scale: 0.98 }], opacity: 0.9 },
               ]}
-              onPress={() => router.push({ pathname: '../reviewDetails', params: { id: review.id } })}
+              onPress={() =>
+                router.push({
+                  pathname: '../reviewDetails',
+                  params: {
+                    id: review.id,
+                    rating: String(review.rating ?? 0),
+                    comment: review.comment ?? '',
+                    createdAt: review.createdAt ?? '',
+                    projectTitle: review.project?.title ?? '',
+                    reviewerName: review.reviewer?.userName ?? '',
+                  },
+                })
+              }
             >
               <View style={styles.cardHeader}>
                 <View style={styles.titleInfo}>
@@ -109,9 +126,7 @@ export default function ReviewsScreen() {
                   </View>
                 </View>
                 <View style={styles.userAvatar}>
-                  <Text style={styles.avatarText}>
-                    {review.reviewer?.userName?.[0]?.toUpperCase() || 'U'}
-                  </Text>
+                  <Text style={styles.avatarText}>{review.reviewer?.userName?.[0]?.toUpperCase() || 'U'}</Text>
                 </View>
               </View>
 
@@ -122,52 +137,57 @@ export default function ReviewsScreen() {
               </View>
 
               <View style={styles.cardFooter}>
-                <Text style={styles.userName}>
-                  {review.reviewer?.userName || 'Unknown User'}
-                </Text>
+                <Text style={styles.userName}>{review.reviewer?.userName || 'Unknown User'}</Text>
                 <View style={styles.dot} />
                 <Text style={styles.duration}>{formatDuration(review.createdAt)}</Text>
               </View>
             </Pressable>
-          ))
-        )}
-      </ScrollView>
-    </SafeAreaView>
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <MessageSquareQuote size={48} color={COLORS.gray300} />
+              <Text style={styles.noReviews}>No reviews for completed projects yet.</Text>
+            </View>
+          }
+        />
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#FFFFFF',
-    gap: 15,
-  },
-  backButton: {
-    backgroundColor: '#F1F5F9',
-    borderRadius: 12,
-    padding: 8,
-  },
-  headerTextContainer: { flex: 1 },
-  headerTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B' },
-  headerSubtitle: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  container: { flex: 1, backgroundColor: COLORS.gray50 },
   
-  scroll: { padding: 20 },
+  listContent: { padding: 20, paddingBottom: 40 },
   
   emptyContainer: { alignItems: 'center', marginTop: 60, gap: 12 },
-  noReviews: { color: '#94A3B8', textAlign: 'center', fontSize: 16, fontWeight: '500' },
+  noReviews: { color: COLORS.gray400, textAlign: 'center', fontSize: 16, fontWeight: '500' },
+  errorContainer: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+  },
+  errorTitle: { fontSize: 16, fontWeight: '800', color: COLORS.gray800, marginBottom: 6, textAlign: 'center' },
+  errorMessage: { fontSize: 14, color: COLORS.gray600, lineHeight: 20, textAlign: 'center' },
+  retryButton: {
+    marginTop: 12,
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  retryButtonText: { color: COLORS.white, fontSize: 14, fontWeight: '800' },
   
   reviewCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderRadius: 20,
     padding: 18,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    shadowColor: '#1E293B',
+    borderColor: COLORS.gray100,
+    shadowColor: COLORS.gray800,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -183,30 +203,30 @@ const styles = StyleSheet.create({
   projectTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1E293B',
+    color: COLORS.gray800,
     marginBottom: 4,
   },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  ratingValue: { fontSize: 13, fontWeight: '700', color: '#4F46E5' },
+  ratingValue: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
   
   userAvatar: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: COLORS.gray100,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarText: { color: '#4F46E5', fontWeight: '800', fontSize: 16 },
+  avatarText: { color: COLORS.primary, fontWeight: '800', fontSize: 16 },
 
   commentContainer: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.gray50,
     padding: 12,
     borderRadius: 12,
     marginBottom: 12,
   },
   comment: {
-    color: '#475569',
+    color: COLORS.gray600,
     fontSize: 14,
     lineHeight: 22,
     fontStyle: 'italic',
@@ -216,9 +236,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  userName: { color: '#1E293B', fontSize: 13, fontWeight: '700' },
-  dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#CBD5E1', marginHorizontal: 8 },
-  duration: { color: '#94A3B8', fontSize: 12, fontWeight: '500' },
+  userName: { color: COLORS.gray800, fontSize: 13, fontWeight: '700' },
+  dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: COLORS.gray300, marginHorizontal: 8 },
+  duration: { color: COLORS.gray400, fontSize: 12, fontWeight: '500' },
   loadingContainer: {
     padding: 60,
     alignItems: 'center',

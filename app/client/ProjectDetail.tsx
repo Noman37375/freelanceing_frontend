@@ -13,6 +13,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { projectService } from '@/services/projectService';
 import { Project, getProjectDisplayStatus } from '@/models/Project';
+import { COLORS } from '@/utils/constants';
 
 export default function ProjectDetail() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export default function ProjectDetail() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <ActivityIndicator size="large" color={COLORS.primary} />
         <Text style={styles.loadingText}>Loading project...</Text>
       </View>
     );
@@ -82,7 +83,7 @@ export default function ProjectDetail() {
         {/* TITLE */}
         <View style={styles.titleCard}>
           <Text style={styles.projectTitle}>{project.title}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: '#3B82F6' }]}>
+          <View style={[styles.statusBadge, { backgroundColor: COLORS.primary }]}>
             <Text style={styles.statusText}>{project.status}</Text>
           </View>
         </View>
@@ -126,9 +127,9 @@ export default function ProjectDetail() {
             <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>Status</Text>
               <View style={[styles.statusBadge, { 
-                backgroundColor: getProjectDisplayStatus(project) === 'Active' ? '#3B82F6' : 
-                                 getProjectDisplayStatus(project) === 'Completed' ? '#10B981' :
-                                 getProjectDisplayStatus(project) === 'In Progress' ? '#6366F1' : '#6B7280' 
+                backgroundColor: getProjectDisplayStatus(project) === 'Active' ? COLORS.primary : 
+                                 getProjectDisplayStatus(project) === 'Completed' ? COLORS.success :
+                                 getProjectDisplayStatus(project) === 'In Progress' ? COLORS.primaryDark : COLORS.gray500 
               }]}>
                 <Text style={styles.statusText}>{getProjectDisplayStatus(project)}</Text>
               </View>
@@ -156,11 +157,9 @@ export default function ProjectDetail() {
             </View>
 
             <TouchableOpacity style={styles.messageButton} onPress={() => {
-              // TODO: Navigate to messages when implemented
-              Alert.alert('Coming Soon', 'Messaging feature coming soon!');
-            }}>
-              <MessageSquare size={18} color="#3B82F6" strokeWidth={2} />
-              <Text style={styles.messageButtonText}>Message</Text>
+            }} disabled>
+              <MessageSquare size={18} color={COLORS.primary} strokeWidth={2} />
+              <Text style={styles.messageButtonText}>Messaging disabled</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -199,38 +198,39 @@ export default function ProjectDetail() {
 
 /* ================= STYLES (same as before) ================= */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60, backgroundColor: '#FFFFFF', borderBottomLeftRadius: 24, borderBottomRightRadius: 24, elevation: 3 },
-  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
+  container: { flex: 1, backgroundColor: COLORS.gray100 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60, backgroundColor: COLORS.white, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, elevation: 3 },
+  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.gray100, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: COLORS.gray800 },
   content: { flex: 1 },
-  titleCard: { margin: 20, padding: 20, backgroundColor: '#FFFFFF', borderRadius: 16, elevation: 3 },
-  projectTitle: { fontSize: 22, fontWeight: '700', color: '#1F2937' },
+  titleCard: { margin: 20, padding: 20, backgroundColor: COLORS.white, borderRadius: 16, elevation: 3 },
+  projectTitle: { fontSize: 22, fontWeight: '700', color: COLORS.gray800 },
   statusBadge: { marginTop: 12, padding: 6, borderRadius: 8 },
   statusText: { color: '#FFF', fontWeight: '600' },
-  infoCard: { marginHorizontal: 20, marginBottom: 20, padding: 20, backgroundColor: '#FFF', borderRadius: 16 },
+  infoCard: { marginHorizontal: 20, marginBottom: 20, padding: 20, backgroundColor: COLORS.white, borderRadius: 16 },
   infoRow: { flexDirection: 'row', gap: 24 },
   infoItem: { flexDirection: 'row', gap: 12 },
-  infoLabel: { fontSize: 12, color: '#6B7280' },
+  infoLabel: { fontSize: 12, color: COLORS.gray500 },
   infoValue: { fontSize: 16, fontWeight: '700' },
-  freelancerCard: { marginHorizontal: 20, marginBottom: 20, padding: 20, backgroundColor: '#FFF', borderRadius: 16 },
+  freelancerCard: { marginHorizontal: 20, marginBottom: 20, padding: 20, backgroundColor: COLORS.white, borderRadius: 16 },
   freelancerHeader: { flexDirection: 'row', marginBottom: 16 },
-  avatarContainer: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  avatarContainer: { width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.gray100, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  freelancerInfo: { flex: 1 },
   freelancerName: { fontSize: 18, fontWeight: '700' },
-  freelancerStats: { color: '#6B7280' },
-  messageButton: { flexDirection: 'row', justifyContent: 'center', gap: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#3B82F6' },
-  messageButtonText: { color: '#3B82F6', fontWeight: '600' },
+  freelancerStats: { color: COLORS.gray500 },
+  messageButton: { flexDirection: 'row', justifyContent: 'center', gap: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.primary, opacity: 0.6 },
+  messageButtonText: { color: COLORS.primary, fontWeight: '600' },
   section: { marginHorizontal: 20, marginBottom: 20 },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
-  description: { backgroundColor: '#FFF', padding: 16, borderRadius: 12, color: '#6B7280' },
+  description: { backgroundColor: COLORS.white, padding: 16, borderRadius: 12, color: COLORS.gray500 },
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tag: { backgroundColor: '#EFF6FF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
-  tagText: { fontSize: 12, color: '#2563EB', fontWeight: '500' },
-  categoryText: { backgroundColor: '#FFF', padding: 16, borderRadius: 12, color: '#374151', fontSize: 16, fontWeight: '500' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' },
-  loadingText: { marginTop: 12, color: '#6B7280', fontSize: 14 },
+  tag: { backgroundColor: COLORS.gray100, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
+  tagText: { fontSize: 12, color: COLORS.primaryDark, fontWeight: '500' },
+  categoryText: { backgroundColor: COLORS.white, padding: 16, borderRadius: 12, color: COLORS.gray700, fontSize: 16, fontWeight: '500' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.gray100 },
+  loadingText: { marginTop: 12, color: COLORS.gray500, fontSize: 14 },
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  errorText: { fontSize: 18, color: '#374151', marginBottom: 20 },
-  backButtonStyle: { backgroundColor: '#3B82F6', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  errorText: { fontSize: 18, color: COLORS.gray700, marginBottom: 20 },
+  backButtonStyle: { backgroundColor: COLORS.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
   backButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
 });

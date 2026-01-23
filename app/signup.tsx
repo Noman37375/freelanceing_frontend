@@ -9,7 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Dimensions,
-  StatusBar
+  StatusBar,
+  ScrollView
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Eye, EyeOff, User, Mail, Lock, Briefcase, UserCircle, Check, ArrowRight, CheckCircle2 } from "lucide-react-native";
@@ -28,6 +29,11 @@ export default function Signup() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [passwordCriteria, setPasswordCriteria] = useState({
+    minLength: false,
+    hasUppercase: false,
+    hasNumber: false,
+  });
 
   const router = useRouter();
   const { signup } = useAuth();
@@ -380,9 +386,6 @@ const styles = StyleSheet.create({
     color: '#222325',
     marginBottom: 8,
   },
-  errorText: { color: '#FECACA', fontSize: 14, fontWeight: '500' },
-
-  inputGroup: { marginBottom: 12 },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -518,11 +521,4 @@ const styles = StyleSheet.create({
   },
 });
 
-  signupButtonContainer: { borderRadius: 16, overflow: 'hidden' },
-  signupButton: { height: 56, alignItems: 'center', justifyContent: 'center' },
-  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 
-  loginContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-  loginText: { color: '#94A3B8', fontSize: 15 },
-  loginLink: { color: '#818CF8', fontSize: 15, fontWeight: '700' },
-});

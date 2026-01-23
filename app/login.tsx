@@ -287,9 +287,6 @@ const styles = StyleSheet.create({
     color: '#1dbf73',
     fontWeight: '600',
   },
-  errorText: { color: '#FECACA', fontSize: 14, marginLeft: 8, flex: 1 },
-
-  inputGroup: { marginBottom: 16 },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',

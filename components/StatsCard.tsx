@@ -1,6 +1,7 @@
-// components/StatsCard.tsx
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { COLORS, SHADOWS, BORDER_RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 
 interface StatsCardProps {
   icon: React.ReactNode;
@@ -8,7 +9,7 @@ interface StatsCardProps {
   value: string;
   subtitle: string;
   color: string;
-  onPress?: () => void; // 👈 optional click handler
+  onPress?: () => void;
 }
 
 export default function StatsCard({
@@ -19,16 +20,20 @@ export default function StatsCard({
   color,
   onPress,
 }: StatsCardProps) {
-  const Container = onPress ? TouchableOpacity : View; // 👈 becomes pressable only if onPress exists
+  const Container = onPress ? TouchableOpacity : View;
 
   return (
     <Container style={styles.container} onPress={onPress} activeOpacity={0.8}>
-      <View style={styles.header}>
-        {icon}
-        <Text style={styles.title}>{title}</Text>
+      <View style={styles.content}>
+        <View style={[styles.iconContainer, { backgroundColor: `${color}15` }]}>
+          {icon}
+        </View>
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={[styles.value, { color }]}>{value}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
+        </View>
       </View>
-      <Text style={[styles.value, { color }]}>{value}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
     </Container>
   );
 }
@@ -36,33 +41,41 @@ export default function StatsCard({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.l,
+    padding: SPACING.m,
+    ...SHADOWS.medium,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  header: {
-    flexDirection: 'row',
+  content: {
+    gap: SPACING.m,
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: BORDER_RADIUS.m,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+  },
+  textContainer: {
+    gap: 2,
   },
   title: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '500',
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: '#64748B',
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   value: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: TYPOGRAPHY.fontSize['3xl'],
+    fontWeight: TYPOGRAPHY.fontWeight.extrabold,
+    marginVertical: 2,
   },
   subtitle: {
-    fontSize: 12,
-    color: '#9CA3AF',
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: '#94A3B8',
+    fontWeight: TYPOGRAPHY.fontWeight.medium,
   },
 });

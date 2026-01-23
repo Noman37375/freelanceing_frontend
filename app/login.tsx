@@ -32,13 +32,11 @@ export default function Login() {
   const handleLogin = async () => {
     setErrorMessage("");
 
-    // Validation
     if (!email || !password) {
       setErrorMessage("Please fill all fields.");
       return;
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setErrorMessage("Please enter a valid email address.");
@@ -60,7 +58,6 @@ export default function Login() {
       }
     } catch (error: any) {
       console.error('[Login] Error:', error);
-      // Better error handling
       let errorMsg = error.message || "Invalid email or password.";
 
       // Show specific error messages
@@ -253,6 +250,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#62646a',
   },
+
   errorContainer: {
     backgroundColor: '#fff0f0',
     borderWidth: 1,
@@ -289,6 +287,9 @@ const styles = StyleSheet.create({
     color: '#1dbf73',
     fontWeight: '600',
   },
+  errorText: { color: '#FECACA', fontSize: 14, marginLeft: 8, flex: 1 },
+
+  inputGroup: { marginBottom: 16 },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',

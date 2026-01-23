@@ -1,113 +1,361 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  StatusBar,
+  Platform
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
-
-/* =======================
-   STATIC PROJECT DATA
-======================= */
-const STATIC_PROJECTS = [
-  {
-    id: "1",
-    title: "React Native Mobile App",
-    budgetMin: 300,
-    budgetMax: 600,
-    deadline: "2 Weeks",
-    client: { name: "Tech Startup" },
-    location: "Remote",
-    description: "We are looking for an experienced React Native developer to build a modern and scalable mobile application.",
-    skills: ["React Native", "JavaScript", "API Integration", "UI/UX"],
-    milestones: [
-      { title: "UI Design", details: "Design application screens", duration: "3 days", pricePKR: "PKR 30,000", priceUSD: "$100" },
-      { title: "Development", details: "Develop app functionality", duration: "7 days", pricePKR: "PKR 90,000", priceUSD: "$300" },
-      { title: "Testing & Delivery", details: "Final testing and deployment", duration: "4 days", pricePKR: "PKR 30,000", priceUSD: "$100" },
-    ],
-  },
-];
+import {
+  ArrowLeft,
+  Share2,
+  Bookmark,
+  MapPin,
+  Clock,
+  DollarSign,
+  User,
+  Briefcase,
+  Calendar,
+  Layers
+} from "lucide-react-native";
+import { projectService } from "@/services/projectService";
+import { Project, getProjectDisplayStatus } from "@/models/Project";
+import { useAuth } from "@/contexts/AuthContext";
+import SectionCard from "@/components/SectionCard";
 
 export default function ProjectDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const [project, setProject] = useState<any>(null);
+  const { user } = useAuth();
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const foundProject = STATIC_PROJECTS.find((p) => p.id === id) || STATIC_PROJECTS[0];
-    setProject(foundProject);
+    const fetchProject = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const fetchedProject = await projectService.getProjectById(id);
+        setProject(fetchedProject || null);
+      } catch (error) {
+        console.error("Failed to fetch project:", error);
+        setProject(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProject();
   }, [id]);
 
-  if (!project) return null;
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+      </View>
+    );
+  }
+
+  if (!project) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ArrowLeft size={24} color="#1E293B" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.errorContainer}>
+          <Briefcase size={64} color="#CBD5E1" />
+          <Text style={styles.errorText}>Project not found</Text>
+          <Text style={styles.errorSubtext}>
+            This project may have been removed or is no longer available.
+          </Text>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.primaryButtonText}>Browse Projects</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const isFreelancer = user?.role === 'Freelancer';
+  const showBidButton = isFreelancer && project.status === 'ACTIVE' && !project.freelancerId;
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Project Details</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.title}>{project.title}</Text>
-        <Text style={styles.budget}>💰 ${project.budgetMin} – ${project.budgetMax}</Text>
-        <Text style={styles.deadline}>🕒 {project.deadline}</Text>
-        <Text style={styles.client}>👤 {project.client.name}</Text>
-        <Text style={styles.location}>📍 {project.location}</Text>
-
-        <Text style={styles.sectionTitle}>Description</Text>
-        <Text style={styles.description}>{project.description}</Text>
-
-        <Text style={styles.sectionTitle}>Skills Required</Text>
-        <View style={styles.skillContainer}>
-          {project.skills.map((skill: string, i: number) => (
-            <Text key={i} style={styles.skillTag}>{skill}</Text>
-          ))}
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ArrowLeft size={24} color="#1E293B" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle} numberOfLines={1}>Job Details</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.actionButton}>
+              <Share2 size={20} color="#64748B" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton}>
+              <Bookmark size={20} color="#64748B" />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Project Milestones</Text>
-        {project.milestones.map((m: any, i: number) => (
-          <View key={i} style={styles.milestoneCard}>
-            <Text style={styles.milestoneTitle}>{i + 1}. {m.title}</Text>
-            <Text style={styles.milestoneDetail}>{m.details}</Text>
-            <Text style={styles.milestoneDuration}>⏳ {m.duration}</Text>
-            <Text style={styles.milestonePrice}>{m.pricePKR} • {m.priceUSD}</Text>
-          </View>
-        ))}
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          {/* Main Title Section */}
+          <View style={styles.mainSection}>
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusText}>{getProjectDisplayStatus(project)}</Text>
+            </View>
+            <Text style={styles.projectTitle}>{project.title}</Text>
 
-        <TouchableOpacity
-          style={styles.applyButton}
-          onPress={() => router.push(`/bids/${project.id}`)} // ✅ dynamic route
-        >
-          <Text style={styles.applyButtonText}>🚀 Bid Now</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+            <View style={styles.metaRow}>
+              {project.createdAt && (
+                <View style={styles.metaItem}>
+                  <Clock size={14} color="#64748B" />
+                  <Text style={styles.metaText}>Posted recently</Text>
+                </View>
+              )}
+              <View style={styles.metaItem}>
+                <Layers size={14} color="#64748B" />
+                <Text style={styles.metaText}>{project.bidsCount || 0} Proposals</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Budget Card */}
+          <View style={styles.budgetCard}>
+            <View style={styles.budgetContent}>
+              <Text style={styles.budgetLabel}>Fixed Price</Text>
+              <Text style={styles.budgetAmount}>${project.budget}</Text>
+            </View>
+            <View style={styles.budgetIconWrapper}>
+              <DollarSign size={24} color="#fff" />
+            </View>
+          </View>
+
+          {/* Details Grid */}
+          <View style={styles.gridContainer}>
+            {project.location && (
+              <View style={styles.gridItem}>
+                <MapPin size={20} color="#4F46E5" />
+                <Text style={styles.gridLabel}>Location</Text>
+                <Text style={styles.gridValue}>{project.location}</Text>
+              </View>
+            )}
+            <View style={styles.gridItem}>
+              <Calendar size={20} color="#4F46E5" />
+              <Text style={styles.gridLabel}>Duration</Text>
+              <Text style={styles.gridValue}>{project.duration || 'Not specified'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Description */}
+          <Text style={styles.sectionHeading}>Job Description</Text>
+          <Text style={styles.descriptionText}>{project.description}</Text>
+
+          {/* Skills */}
+          {project.tags && project.tags.length > 0 && (
+            <View style={styles.skillsSection}>
+              <Text style={styles.sectionHeading}>Skills Required</Text>
+              <View style={styles.skillsList}>
+                {project.tags.map((tag, index) => (
+                  <View key={index} style={styles.skillChip}>
+                    <Text style={styles.skillText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Client Info */}
+          {project.client && (
+            <View style={styles.clientSection}>
+              <Text style={styles.sectionHeading}>About the Client</Text>
+              <View style={styles.clientCard}>
+                <View style={styles.clientAvatar}>
+                  <User size={24} color="#64748B" />
+                </View>
+                <View style={styles.clientInfo}>
+                  <Text style={styles.clientName}>{project.client.userName}</Text>
+                  <Text style={styles.clientMeta}>Verified Client</Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Padding for bottom buttons */}
+          <View style={{ height: 100 }} />
+        </ScrollView>
+
+        {/* Floating Action Button */}
+        {showBidButton && (
+          <View style={styles.bottomBar}>
+            <TouchableOpacity
+              style={styles.bidButton}
+              onPress={() => router.push(`/Bid-now?id=${project.id}` as any)}
+            >
+              <Text style={styles.bidButtonText}>Submit Proposal</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </SafeAreaView>
+    </View>
   );
 }
 
-/* =======================
-   STYLES
-======================= */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 16, backgroundColor: "#FFFFFF", borderBottomWidth: 1, borderBottomColor: "#E5E7EB" },
-  headerTitle: { fontSize: 20, fontWeight: "bold", color: "#111827" },
-  card: { backgroundColor: "#FFFFFF", margin: 20, borderRadius: 12, padding: 20, elevation: 3 },
-  title: { fontSize: 22, fontWeight: "bold", color: "#111827", marginBottom: 8 },
-  budget: { fontSize: 16, color: "#3B82F6", marginBottom: 4 },
-  deadline: { fontSize: 16, color: "#6B7280", marginBottom: 4 },
-  client: { fontSize: 16, color: "#6B7280", marginBottom: 4 },
-  location: { fontSize: 16, color: "#6B7280", marginBottom: 12 },
-  sectionTitle: { fontSize: 18, fontWeight: "600", marginTop: 16, marginBottom: 6 },
-  description: { fontSize: 16, color: "#374151", lineHeight: 22 },
-  skillContainer: { flexDirection: "row", flexWrap: "wrap", marginTop: 6 },
-  skillTag: { backgroundColor: "#EFF6FF", color: "#2563EB", paddingVertical: 4, paddingHorizontal: 10, borderRadius: 16, marginRight: 6, marginBottom: 6, fontSize: 14 },
-  milestoneCard: { backgroundColor: "#F3F4F6", borderRadius: 8, padding: 12, marginBottom: 10 },
-  milestoneTitle: { fontSize: 16, fontWeight: "600" },
-  milestoneDetail: { fontSize: 14, marginTop: 2 },
-  milestoneDuration: { fontSize: 13, color: "#6B7280", marginTop: 4 },
-  milestonePrice: { fontSize: 14, color: "#10B981", marginTop: 4 },
-  applyButton: { backgroundColor: "#3B82F6", paddingVertical: 12, borderRadius: 8, alignItems: "center", marginTop: 20 },
-  applyButtonText: { color: "#FFFFFF", fontWeight: "600", fontSize: 16 },
+  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#F8FAFC',
+  },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B', flex: 1, textAlign: 'center' },
+  headerActions: { flexDirection: 'row', gap: 12 },
+  backButton: { padding: 8, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', backgroundColor: '#FFF' },
+  actionButton: { padding: 8 },
+
+  scrollContent: { paddingHorizontal: 20 },
+
+  mainSection: { marginTop: 10, marginBottom: 24 },
+  statusBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  statusText: { color: '#15803D', fontWeight: '700', fontSize: 12, textTransform: 'uppercase' },
+  projectTitle: { fontSize: 24, fontWeight: '800', color: '#1E293B', lineHeight: 32, marginBottom: 12 },
+  metaRow: { flexDirection: 'row', gap: 16 },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  metaText: { color: '#64748B', fontSize: 14, fontWeight: '500' },
+
+  budgetCard: {
+    backgroundColor: '#4F46E5',
+    borderRadius: 24,
+    padding: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  budgetContent: {},
+  budgetLabel: { color: '#C7D2FE', fontSize: 14, fontWeight: '600', marginBottom: 4 },
+  budgetAmount: { color: '#FFFFFF', fontSize: 28, fontWeight: '800' },
+  budgetIconWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
+  gridContainer: { flexDirection: 'row', gap: 16, marginBottom: 24 },
+  gridItem: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#F1F5F9'
+  },
+  gridLabel: { color: '#94A3B8', fontSize: 12, fontWeight: '600', marginTop: 12, marginBottom: 4 },
+  gridValue: { color: '#1E293B', fontSize: 15, fontWeight: '700' },
+
+  divider: { height: 1, backgroundColor: '#E2E8F0', marginBottom: 24 },
+
+  sectionHeading: { fontSize: 18, fontWeight: '700', color: '#1E293B', marginBottom: 12 },
+  descriptionText: { fontSize: 16, color: '#475569', lineHeight: 26, marginBottom: 32 },
+
+  skillsSection: { marginBottom: 32 },
+  skillsList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  skillChip: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  skillText: { color: '#475569', fontSize: 14, fontWeight: '600' },
+
+  clientSection: { marginBottom: 32 },
+  clientCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  clientAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  clientInfo: {},
+  clientName: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
+  clientMeta: { fontSize: 13, color: '#64748B', marginTop: 2 },
+
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    ...Platform.select({
+      ios: { paddingBottom: 32 },
+    }),
+  },
+  bidButton: {
+    backgroundColor: '#4F46E5',
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  bidButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+
+  errorContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 40 },
+  errorText: { fontSize: 20, fontWeight: "700", color: "#1E293B", marginTop: 20, marginBottom: 8 },
+  errorSubtext: { fontSize: 15, color: "#64748B", textAlign: "center", marginBottom: 32, lineHeight: 22 },
+  primaryButton: { backgroundColor: "#4F46E5", paddingHorizontal: 24, paddingVertical: 14, borderRadius: 14 },
+  primaryButtonText: { color: "#FFFFFF", fontWeight: "700", fontSize: 16 },
 });

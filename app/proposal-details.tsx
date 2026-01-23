@@ -1,279 +1,240 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  ActivityIndicator,
-  TouchableOpacity,
-} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import axios from "axios";
-import { ArrowLeft } from "lucide-react-native";
-import { API_BASE_URL } from "@/config";
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ArrowLeft, DollarSign, FileText, User } from 'lucide-react-native';
+import { Proposal } from '@/models/Project';
+import { proposalService } from '@/services/projectService';
+import { COLORS } from '@/utils/constants';
 
-/* ======================
-   TYPES
-====================== */
-interface Milestone {
-  title: string;
-  duration: string;
-  details: string;
-  pricePKR: string;
-  priceUSD: string;
-}
-
-interface Project {
-  id: string;
-  title: string;
-
-  client: {
-    name: string;
-  };
-
-  budgetMin: number;
-  budgetMax: number;
-
-  postedAt: string;
-  deadline?: string;
-
-  skills: string[];
-  description: string;
-
-  milestones?: Milestone[];
-}
-
-/* ======================
-   FALLBACK PROJECT
-====================== */
-const STATIC_PROJECT: Project = {
-  id: "static-1",
-  title: "React Native Mobile App Development",
-  client: { name: "Tech Startup" },
-  budgetMin: 300,
-  budgetMax: 600,
-  postedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  skills: ["React Native", "JavaScript", "API Integration", "UI/UX"],
-  description:
-    "Looking for an experienced React Native developer to build a scalable and modern mobile application.",
-  milestones: [
-    {
-      title: "App UI Design",
-      duration: "1 week",
-      details: "Design screens and user flow",
-      pricePKR: "50,000 PKR",
-      priceUSD: "$180",
-    },
-    {
-      title: "App Development",
-      duration: "3 weeks",
-      details: "Develop core features",
-      pricePKR: "120,000 PKR",
-      priceUSD: "$420",
-    },
-  ],
-};
-
-/* ======================
-   HELPERS
-====================== */
-const timeAgo = (timestamp: string) => {
-  const postedDate = new Date(timestamp);
-  const now = new Date();
-  const diffMs = now.getTime() - postedDate.getTime();
-
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  const days = Math.floor(hours / 24);
-
-  if (hours < 1) return "Just now";
-  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
-  if (days < 7) return `${days} day${days > 1 ? "s" : ""} ago`;
-
-  return `${Math.floor(days / 7)} weeks ago`;
-};
-
-/* ======================
-   COMPONENT
-====================== */
-export default function ProjectDetails() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+export default function ProposalDetailsScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
 
-  const [project, setProject] = useState<Project | null>(null);
+  const [proposal, setProposal] = useState<Proposal | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchProject = async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/projects/${id}`);
-        const data = res.data;
+  const fetchProposal = useCallback(async () => {
+    if (!id) {
+      setProposal(null);
+      setError('Missing proposal id.');
+      setLoading(false);
+      return;
+    }
 
-        setProject({
-          id: data.id ?? STATIC_PROJECT.id,
-          title: data.title ?? STATIC_PROJECT.title,
-
-          client: {
-            name: data.client ?? STATIC_PROJECT.client.name,
-          },
-
-          budgetMin: data.budgetMin ?? STATIC_PROJECT.budgetMin,
-          budgetMax: data.budgetMax ?? STATIC_PROJECT.budgetMax,
-
-          postedAt: data.postedAt ?? STATIC_PROJECT.postedAt,
-          deadline: data.deadline,
-
-          skills: data.skills ?? STATIC_PROJECT.skills,
-          description: data.description ?? STATIC_PROJECT.description,
-
-          milestones: data.milestones ?? STATIC_PROJECT.milestones,
-        });
-      } catch {
-        setProject(STATIC_PROJECT);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProject();
+    try {
+      setLoading(true);
+      setError(null);
+      const fetched = await proposalService.getProposalById(id);
+      setProposal(fetched);
+    } catch (e: any) {
+      setProposal(null);
+      setError(e?.message || 'Failed to load proposal.');
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
+  useEffect(() => {
+    void fetchProposal();
+  }, [fetchProposal]);
+
+  const createdLabel = useMemo(() => {
+    if (!proposal?.createdAt) return null;
+    const d = new Date(proposal.createdAt);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleDateString();
+  }, [proposal?.createdAt]);
+
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 40 }} size="large" color="#2563EB" />;
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading proposal...</Text>
+      </View>
+    );
   }
 
-  if (!project) return null;
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <View style={styles.errorCard}>
+          <Text style={styles.errorTitle}>Couldn’t load proposal</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
+          <View style={styles.errorActions}>
+            <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()} activeOpacity={0.85}>
+              <Text style={styles.secondaryButtonText}>Go Back</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.primaryButton} onPress={fetchProposal} activeOpacity={0.85}>
+              <Text style={styles.primaryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  if (!proposal) {
+    return (
+      <View style={styles.errorContainer}>
+        <View style={styles.errorCard}>
+          <Text style={styles.errorTitle}>Proposal not found</Text>
+          <Text style={styles.errorMessage}>The proposal may have been removed.</Text>
+          <TouchableOpacity style={styles.primaryButton} onPress={() => router.back()} activeOpacity={0.85}>
+            <Text style={styles.primaryButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  const title = proposal.project?.title || 'Proposal Details';
+  const freelancerName = proposal.freelancer?.userName || proposal.freelancer?.name || 'Freelancer';
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
+    <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={22} color="#111827" />
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.85}>
+          <ArrowLeft size={22} color={COLORS.gray800} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Project Details</Text>
-        <View style={{ width: 22 }} />
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {title}
+        </Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      {/* Project Info */}
-      <View style={styles.card}>
-        <Text style={styles.title}>{project.title}</Text>
-
-        <Text style={styles.info}>
-          👤 Posted by <Text style={styles.bold}>{project.client.name}</Text>
-        </Text>
-
-        <Text style={styles.info}>
-          💰 Budget:{" "}
-          <Text style={styles.bold}>
-            ${project.budgetMin} – ${project.budgetMax}
-          </Text>
-        </Text>
-
-        <Text style={styles.info}>
-          🕒 Posted: <Text style={styles.bold}>{timeAgo(project.postedAt)}</Text>
-        </Text>
-
-        <Text style={styles.sectionTitle}>Description</Text>
-        <Text style={styles.description}>{project.description}</Text>
-
-        <Text style={styles.sectionTitle}>Skills Required</Text>
-        <View style={styles.skillContainer}>
-          {project.skills.map((skill, i) => (
-            <Text key={i} style={styles.skillTag}>
-              {skill}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <User size={18} color={COLORS.gray500} />
+            <Text style={styles.rowLabel}>Freelancer</Text>
+            <Text style={styles.rowValue} numberOfLines={1}>
+              {freelancerName}
             </Text>
-          ))}
+          </View>
+
+          <View style={styles.row}>
+            <DollarSign size={18} color={COLORS.gray500} />
+            <Text style={styles.rowLabel}>Bid</Text>
+            <Text style={styles.rowValue}>${proposal.bidAmount.toFixed(2)}</Text>
+          </View>
+
+          <View style={styles.row}>
+            <FileText size={18} color={COLORS.gray500} />
+            <Text style={styles.rowLabel}>Status</Text>
+            <Text style={styles.rowValue}>{proposal.status}</Text>
+          </View>
+
+          {createdLabel && <Text style={styles.metaText}>Submitted {createdLabel}</Text>}
         </View>
 
-        {project.milestones && (
-          <>
-            <Text style={styles.sectionTitle}>Project Milestones</Text>
-            {project.milestones.map((m, i) => (
-              <View key={i} style={styles.milestoneCard}>
-                <Text style={styles.milestoneTitle}>
-                  {i + 1}. {m.title}
-                </Text>
-                <Text style={styles.milestoneDetail}>{m.details}</Text>
-                <Text style={styles.milestoneDuration}>⏳ {m.duration}</Text>
-                <Text style={styles.milestonePrice}>
-                  {m.priceUSD} • {m.pricePKR}
-                </Text>
-              </View>
-            ))}
-          </>
-        )}
-
-        <TouchableOpacity
-          style={styles.applyButton}
-          onPress={() => router.push(`/Bid-now?id=${project.id}`)}
-        >
-          <Text style={styles.applyButtonText}>🚀 Bid Now</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+        <Text style={styles.sectionTitle}>Cover Letter</Text>
+        <View style={styles.card}>
+          <Text style={styles.paragraph}>
+            {proposal.coverLetter?.trim() ? proposal.coverLetter : 'No cover letter provided.'}
+          </Text>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
-/* ======================
-   STYLES
-====================== */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
+  container: { flex: 1, backgroundColor: COLORS.gray100 },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 20,
-    backgroundColor: "#fff",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: COLORS.gray200,
   },
-  headerTitle: { fontSize: 20, fontWeight: "700", color: "#111827" },
-  card: {
-    backgroundColor: "#fff",
-    margin: 20,
-    padding: 20,
-    borderRadius: 14,
-    elevation: 3,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: COLORS.gray100,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  title: { fontSize: 22, fontWeight: "700", color: "#111827", marginBottom: 10 },
-  info: { fontSize: 15, color: "#374151", marginBottom: 6 },
-  bold: { fontWeight: "600", color: "#111827" },
-  sectionTitle: {
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
     fontSize: 18,
-    fontWeight: "600",
-    marginTop: 16,
-    marginBottom: 6,
-    color: "#111827",
+    fontWeight: '800',
+    color: COLORS.gray800,
+    marginHorizontal: 12,
   },
-  description: { fontSize: 15, color: "#4B5563", lineHeight: 22 },
-  skillContainer: { flexDirection: "row", flexWrap: "wrap", marginTop: 6 },
-  skillTag: {
-    backgroundColor: "#EFF6FF",
-    color: "#2563EB",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 6,
-    marginBottom: 6,
-    fontSize: 14,
-  },
-  milestoneCard: {
-    backgroundColor: "#F3F4F6",
-    padding: 12,
-    borderRadius: 10,
+  content: { padding: 20, paddingBottom: 40 },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.gray800,
     marginBottom: 10,
+    marginTop: 14,
   },
-  milestoneTitle: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  milestoneDetail: { fontSize: 14, color: "#374151", marginTop: 4 },
-  milestoneDuration: { fontSize: 13, color: "#6B7280", marginTop: 4 },
-  milestonePrice: { fontSize: 14, color: "#10B981", marginTop: 4 },
-  applyButton: {
-    backgroundColor: "#2563EB",
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+  },
+  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
+  rowLabel: { color: COLORS.gray500, fontSize: 12, fontWeight: '700', width: 70 },
+  rowValue: {
+    flex: 1,
+    color: COLORS.gray800,
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'right',
+  },
+  metaText: { marginTop: 6, color: COLORS.gray500, fontSize: 12, fontWeight: '600' },
+  paragraph: { color: COLORS.gray700, fontSize: 14, lineHeight: 20 },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: COLORS.gray100,
+  },
+  loadingText: { marginTop: 10, color: COLORS.gray500, fontSize: 14, fontWeight: '600' },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: COLORS.gray100,
+  },
+  errorCard: {
+    width: '100%',
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+  },
+  errorTitle: { fontSize: 18, fontWeight: '800', color: COLORS.gray800, marginBottom: 6 },
+  errorMessage: { fontSize: 14, color: COLORS.gray600, lineHeight: 20 },
+  errorActions: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  primaryButton: {
+    flex: 1,
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
     paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 20,
+    alignItems: 'center',
   },
-  applyButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  primaryButtonText: { color: COLORS.white, fontSize: 14, fontWeight: '800' },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: COLORS.gray100,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+  },
+  secondaryButtonText: { color: COLORS.gray800, fontSize: 14, fontWeight: '800' },
 });

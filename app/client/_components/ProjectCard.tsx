@@ -4,7 +4,7 @@ import { Clock, DollarSign, User } from 'lucide-react-native';
 interface ProjectCardProps {
   title: string;
   budget: string;
-  status: 'Active' | 'Completed' | 'In Progress' | 'Pending';
+  status: 'Active' | 'Completed' | 'In Progress' | 'Pending' | 'Cancelled';
   freelancer?: string;
   deadline: string;
   onPress?: () => void;
@@ -27,6 +27,8 @@ export default function ProjectCard({
         return '#10B981';
       case 'Pending':
         return '#F59E0B';
+      case 'Cancelled':
+        return '#EF4444';
       default:
         return '#6B7280';
     }

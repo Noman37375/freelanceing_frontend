@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-import { ArrowLeft, CheckCircle2, Clock4, FileText } from "lucide-react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router"; // 🔹 Added for back navigation
+import { ArrowLeft, CheckCircle2, Clock4, FileText, User, DollarSign, Calendar, MapPin, Award } from "lucide-react-native";
 
 type Milestone = {
   title: string;
@@ -25,7 +27,9 @@ type Project = {
 };
 
 export default function CompletedDetails() {
-  // 🔹 Static project data
+  const router = useRouter(); // 🔹 Initialize router
+
+  // 🔹 Static project data (Logic Maintained)
   const [project] = useState<Project>({
     id: "1",
     title: "Website Redesign Project",
@@ -36,177 +40,113 @@ export default function CompletedDetails() {
     location: "Remote",
     description: "Redesign the corporate website with modern UI/UX and responsive layout.",
     completedDate: "Dec 20, 2025",
-    milestones: [
-      {
-        title: "Design Mockups",
-        duration: "3 days",
-        details: "Create Figma mockups for all pages",
-        priceUSD: "$500",
-        pricePKR: "PKR 100,000",
-        status: "completed",
-      },
-      {
-        title: "Frontend Implementation",
-        duration: "5 days",
-        details: "Develop responsive React components",
-        priceUSD: "$600",
-        pricePKR: "PKR 120,000",
-        status: "completed",
-      },
-      {
-        title: "Backend Integration",
-        duration: "4 days",
-        details: "Connect frontend with API endpoints",
-        priceUSD: "$400",
-        pricePKR: "PKR 80,000",
-        status: "completed",
-      },
-    ],
+    milestones: [],
   });
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.iconWrap} onPress={() => console.log("Go Back")}>
-          <ArrowLeft color="#111827" size={22} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Completed Project</Text>
-      </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
+      {/* INDIGO HEADER */}
+      <View style={styles.darkHeader}>
+        <SafeAreaView>
+          <View style={styles.navRow}>
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => router.back()} // 🔹 Logic Fixed: Works now
+            >
+              <ArrowLeft color="#F8FAFC" size={22} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Project Archive</Text>
+          </View>
 
-      {/* Project Info */}
-      <View style={styles.card}>
-        <Text style={styles.projectTitle}>{project.title}</Text>
-        <Text style={styles.client}>👤 Client: {project.client}</Text>
-        <Text style={styles.info}>💰 Budget: {project.budget}</Text>
-        <Text style={styles.info}>🕒 Deadline: {project.deadline}</Text>
-        {project.location && <Text style={styles.info}>📍 Location: {project.location}</Text>}
-        {project.description && <Text style={styles.desc}>{project.description}</Text>}
-      </View>
-
-      {/* Milestones */}
-      <View style={styles.milestoneCard}>
-        <View style={styles.milestoneHeader}>
-          <FileText size={18} color="#2563EB" />
-          <Text style={styles.sectionTitle}>Milestones</Text>
-        </View>
-
-        {project.milestones.map((m, i) => (
-          <View key={i} style={styles.milestoneItem}>
-            <View style={styles.milestoneTop}>
-              <View style={styles.milestoneLeft}>
-                {m.status === "completed" ? (
-                  <CheckCircle2 size={18} color="#16A34A" />
-                ) : (
-                  <Clock4 size={18} color="#F59E0B" />
-                )}
-                <Text style={styles.milestoneTitle}>{m.title}</Text>
-              </View>
-              <Text
-                style={[
-                  styles.approvalStatus,
-                  m.status === "completed" ? styles.approved : styles.pending,
-                ]}
-              >
-                {m.status === "completed" ? "COMPLETED" : "PENDING"}
-              </Text>
+          <View style={styles.summaryGrid}>
+            <View style={styles.tag}>
+              <User size={12} color="#C7D2FE" />
+              <Text style={styles.tagText}>{project.client}</Text>
             </View>
-
-            {m.details && <Text style={styles.milestoneDetail}>{m.details}</Text>}
-
-            <View style={styles.milestoneFooter}>
-              {m.duration && <Text style={styles.milestoneDuration}>⏳ {m.duration}</Text>}
-              {(m.priceUSD || m.pricePKR) && (
-                <Text style={styles.milestonePrice}>
-                  💵 {m.priceUSD} {m.pricePKR ? `(${m.pricePKR})` : ""}
-                </Text>
-              )}
+            <View style={styles.tag}>
+              <DollarSign size={12} color="#C7D2FE" />
+              <Text style={styles.tagText}>{project.budget}</Text>
+            </View>
+            <View style={styles.tag}>
+              <MapPin size={12} color="#C7D2FE" />
+              <Text style={styles.tagText}>{project.location}</Text>
             </View>
           </View>
-        ))}
+        </SafeAreaView>
       </View>
 
-      {/* Completion Message */}
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryText}>🎉 Congratulations! Project Completed</Text>
-        {project.completedDate && (
-          <Text style={styles.summarySubText}>Completed on {project.completedDate}</Text>
-        )}
-      </View>
-    </ScrollView>
+      {/* CONTENT BODY */}
+      <ScrollView 
+        style={styles.contentBody} 
+        contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Project Overview */}
+        <View style={styles.mainCard}>
+          <Text style={styles.projectTitle}>{project.title}</Text>
+          <Text style={styles.description}>{project.description}</Text>
+          
+          <View style={styles.divider} />
+          
+          <View style={styles.deadlineRow}>
+            <Calendar size={16} color="#6366F1" />
+            <Text style={styles.deadlineText}>Final Deadline: {project.deadline}</Text>
+          </View>
+        </View>
+
+
+        {/* Completion Success Card */}
+        <View style={styles.successCard}>
+          <Award size={24} color="#FFF" />
+          <View style={{ marginLeft: 12 }}>
+            <Text style={styles.successTitle}>Project Fully Completed</Text>
+            <Text style={styles.successDate}>Archive Date: {project.completedDate}</Text>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  iconWrap: { backgroundColor: "#EFF6FF", padding: 8, borderRadius: 10 },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#111827", marginLeft: 10 },
+  container: { flex: 1, backgroundColor: "#0F172A" },
+  
+  // Header
+  darkHeader: { paddingHorizontal: 20, paddingBottom: 20 },
+  navRow: { flexDirection: "row", alignItems: "center", marginTop: 10, gap: 12 },
+  backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: "#1E293B", justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#334155" },
+  headerTitle: { fontSize: 20, fontWeight: "800", color: "#F8FAFC" },
+  
+  summaryGrid: { flexDirection: "row", flexWrap: "wrap", marginTop: 15, gap: 8 },
+  tag: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(99, 102, 241, 0.2)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  tagText: { color: "#C7D2FE", fontSize: 12, fontWeight: "600" },
 
-  card: {
-    backgroundColor: "#fff",
-    margin: 16,
-    padding: 18,
-    borderRadius: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: "#2563EB",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  projectTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
-  client: { fontSize: 14, color: "#6B7280", marginTop: 6 },
-  info: { fontSize: 14, color: "#374151", marginTop: 4 },
-  desc: { color: "#4B5563", fontSize: 14, marginTop: 10, lineHeight: 20 },
+  // Content
+  contentBody: { flex: 1, backgroundColor: "#F8FAFC", borderTopLeftRadius: 32, borderTopRightRadius: 32 },
+  mainCard: { backgroundColor: "#FFF", padding: 20, borderRadius: 24, marginBottom: 20, marginTop: 10, borderWidth: 1, borderColor: "#E2E8F0" },
+  projectTitle: { fontSize: 22, fontWeight: "800", color: "#1E293B", marginBottom: 8 },
+  description: { fontSize: 14, color: "#64748B", lineHeight: 22 },
+  divider: { height: 1, backgroundColor: "#F1F5F9", marginVertical: 15 },
+  deadlineRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  deadlineText: { fontSize: 13, fontWeight: "700", color: "#6366F1" },
 
-  milestoneCard: {
-    backgroundColor: "#fff",
-    marginHorizontal: 16,
-    marginTop: 8,
-    borderRadius: 16,
-    padding: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: "#10B981",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  milestoneHeader: { flexDirection: "row", alignItems: "center", marginBottom: 10, gap: 6 },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#111827" },
-  milestoneItem: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-    paddingVertical: 10,
-  },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 15, paddingLeft: 5 },
+  sectionTitle: { fontSize: 18, fontWeight: "800", color: "#1E293B" },
+
+  milestoneItem: { backgroundColor: "#FFF", borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: "#E2E8F0", borderLeftWidth: 5, borderLeftColor: "#10B981" },
   milestoneTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  milestoneLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
-  milestoneTitle: { fontSize: 14, fontWeight: "600", color: "#111827" },
-  milestoneDetail: { fontSize: 13, color: "#4B5563", marginTop: 6 },
-  milestoneFooter: { flexDirection: "row", justifyContent: "space-between", marginTop: 6 },
-  milestoneDuration: { color: "#6B7280", fontSize: 13 },
-  milestonePrice: { color: "#2563EB", fontSize: 13, fontWeight: "600" },
-  approvalStatus: { fontSize: 12, fontWeight: "700", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8 },
-  approved: { backgroundColor: "#DCFCE7", color: "#16A34A" },
-  pending: { backgroundColor: "#FEF9C3", color: "#CA8A04" },
+  milestoneLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  milestoneTitle: { fontSize: 15, fontWeight: "700", color: "#1E293B" },
+  statusBadge: { backgroundColor: "#ECFDF5", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  statusText: { fontSize: 10, fontWeight: "800", color: "#10B981" },
+  milestoneDetail: { fontSize: 13, color: "#94A3B8", marginTop: 8, lineHeight: 18 },
+  milestoneFooter: { flexDirection: "row", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: "#F8FAFC" },
+  footerInfo: { fontSize: 12, color: "#64748B", fontWeight: "600" },
+  footerPrice: { fontSize: 13, color: "#1E293B", fontWeight: "800" },
 
-  summaryCard: {
-    backgroundColor: "#E0F2FE",
-    margin: 16,
-    padding: 16,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  summaryText: { color: "#0369A1", fontWeight: "700", fontSize: 15 },
-  summarySubText: { color: "#0369A1", marginTop: 4 },
+  successCard: { backgroundColor: "#6366F1", flexDirection: "row", alignItems: "center", padding: 20, borderRadius: 20, marginTop: 10 },
+  successTitle: { color: "#FFF", fontWeight: "800", fontSize: 16 },
+  successDate: { color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "600" }
 });

@@ -7,11 +7,12 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Search, Plus, ArrowUpRight, History, Settings2, CheckCircle2, Clock, AlertCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useWallet } from '@/contexts/WalletContext'; // ✅ Use context
+import { useWallet } from '@/contexts/WalletContext';
 
 export default function WalletScreen() {
   const router = useRouter();
@@ -25,27 +26,23 @@ export default function WalletScreen() {
 
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
-  const [autoReplenish, setAutoReplenish] = useState(
-    autoReplenishSettings.enabled
-  );
+  const [autoReplenish, setAutoReplenish] = useState(autoReplenishSettings.enabled);
 
   useEffect(() => {
-    getTransactionHistory(); // ✅ Now comes from WalletContext
+    getTransactionHistory();
   }, []);
 
   if (isLoading) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#0D9488" />
+        <ActivityIndicator size="large" color="#4F46E5" />
       </View>
     );
   }
 
   const filteredTxns = transactions.filter((txn) => {
-    const matchesFilter =
-      filter === 'All' || txn.status?.toLowerCase() === filter.toLowerCase();
-    const matchesSearch =
-      txn.description?.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = filter === 'All' || txn.status?.toLowerCase() === filter.toLowerCase();
+    const matchesSearch = txn.description?.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -53,139 +50,133 @@ export default function WalletScreen() {
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#111827" />
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <ArrowLeft size={22} color="#1E293B" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Wallet</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>Financial Wallet</Text>
+        <TouchableOpacity style={styles.headerRight}>
+          <Settings2 size={22} color="#1E293B" />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* MAIN WALLET CARD */}
         <View style={styles.walletCard}>
-          <Text style={styles.balanceLabel}>Available Balance</Text>
-          <Text style={styles.balanceValue}>${balance}</Text>
+          <View style={styles.cardTop}>
+            <View>
+              <Text style={styles.balanceLabel}>Total Balance</Text>
+              <Text style={styles.balanceValue}>${balance.toLocaleString()}</Text>
+            </View>
+            <View style={styles.chipBranding}>
+              <View style={styles.circleBlur} />
+            </View>
+          </View>
 
           <View style={styles.walletStats}>
             <View style={styles.statBox}>
-              <Text style={styles.statLabel}>Pending</Text>
+              <Text style={styles.statLabel}>On Hold</Text>
               <Text style={styles.statValue}>
-                $
-                {transactions
-                  .filter((t) => t.status?.toLowerCase() === 'pending')
-                  .reduce((sum, t) => sum + (t.amount || 0), 0)}
+                ${transactions.filter(t => t.status?.toLowerCase() === 'pending').reduce((sum, t) => sum + (t.amount || 0), 0)}
               </Text>
             </View>
-
+            <View style={styles.statDivider} />
             <View style={styles.statBox}>
-              <Text style={styles.statLabel}>Total</Text>
-              <Text style={styles.statValue}>
-                $
-                {balance +
-                  transactions
-                    .filter((t) => t.status?.toLowerCase() === 'pending')
-                    .reduce((sum, t) => sum + (t.amount || 0), 0)}
-              </Text>
+              <Text style={styles.statLabel}>Lifetime</Text>
+              <Text style={styles.statValue}>${balance + 1250} {/* Example offset */}</Text>
             </View>
           </View>
 
           <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionText}>Add Funds</Text>
+            <TouchableOpacity style={styles.primaryAction}>
+              <Plus size={18} color="#4F46E5" />
+              <Text style={styles.primaryActionText}>Add Funds</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButtonOutline}>
-              <Text style={styles.actionTextOutline}>Withdraw</Text>
+            <TouchableOpacity style={styles.secondaryAction}>
+              <ArrowUpRight size={18} color="#FFF" />
+              <Text style={styles.secondaryActionText}>Withdraw</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* AUTO-REPLENISH */}
+        {/* AUTO-REPLENISH MODULAR CARD */}
         <View style={styles.autoSection}>
-          <Text style={styles.autoTitle}>
-            {autoReplenish ? 'Auto-Replenish Active' : 'Auto-Replenish Inactive'}
-          </Text>
-          <Text style={styles.autoDesc}>
-            When balance drops below ${autoReplenishSettings.threshold}, add $
-            {autoReplenishSettings.amount} automatically.
-          </Text>
+          <View style={styles.autoInfo}>
+            <View style={styles.autoHeader}>
+              <Text style={styles.autoTitle}>Auto-Replenish</Text>
+              <View style={[styles.statusIndicator, { backgroundColor: autoReplenish ? '#10B981' : '#94A3B8' }]} />
+            </View>
+            <Text style={styles.autoDesc}>
+              Smart-fill ${autoReplenishSettings.amount} if balance {'<'} ${autoReplenishSettings.threshold}
+            </Text>
+          </View>
           <TouchableOpacity
-            style={[
-              styles.toggle,
-              { backgroundColor: autoReplenish ? '#0D9488' : '#E5E7EB' },
-            ]}
+            activeOpacity={0.8}
+            style={[styles.toggle, { backgroundColor: autoReplenish ? '#4F46E5' : '#E2E8F0' }]}
             onPress={() => setAutoReplenish(!autoReplenish)}
           >
-            <View
-              style={[
-                styles.knob,
-                { alignSelf: autoReplenish ? 'flex-end' : 'flex-start' },
-              ]}
-            />
+            <View style={[styles.knob, { alignSelf: autoReplenish ? 'flex-end' : 'flex-start' }]} />
           </TouchableOpacity>
         </View>
 
-        {/* TRANSACTIONS */}
+        {/* TRANSACTIONS SECTION */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          <TextInput
-            style={styles.searchBar}
-            placeholder="Search transaction..."
-            value={search}
-            onChangeText={setSearch}
-          />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.filterRow}
-          >
-            {['All', 'Withdrawn', 'Completed', 'Pending', 'Deposit'].map(
-              (item) => (
-                <TouchableOpacity
-                  key={item}
-                  style={[styles.chip, filter === item && styles.activeChip]}
-                  onPress={() => setFilter(item)}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      filter === item && styles.activeChipText,
-                    ]}
-                  >
-                    {item}
-                  </Text>
-                </TouchableOpacity>
-              )
-            )}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Transaction History</Text>
+            <History size={18} color="#64748B" />
+          </View>
+
+          {/* Styled Search */}
+          <View style={styles.searchWrapper}>
+            <Search size={18} color="#94A3B8" />
+            <TextInput
+              style={styles.searchBar}
+              placeholder="Search history..."
+              placeholderTextColor="#94A3B8"
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
+
+          {/* Filters Scroll */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+            {['All', 'Completed', 'Pending', 'Withdrawn', 'Deposit'].map((item) => (
+              <TouchableOpacity
+                key={item}
+                style={[styles.chip, filter === item && styles.activeChip]}
+                onPress={() => setFilter(item)}
+              >
+                <Text style={[styles.chipText, filter === item && styles.activeChipText]}>{item}</Text>
+              </TouchableOpacity>
+            ))}
           </ScrollView>
 
           {filteredTxns.length === 0 ? (
-            <Text style={styles.emptyText}>No transactions found.</Text>
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No activity found</Text>
+            </View>
           ) : (
             filteredTxns.map((txn, index) => (
               <View key={index} style={styles.transactionItem}>
-                <View style={{ flex: 1, paddingRight: 10 }}>
-                  <Text style={styles.txnDate}>{txn.date}</Text>
-                  <Text style={styles.txnDesc} numberOfLines={2}>
-                    {txn.description}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.statusTag,
-                      styles[`status_${txn.status?.toLowerCase()}`],
-                      { alignSelf: 'flex-start', marginTop: 4 },
-                    ]}
-                  >
-                    {txn.status}
-                  </Text>
+                <View style={styles.txnIconWrapper}>
+                  {txn.type === 'credit' ? 
+                    <Plus size={18} color="#10B981" /> : 
+                    <ArrowUpRight size={18} color="#EF4444" />
+                  }
+                </View>
+                
+                <View style={styles.txnContent}>
+                  <Text style={styles.txnDesc}>{txn.description}</Text>
+                  <View style={styles.txnMetaRow}>
+                    <Text style={styles.txnDate}>{txn.date}</Text>
+                    <View style={styles.dot} />
+                    <Text style={[styles.txnStatusText, styles[`text_${txn.status?.toLowerCase()}`]]}>
+                      {txn.status}
+                    </Text>
+                  </View>
                 </View>
 
-                <View style={{ justifyContent: 'center', alignItems: 'flex-end' }}>
-                  <Text
-                    style={[
-                      styles.txnAmount,
-                      { color: txn.type === 'credit' ? '#0D9488' : '#DC2626' },
-                    ]}
-                  >
+                <View style={styles.txnAmountWrapper}>
+                  <Text style={[styles.txnAmount, { color: txn.type === 'credit' ? '#10B981' : '#1E293B' }]}>
                     {txn.type === 'credit' ? '+' : '-'}${txn.amount}
                   </Text>
                 </View>
@@ -198,158 +189,125 @@ export default function WalletScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: '#111827' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1E293B' },
+  backButton: { padding: 8, backgroundColor: '#F1F5F9', borderRadius: 12 },
+  headerRight: { padding: 8 },
+  
   walletCard: {
-    backgroundColor: '#0D9488',
+    backgroundColor: '#1E1B4B',
     margin: 20,
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 24,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    overflow: 'hidden',
   },
-  balanceLabel: { color: '#CCFBF1', fontSize: 16 },
-  balanceValue: {
-    color: '#FFFFFF',
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginTop: 8,
+  circleBlur: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: '#4F46E5',
+    top: -50,
+    right: -50,
+    opacity: 0.3,
   },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25 },
+  balanceLabel: { color: '#C7D2FE', fontSize: 14, fontWeight: '500' },
+  balanceValue: { color: '#FFFFFF', fontSize: 34, fontWeight: '800', marginTop: 4 },
+  
   walletStats: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
   },
-  statBox: { alignItems: 'center', flex: 1 },
-  statLabel: { color: '#A7F3D0', fontSize: 14 },
-  statValue: { color: '#FFFFFF', fontSize: 18, fontWeight: '600' },
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20,
-  },
-  actionButton: {
-    backgroundColor: '#14B8A6',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-  },
-  actionText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-  actionButtonOutline: {
-    borderWidth: 1.5,
-    borderColor: '#fff',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-  },
-  actionTextOutline: { color: '#fff', fontWeight: '600', fontSize: 16 },
-  settingsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginHorizontal: 20,
-  },
-  settingsBtn: {
-    flex: 1,
-    marginHorizontal: 5,
-    backgroundColor: '#E0F2FE',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  settingsText: { color: '#0369A1', fontWeight: '600' },
+  statBox: { flex: 1, alignItems: 'center' },
+  statDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.1)', height: '100%' },
+  statLabel: { color: '#94A3B8', fontSize: 12, marginBottom: 4 },
+  statValue: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  
+  actionRow: { flexDirection: 'row', gap: 12 },
+  primaryAction: { flex: 1, backgroundColor: '#FFFFFF', height: 50, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  primaryActionText: { color: '#4F46E5', fontWeight: '700' },
+  secondaryAction: { flex: 1, backgroundColor: '#4F46E5', height: 50, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  secondaryActionText: { color: '#FFF', fontWeight: '700' },
+
   autoSection: {
     backgroundColor: '#FFFFFF',
-    margin: 20,
-    padding: 16,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    marginHorizontal: 20,
+    padding: 20,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  autoTitle: { fontSize: 16, fontWeight: '600', color: '#0F172A' },
-  autoDesc: { fontSize: 14, color: '#475569', marginTop: 4 },
-  toggle: {
-    width: 48,
-    height: 26,
-    borderRadius: 13,
-    justifyContent: 'center',
-    marginTop: 10,
-    paddingHorizontal: 3,
-  },
-  knob: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-  },
-  section: { paddingHorizontal: 20, marginTop: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
-  searchBar: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 10,
-    marginTop: 10,
+  autoHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  autoTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
+  statusIndicator: { width: 8, height: 8, borderRadius: 4 },
+  autoDesc: { fontSize: 13, color: '#64748B', marginTop: 4 },
+  toggle: { width: 44, height: 24, borderRadius: 12, justifyContent: 'center', paddingHorizontal: 3 },
+  knob: { width: 18, height: 18, borderRadius: 9, backgroundColor: '#FFF' },
+
+  section: { paddingHorizontal: 20, marginTop: 30 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B' },
+  
+  searchWrapper: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#FFF', 
+    borderRadius: 14, 
+    paddingHorizontal: 15, 
+    height: 50,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    marginBottom: 15 
   },
-  filterRow: { marginVertical: 10 },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  activeChip: { backgroundColor: '#0D9488' },
-  chipText: { color: '#334155', fontWeight: '500' },
-  activeChipText: { color: '#FFFFFF' },
-  emptyText: { color: '#6B7280', fontSize: 14, marginTop: 10 },
+  searchBar: { flex: 1, marginLeft: 10, fontSize: 15, color: '#1E293B' },
+  
+  filterRow: { marginBottom: 20 },
+  chip: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#FFF', borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+  activeChip: { backgroundColor: '#4F46E5', borderColor: '#4F46E5' },
+  chipText: { color: '#64748B', fontWeight: '600', fontSize: 13 },
+  activeChipText: { color: '#FFF' },
+
   transactionItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  txnDate: { color: '#94A3B8', fontSize: 12 },
-  txnDesc: {
-    color: '#1E293B',
-    fontSize: 15,
-    fontWeight: '500',
-    flexShrink: 1,
-    flexWrap: 'wrap',
-  },
-  txnAmount: { fontSize: 16, fontWeight: '600' },
-  statusTag: {
-    marginTop: 4,
-    fontSize: 12,
-    fontWeight: '600',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    overflow: 'hidden',
-    textAlign: 'center',
-  },
-  status_completed: { backgroundColor: '#DCFCE7', color: '#166534' },
-  status_pending: { backgroundColor: '#FEF9C3', color: '#854D0E' },
-  status_withdrawn: { backgroundColor: '#FFE4E6', color: '#991B1B' },
-  status_deposit: { backgroundColor: '#CCFBF1', color: '#0F766E' },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFF',
+    padding: 15,
+    borderRadius: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
+  txnIconWrapper: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#F1F5F9' },
+  txnContent: { flex: 1, marginLeft: 12 },
+  txnDesc: { fontSize: 15, fontWeight: '600', color: '#1E293B', marginBottom: 4 },
+  txnMetaRow: { flexDirection: 'row', alignItems: 'center' },
+  txnDate: { fontSize: 12, color: '#94A3B8' },
+  dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#CBD5E1', marginHorizontal: 8 },
+  txnStatusText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
+  txnAmount: { fontSize: 16, fontWeight: '800' },
+  
+  text_completed: { color: '#10B981' },
+  text_pending: { color: '#F59E0B' },
+  text_withdrawn: { color: '#EF4444' },
+  text_deposit: { color: '#10B981' },
+
+  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
+  emptyContainer: { alignItems: 'center', padding: 40 },
+  emptyText: { color: '#94A3B8', fontWeight: '500' },
 });

@@ -11,19 +11,19 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
-import { API_BASE_URL } from "@/config";
+import { projectService, proposalService } from "@/services/projectService";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function BidNow() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
 
   const [projectTitle, setProjectTitle] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [coverLetter, setCoverLetter] = useState<string>("");
-  const [duration, setDuration] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -32,10 +32,11 @@ export default function BidNow() {
       if (!id) return;
       try {
         setLoading(true);
-        const res = await axios.get(`${API_BASE_URL}/projects/${id}`);
-        setProjectTitle(res.data.title || "");
-      } catch (err) {
+        const project = await projectService.getProjectById(id);
+        setProjectTitle(project.title || "");
+      } catch (err: any) {
         console.error("Failed to fetch project for bidding", err);
+        Alert.alert("Error", err.message || "Failed to load project");
       } finally {
         setLoading(false);
       }
@@ -44,20 +45,28 @@ export default function BidNow() {
   }, [id]);
 
   const handleSubmit = async () => {
-    if (!id) return Alert.alert("Missing project ID");
-    if (!amount || !coverLetter) return Alert.alert("Please enter amount and cover letter");
+    if (!id) return Alert.alert("Error", "Missing project ID");
+    if (!amount || !coverLetter) {
+      return Alert.alert("Error", "Please enter bid amount and cover letter");
+    }
+
+    if (!user || user.role !== 'Freelancer') {
+      return Alert.alert("Error", "Only freelancers can submit proposals");
+    }
 
     try {
       setSubmitting(true);
-      const payload = { amount, coverLetter, duration };
-      await axios.post(`${API_BASE_URL}/projects/${id}/bid`, payload);
+      await proposalService.createProposal(id, {
+        coverLetter: coverLetter.trim(),
+        bidAmount: parseFloat(amount),
+      });
 
-      Alert.alert("Success", "Your bid has been submitted.", [
+      Alert.alert("Success", "Your proposal has been submitted successfully!", [
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (err: any) {
-      console.error("Bid error", err);
-      Alert.alert("Error", err.response?.data?.message || "Unable to submit bid");
+      console.error("Proposal submission error", err);
+      Alert.alert("Error", err.message || "Unable to submit proposal");
     } finally {
       setSubmitting(false);
     }
@@ -96,16 +105,6 @@ export default function BidNow() {
               keyboardType="numeric"
               value={amount}
               onChangeText={setAmount}
-              style={styles.input}
-            />
-          </View>
-
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Estimated Duration</Text>
-            <TextInput
-              placeholder="e.g. 2 weeks"
-              value={duration}
-              onChangeText={setDuration}
               style={styles.input}
             />
           </View>

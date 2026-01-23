@@ -5,11 +5,11 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Dimensions,
+  StatusBar
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Eye, EyeOff, User, Mail, Lock, Briefcase, UserCircle, Check, ArrowRight, CheckCircle2 } from "lucide-react-native";
@@ -17,22 +17,17 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const { width } = Dimensions.get("window");
 
-const Signup = () => {
+export default function Signup() {
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<'Freelancer' | 'Client' | 'Admin'>('Freelancer');
+  const [role, setRole] = useState<'Freelancer' | 'Client'>('Freelancer');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
-  const [passwordCriteria, setPasswordCriteria] = useState({
-    minLength: false,
-    hasUppercase: false,
-    hasNumber: false,
-  });
 
   const router = useRouter();
   const { signup } = useAuth();
@@ -52,28 +47,24 @@ const Signup = () => {
   const handleSignup = async () => {
     setErrorMessage("");
 
-    // Validation
     if (!userName || !email || !password || !confirmPassword) {
       setErrorMessage("Please fill all fields.");
       return;
     }
 
-    // Username validation
     if (userName.length < 3) {
-      setErrorMessage("Username must be at least 3 characters long.");
+      setErrorMessage("Username must be at least 3 characters.");
       return;
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setErrorMessage("Please enter a valid email address.");
       return;
     }
 
-    // Password validation
     if (password.length < 6) {
-      setErrorMessage("Password must be at least 6 characters long.");
+      setErrorMessage("Password must be at least 6 characters.");
       return;
     }
 
@@ -99,7 +90,6 @@ const Signup = () => {
       } as any);
     } catch (error: any) {
       console.error('[Signup] Error:', error);
-      // Better error handling
       let errorMsg = error.message || "Signup failed. Please try again.";
 
       if (errorMsg.includes("already exists") || errorMsg.includes("User exists") || errorMsg.includes("USER_EXISTS")) {
@@ -323,7 +313,7 @@ const Signup = () => {
       </ScrollView>
     </KeyboardAvoidingView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -364,6 +354,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#62646a',
   },
+
   errorContainer: {
     backgroundColor: '#fff0f0',
     borderWidth: 1,
@@ -389,6 +380,9 @@ const styles = StyleSheet.create({
     color: '#222325',
     marginBottom: 8,
   },
+  errorText: { color: '#FECACA', fontSize: 14, fontWeight: '500' },
+
+  inputGroup: { marginBottom: 12 },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -524,4 +518,11 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Signup;
+  signupButtonContainer: { borderRadius: 16, overflow: 'hidden' },
+  signupButton: { height: 56, alignItems: 'center', justifyContent: 'center' },
+  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+
+  loginContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  loginText: { color: '#94A3B8', fontSize: 15 },
+  loginLink: { color: '#818CF8', fontSize: 15, fontWeight: '700' },
+});

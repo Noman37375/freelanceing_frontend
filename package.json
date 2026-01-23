@@ -5,8 +5,10 @@
   "private": true,
   "scripts": {
     "dev": "cross-env EXPO_NO_TELEMETRY=1 expo start",
-    "build": "expo export --platform web",
-    "build:web": "expo export --platform web",
+    "icons:generate": "node ./scripts/generate-icons.mjs",
+    "pwa:postbuild": "node ./scripts/pwa-postbuild.mjs",
+    "build": "npm run icons:generate && expo export --platform web && npm run pwa:postbuild",
+    "build:web": "npm run icons:generate && expo export --platform web && npm run pwa:postbuild",
     "preview": "npx serve -p 8080",
     "build:web:preview": "npm run build:web && npm run preview",
     "lint": "expo lint",
@@ -61,6 +63,7 @@
     "autoprefixer": "^10.4.23",
     "cross-env": "^10.0.0",
     "postcss": "^8.5.6",
+    "sharp": "^0.34.4",
     "serve": "^14.2.5",
     "typescript": "~5.8.3"
   },

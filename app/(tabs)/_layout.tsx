@@ -21,16 +21,25 @@ export default function TabLayout() {
           position: 'absolute', // Makes it look modern/floating
           backgroundColor: '#FFFFFF',
           borderTopWidth: 0,
-          elevation: 20, // Shadow for Android
-          shadowColor: '#000', // Shadow for iOS
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.05,
-          shadowRadius: 10,
           height: Platform.OS === 'ios' ? 88 : 70,
           paddingTop: 10,
+          ...Platform.select({
+            ios: {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.05,
+              shadowRadius: 10,
+            },
+            android: {
+              elevation: 20,
+            },
+            web: {
+              boxShadow: '0px -4px 10px rgba(0, 0, 0, 0.05)',
+            },
+          }),
         },
       }}>
-      
+
       <Tabs.Screen
         name="index"
         options={{

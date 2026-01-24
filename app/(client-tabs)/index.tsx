@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from 'react-native';
-import { Briefcase, DollarSign, MessageSquare, AlertCircle, Plus, Search } from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Platform, StatusBar } from 'react-native';
+import { Briefcase, DollarSign, MessageSquare, AlertCircle, Plus, Search, ArrowRight, Wallet, UserCheck } from 'lucide-react-native';
 import StatsCard from '@/components/ClientStatsCard';
 import ProjectCard from '@/components/ClientProjectCard';
 import { useRouter } from 'expo-router';
@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { projectService } from '@/services/projectService';
 import { Project, getProjectDisplayStatus } from '@/models/Project';
 import { disputeService } from '@/services/disputeService';
-import { COLORS } from '@/utils/constants';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ClientHome() {
   const router = useRouter();
@@ -23,7 +23,6 @@ export default function ClientHome() {
     disputes: 0,
   });
 
-  // Fetch client's projects
   const fetchProjects = async () => {
     if (!user?.id) {
       setLoading(false);
@@ -33,20 +32,18 @@ export default function ClientHome() {
       setLoading(true);
       const fetchedProjects = await projectService.getProjects({ clientId: user.id });
       setProjects(fetchedProjects);
-      
-      // Fetch disputes count
+
       const disputes = await disputeService.getMyDisputes();
-      
-      // Calculate stats
+
       const total = fetchedProjects.length;
       const totalSpent = fetchedProjects
         .filter(p => p.status === 'COMPLETED')
         .reduce((sum, p) => sum + (p.budget || 0), 0);
-      
+
       setStats({
         total,
         totalSpent,
-        messages: 0, // TODO: Implement when messages API is ready
+        messages: 0,
         disputes: disputes.length,
       });
     } catch (error: any) {
@@ -67,7 +64,6 @@ export default function ClientHome() {
     fetchProjects();
   };
 
-  // Get recent projects (last 3)
   const recentProjects = projects
     .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
     .slice(0, 3);
@@ -75,204 +71,301 @@ export default function ClientHome() {
   if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <ActivityIndicator size="large" color="#4F46E5" />
       </View>
     );
   }
 
   return (
-    <ScrollView 
-      style={styles.container} 
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-      contentContainerStyle={{ paddingBottom: 100 }}
-    >
-      {/* HEADER */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Welcome back!</Text>
-          <Text style={styles.userName}>{user?.userName || 'Client'}</Text>
-        </View>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.topGradient} />
 
-      {/* OVERVIEW STATS */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Overview</Text>
-        <View style={styles.statsContainer}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => router.push('/(client-tabs)/projects' as any)}
-          >
-            <StatsCard
-              title="Projects"
-              value={stats.total.toString()}
-              icon={Briefcase}
-              iconColor={COLORS.primary}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => router.push('/client/Wallet' as any)}
-          >
-            <StatsCard
-              title="Total Spent"
-              value={`$${(stats.totalSpent / 1000).toFixed(1)}K`}
-              icon={DollarSign}
-              iconColor={COLORS.success}
-            />
-          </TouchableOpacity>
-
-          <View style={{ opacity: 0.55 }}>
-            <StatsCard
-              title="Messages"
-              value={stats.messages.toString()}
-              icon={MessageSquare}
-              iconColor={COLORS.accent}
-            />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFF" />
+        }
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        {/* HEADER */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Welcome back,</Text>
+            <Text style={styles.userName}>{user?.userName || 'Client'}</Text>
           </View>
-
           <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => router.push('/client/Disputes' as any)}
+            style={styles.profileCircle}
+            onPress={() => router.push('/(client-tabs)/profile' as any)}
           >
-            <StatsCard
-              title="Disputes"
-              value={stats.disputes.toString()}
-              icon={AlertCircle}
-              iconColor={COLORS.error}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* QUICK ACTIONS */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => router.push('/create-project' as any)}
-          >
-            <View style={[styles.actionIconContainer, { backgroundColor: COLORS.primary }]}>
-              <Plus size={24} color={COLORS.white} strokeWidth={2} />
-            </View>
-            <Text style={styles.actionTitle}>Post Project</Text>
-            <Text style={styles.actionSubtitle}>Find the right talent</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => router.push('/(client-tabs)/freelancers' as any)}
-          >
-            <View style={[styles.actionIconContainer, { backgroundColor: COLORS.success }]}>
-              <Search size={24} color={COLORS.white} strokeWidth={2} />
-            </View>
-            <Text style={styles.actionTitle}>Find Freelancers</Text>
-            <Text style={styles.actionSubtitle}>Browse top talent</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* RECENT PROJECTS */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Projects</Text>
-          <TouchableOpacity onPress={() => router.push('/(client-tabs)/projects' as any)}>
-            <Text style={styles.viewAllText}>View All</Text>
+            <UserCheck size={20} color="#FFF" />
           </TouchableOpacity>
         </View>
 
-        {recentProjects.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No projects yet</Text>
-            <Text style={styles.emptySubtext}>Create your first project to get started!</Text>
-            <TouchableOpacity 
-              style={styles.createButton}
-              onPress={() => router.push('/create-project' as any)}
+        {/* STATS OVERVIEW */}
+        <View style={styles.section}>
+          <View style={styles.statsRow}>
+            <TouchableOpacity
+              style={styles.statBox}
+              activeOpacity={0.8}
+              onPress={() => router.push('/(client-tabs)/projects' as any)}
             >
-              <Text style={styles.createButtonText}>Create Project</Text>
+              <View style={[styles.iconCircle, { backgroundColor: '#EEF2FF' }]}>
+                <Briefcase size={20} color="#4F46E5" />
+              </View>
+              <Text style={styles.statValue}>{stats.total}</Text>
+              <Text style={styles.statLabel}>Total Projects</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statBox}
+              activeOpacity={0.8}
+              onPress={() => router.push('/client/Wallet' as any)}
+            >
+              <View style={[styles.iconCircle, { backgroundColor: '#ECFDF5' }]}>
+                <Wallet size={20} color="#10B981" />
+              </View>
+              <Text style={styles.statValue}>${(stats.totalSpent / 1000).toFixed(1)}K</Text>
+              <Text style={styles.statLabel}>Total Spent</Text>
             </TouchableOpacity>
           </View>
-        ) : (
-          recentProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              title={project.title}
-              budget={`$${project.budget}`}
-              status={getProjectDisplayStatus(project)}
-              freelancer={project.freelancer?.userName}
-              deadline={project.duration || 'Not specified'}
-              onPress={() =>
-                router.push({
-                  pathname: '/client/ProjectDetail' as any,
-                  params: { id: project.id },
-                } as any)
-              }
-            />
-          ))
-        )}
+        </View>
 
-      </View>
-    </ScrollView>
+        {/* QUICK ACTIONS */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.actionsGrid}>
+            <TouchableOpacity
+              style={[styles.actionCard, { backgroundColor: '#4F46E5' }]}
+              onPress={() => router.push('/create-project' as any)}
+            >
+              <Plus size={24} color="#FFF" />
+              <Text style={styles.actionCardTitle}>Post Project</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionCard, { backgroundColor: '#10B981' }]}
+              onPress={() => router.push('/(client-tabs)/freelancers' as any)}
+            >
+              <Search size={24} color="#FFF" />
+              <Text style={styles.actionCardTitle}>Find Talent</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* RECENT PROJECTS */}
+        <View style={[styles.section, { flex: 1 }]}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Projects</Text>
+            <TouchableOpacity onPress={() => router.push('/(client-tabs)/projects' as any)}>
+              <View style={styles.viewAllBtn}>
+                <Text style={styles.viewAllText}>See all</Text>
+                <ArrowRight size={14} color="#4F46E5" />
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {recentProjects.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>You haven't posted any projects yet.</Text>
+              <Text style={styles.emptySubtitle}>Hire the best freelancers for your business.</Text>
+              <TouchableOpacity
+                style={styles.createBtn}
+                onPress={() => router.push('/create-project' as any)}
+              >
+                <Text style={styles.createBtnText}>Post a Project</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            recentProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                title={project.title}
+                budget={`$${project.budget}`}
+                status={getProjectDisplayStatus(project)}
+                freelancer={project.freelancer?.userName}
+                deadline={project.duration || 'Not specified'}
+                onPress={() =>
+                  router.push({
+                    pathname: '/client/ProjectDetail' as any,
+                    params: { id: project.id },
+                  } as any)
+                }
+              />
+            ))
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.gray100 },
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  topGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: Platform.OS === 'ios' ? 300 : 260,
+    backgroundColor: '#1E1B4B',
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: COLORS.white,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    elevation: 3,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 30,
   },
-  greeting: { fontSize: 14, color: COLORS.gray500, fontWeight: '500' },
-  userName: { fontSize: 24, fontWeight: '700', color: COLORS.gray800, marginTop: 4 },
-  section: { padding: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: COLORS.gray800, marginBottom: 16 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  viewAllText: { fontSize: 14, color: COLORS.primary, fontWeight: '600' },
-  statsContainer: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -8 },
-  actionsContainer: { flexDirection: 'row', gap: 12 },
-  actionButton: {
+  greeting: {
+    fontSize: 14,
+    color: '#C7D2FE',
+    fontWeight: '500',
+  },
+  userName: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginTop: 4,
+  },
+  profileCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  section: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statBox: {
     flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
     padding: 20,
-    alignItems: 'center',
-    elevation: 3,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.05,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 10,
+      },
+      web: {
+        boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.05)',
+      },
+    }),
   },
-  actionIconContainer: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  actionTitle: { fontSize: 16, fontWeight: '600', color: COLORS.gray800, marginBottom: 4, textAlign: 'center' },
-  actionSubtitle: { fontSize: 12, color: COLORS.gray500, textAlign: 'center' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.gray100 },
-  loadingText: { marginTop: 12, color: COLORS.gray500, fontSize: 14 },
-  emptyContainer: { 
-    backgroundColor: COLORS.white, 
-    borderRadius: 12, 
-    padding: 24, 
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    marginBottom: 12,
   },
-  emptyText: { fontSize: 16, fontWeight: '600', color: COLORS.gray700, marginBottom: 4 },
-  emptySubtext: { fontSize: 14, color: COLORS.gray500, marginBottom: 16, textAlign: 'center' },
-  createButton: {
-    backgroundColor: COLORS.primary,
+  statValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  viewAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  viewAllText: {
+    fontSize: 14,
+    color: '#4F46E5',
+    fontWeight: '700',
+  },
+  actionsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionCard: {
+    flex: 1,
+    height: 100,
+    borderRadius: 24,
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  actionCardTitle: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  emptyCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  createBtn: {
+    backgroundColor: '#4F46E5',
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12,
   },
-  createButtonText: {
-    color: COLORS.white,
+  createBtnText: {
+    color: '#FFF',
+    fontWeight: '700',
     fontSize: 14,
-    fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
   },
 });

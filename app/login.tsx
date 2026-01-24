@@ -16,8 +16,6 @@ import { useRouter } from "expo-router";
 import { Eye, EyeOff, Lock, Mail, ArrowRight, CheckCircle2 } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 
-const { width } = Dimensions.get("window");
-
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,7 +46,7 @@ export default function Login() {
     try {
       console.log('[Login] Attempting login for:', email);
       const user = await login(email, password);
-      console.log('[Login] Login successful', user);
+      console.log('[Login] Login successful', user?.role);
 
       // After successful login, redirect based on role
       if (user?.role === 'Admin') {

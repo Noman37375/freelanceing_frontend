@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, Platform } from 'react-native';
 import { FileText, CheckCircle, XCircle, Clock, DollarSign, User, Calendar } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,14 +27,14 @@ export default function Proposals() {
       setLoading(true);
       setError(null);
       const allProposals = await proposalService.getClientProposals();
-      
+
       // Sort by created date (newest first)
       const sortedProposals = [...allProposals].sort((a, b) => {
         const dateA = new Date(a.createdAt || 0).getTime();
         const dateB = new Date(b.createdAt || 0).getTime();
         return dateB - dateA;
       });
-      
+
       setProposals(sortedProposals);
     } catch (error: any) {
       console.error('[Proposals] Failed to fetch proposals:', error);
@@ -58,7 +58,7 @@ export default function Proposals() {
     if (updatingProposalId) {
       return; // Prevent double clicks
     }
-    
+
     try {
       setUpdatingProposalId(proposalId);
       await proposalService.updateProposalStatus(proposalId, 'ACCEPTED');
@@ -78,7 +78,7 @@ export default function Proposals() {
     if (updatingProposalId) {
       return; // Prevent double clicks
     }
-    
+
     try {
       setUpdatingProposalId(proposalId);
       await proposalService.updateProposalStatus(proposalId, 'REJECTED');
@@ -94,8 +94,8 @@ export default function Proposals() {
     }
   };
 
-  const filteredProposals = activeFilter === 'ALL' 
-    ? proposals 
+  const filteredProposals = activeFilter === 'ALL'
+    ? proposals
     : proposals.filter(p => p.status === activeFilter);
 
   const getStatusColor = (status: string) => {
@@ -130,7 +130,7 @@ export default function Proposals() {
     const diffMs = now.getTime() - date.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffHours / 24);
-    
+
     if (diffHours < 1) return 'Just now';
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
@@ -187,158 +187,158 @@ export default function Proposals() {
                 } as any)
               }
             >
-                <View style={styles.cardHeader}>
-                  <View style={styles.projectInfo}>
-                    <Text style={styles.projectTitle} numberOfLines={1}>
-                      {proposal.project?.title || 'Unknown Project'}
-                    </Text>
-                    <View style={styles.metaRow}>
-                      <Calendar size={14} color={COLORS.gray500} strokeWidth={2} />
-                      <Text style={styles.metaText}>{formatDate(proposal.createdAt)}</Text>
-                    </View>
-                  </View>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(proposal.status) + '20' }]}>
-                    <StatusIcon size={16} color={getStatusColor(proposal.status)} strokeWidth={2} />
-                    <Text style={[styles.statusText, { color: getStatusColor(proposal.status) }]}>
-                      {proposal.status}
-                    </Text>
+              <View style={styles.cardHeader}>
+                <View style={styles.projectInfo}>
+                  <Text style={styles.projectTitle} numberOfLines={1}>
+                    {proposal.project?.title || 'Unknown Project'}
+                  </Text>
+                  <View style={styles.metaRow}>
+                    <Calendar size={14} color={COLORS.gray500} strokeWidth={2} />
+                    <Text style={styles.metaText}>{formatDate(proposal.createdAt)}</Text>
                   </View>
                 </View>
-
-                <View style={styles.freelancerInfo}>
-                  <User size={16} color={COLORS.gray500} strokeWidth={2} />
-                  <Text style={styles.freelancerName}>
-                    {proposal.freelancer?.userName || proposal.freelancer?.name || 'Unknown Freelancer'}
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(proposal.status) + '20' }]}>
+                  <StatusIcon size={16} color={getStatusColor(proposal.status)} strokeWidth={2} />
+                  <Text style={[styles.statusText, { color: getStatusColor(proposal.status) }]}>
+                    {proposal.status}
                   </Text>
                 </View>
+              </View>
 
-                <Text style={styles.coverLetter} numberOfLines={2}>
-                  {proposal.coverLetter}
+              <View style={styles.freelancerInfo}>
+                <User size={16} color={COLORS.gray500} strokeWidth={2} />
+                <Text style={styles.freelancerName}>
+                  {proposal.freelancer?.userName || proposal.freelancer?.name || 'Unknown Freelancer'}
                 </Text>
+              </View>
 
-                <View style={styles.cardFooter}>
-                  <View style={styles.bidAmount}>
-                    <DollarSign size={18} color={COLORS.success} strokeWidth={2} />
-                    <Text style={styles.bidAmountText}>${proposal.bidAmount.toFixed(2)}</Text>
-                  </View>
-                  
-                  {proposal.status === 'PENDING' && (
-                    <View style={styles.actionButtons}>
-                      <TouchableOpacity
-                        style={[
-                          styles.actionButton, 
-                          styles.rejectButton,
-                          updatingProposalId === proposal.id && styles.disabledButton
-                        ]}
-                        onPress={async (e) => {
-                          e.stopPropagation();
-                          if (updatingProposalId === proposal.id) {
-                            return;
-                          }
-                          
-                          // For web, use window.confirm instead of Alert.alert
-                          if (typeof window !== 'undefined') {
-                            const confirmed = window.confirm('Are you sure you want to reject this proposal?');
-                            if (confirmed) {
-                              await handleReject(proposal.id);
-                            }
-                          } else {
-                            // For native, use Alert.alert
-                            Alert.alert(
-                              'Reject Proposal',
-                              'Are you sure you want to reject this proposal?',
-                              [
-                                { 
-                                  text: 'Cancel', 
-                                  style: 'cancel'
-                                },
-                                { 
-                                  text: 'Reject', 
-                                  style: 'destructive', 
-                                  onPress: async () => {
-                                    try {
-                                      await handleReject(proposal.id);
-                                    } catch (err) {
-                                      console.error('[Proposals] Error in Reject callback:', err);
-                                    }
-                                  }
-                                },
-                              ],
-                              { cancelable: true }
-                            );
-                          }
-                        }}
-                        disabled={updatingProposalId === proposal.id}
-                      >
-                        {updatingProposalId === proposal.id ? (
-                          <ActivityIndicator size="small" color={COLORS.error} />
-                        ) : (
-                          <>
-                            <XCircle size={16} color={COLORS.error} strokeWidth={2} />
-                            <Text style={styles.rejectButtonText}>Reject</Text>
-                          </>
-                        )}
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[
-                          styles.actionButton, 
-                          styles.acceptButton,
-                          updatingProposalId === proposal.id && styles.disabledButton
-                        ]}
-                        onPress={async (e) => {
-                          e.stopPropagation();
-                          if (updatingProposalId === proposal.id) {
-                            return;
-                          }
-                          
-                          // For web, use window.confirm instead of Alert.alert
-                          if (typeof window !== 'undefined') {
-                            const confirmed = window.confirm('Are you sure you want to accept this proposal? This will reject all other proposals for this project.');
-                            if (confirmed) {
-                              await handleAccept(proposal.id);
-                            }
-                          } else {
-                            // For native, use Alert.alert
-                            Alert.alert(
-                              'Accept Proposal',
-                              'Are you sure you want to accept this proposal? This will reject all other proposals for this project.',
-                              [
-                                { 
-                                  text: 'Cancel', 
-                                  style: 'cancel'
-                                },
-                                { 
-                                  text: 'Accept', 
-                                  style: 'default',
-                                  onPress: async () => {
-                                    try {
-                                      await handleAccept(proposal.id);
-                                    } catch (err) {
-                                      console.error('[Proposals] Error in Accept callback:', err);
-                                    }
-                                  }
-                                },
-                              ],
-                              { cancelable: true }
-                            );
-                          }
-                        }}
-                        disabled={updatingProposalId === proposal.id}
-                      >
-                        {updatingProposalId === proposal.id ? (
-                          <ActivityIndicator size="small" color={COLORS.success} />
-                        ) : (
-                          <>
-                            <CheckCircle size={16} color={COLORS.success} strokeWidth={2} />
-                            <Text style={styles.acceptButtonText}>Accept</Text>
-                          </>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                  )}
+              <Text style={styles.coverLetter} numberOfLines={2}>
+                {proposal.coverLetter}
+              </Text>
+
+              <View style={styles.cardFooter}>
+                <View style={styles.bidAmount}>
+                  <DollarSign size={18} color={COLORS.success} strokeWidth={2} />
+                  <Text style={styles.bidAmountText}>${proposal.bidAmount.toFixed(2)}</Text>
                 </View>
-              </TouchableOpacity>
-            );
+
+                {proposal.status === 'PENDING' && (
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.actionButton,
+                        styles.rejectButton,
+                        updatingProposalId === proposal.id && styles.disabledButton
+                      ]}
+                      onPress={async (e) => {
+                        e.stopPropagation();
+                        if (updatingProposalId === proposal.id) {
+                          return;
+                        }
+
+                        // For web, use window.confirm instead of Alert.alert
+                        if (typeof window !== 'undefined') {
+                          const confirmed = window.confirm('Are you sure you want to reject this proposal?');
+                          if (confirmed) {
+                            await handleReject(proposal.id);
+                          }
+                        } else {
+                          // For native, use Alert.alert
+                          Alert.alert(
+                            'Reject Proposal',
+                            'Are you sure you want to reject this proposal?',
+                            [
+                              {
+                                text: 'Cancel',
+                                style: 'cancel'
+                              },
+                              {
+                                text: 'Reject',
+                                style: 'destructive',
+                                onPress: async () => {
+                                  try {
+                                    await handleReject(proposal.id);
+                                  } catch (err) {
+                                    console.error('[Proposals] Error in Reject callback:', err);
+                                  }
+                                }
+                              },
+                            ],
+                            { cancelable: true }
+                          );
+                        }
+                      }}
+                      disabled={updatingProposalId === proposal.id}
+                    >
+                      {updatingProposalId === proposal.id ? (
+                        <ActivityIndicator size="small" color={COLORS.error} />
+                      ) : (
+                        <>
+                          <XCircle size={16} color={COLORS.error} strokeWidth={2} />
+                          <Text style={styles.rejectButtonText}>Reject</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.actionButton,
+                        styles.acceptButton,
+                        updatingProposalId === proposal.id && styles.disabledButton
+                      ]}
+                      onPress={async (e) => {
+                        e.stopPropagation();
+                        if (updatingProposalId === proposal.id) {
+                          return;
+                        }
+
+                        // For web, use window.confirm instead of Alert.alert
+                        if (typeof window !== 'undefined') {
+                          const confirmed = window.confirm('Are you sure you want to accept this proposal? This will reject all other proposals for this project.');
+                          if (confirmed) {
+                            await handleAccept(proposal.id);
+                          }
+                        } else {
+                          // For native, use Alert.alert
+                          Alert.alert(
+                            'Accept Proposal',
+                            'Are you sure you want to accept this proposal? This will reject all other proposals for this project.',
+                            [
+                              {
+                                text: 'Cancel',
+                                style: 'cancel'
+                              },
+                              {
+                                text: 'Accept',
+                                style: 'default',
+                                onPress: async () => {
+                                  try {
+                                    await handleAccept(proposal.id);
+                                  } catch (err) {
+                                    console.error('[Proposals] Error in Accept callback:', err);
+                                  }
+                                }
+                              },
+                            ],
+                            { cancelable: true }
+                          );
+                        }
+                      }}
+                      disabled={updatingProposalId === proposal.id}
+                    >
+                      {updatingProposalId === proposal.id ? (
+                        <ActivityIndicator size="small" color={COLORS.success} />
+                      ) : (
+                        <>
+                          <CheckCircle size={16} color={COLORS.success} strokeWidth={2} />
+                          <Text style={styles.acceptButtonText}>Accept</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          );
         }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
@@ -463,11 +463,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.05)',
+      },
+    }),
   },
   cardHeader: {
     flexDirection: 'row',

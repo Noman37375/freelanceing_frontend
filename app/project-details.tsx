@@ -258,11 +258,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 24,
-    shadowColor: '#4F46E5',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#4F46E5',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 8,
+      },
+      web: {
+        boxShadow: '0px 8px 16px rgba(79, 70, 229, 0.3)',
+      },
+    }),
   },
   budgetContent: {},
   budgetLabel: { color: '#C7D2FE', fontSize: 14, fontWeight: '600', marginBottom: 4 },
@@ -345,11 +354,20 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
-    shadowColor: '#4F46E5',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#4F46E5',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 8,
+      },
+      web: {
+        boxShadow: '0px 4px 10px rgba(79, 70, 229, 0.3)',
+      },
+    }),
   },
   bidButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 

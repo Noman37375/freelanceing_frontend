@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
-  StatusBar
+  StatusBar,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Search, Filter } from 'lucide-react-native';
@@ -203,11 +204,20 @@ const styles = StyleSheet.create({
     height: 52,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    shadowColor: '#64748B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: '0px 4px 8px rgba(100, 116, 139, 0.05)',
+      },
+    }),
   },
   searchInput: {
     flex: 1,

@@ -10,28 +10,37 @@ export default function ClientTabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.gray400,
+        tabBarActiveTintColor: '#4F46E5', // Primary indigo
+        tabBarInactiveTintColor: '#94A3B8',
         tabBarShowLabel: true,
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '600',
+          fontWeight: '700',
           marginBottom: 10,
         },
         tabBarStyle: {
           position: 'absolute',
-          backgroundColor: COLORS.white,
+          backgroundColor: '#FFFFFF',
           borderTopWidth: 0,
-          elevation: 20,
-          shadowColor: COLORS.black,
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.05,
-          shadowRadius: 10,
           height: Platform.OS === 'ios' ? 88 : 70,
           paddingTop: 10,
+          ...Platform.select({
+            ios: {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.05,
+              shadowRadius: 10,
+            },
+            android: {
+              elevation: 20,
+            },
+            web: {
+              boxShadow: '0px -4px 10px rgba(0, 0, 0, 0.05)',
+            },
+          }),
         },
       }}>
-      
+
       <Tabs.Screen
         name="index"
         options={{
@@ -92,19 +101,6 @@ export default function ClientTabLayout() {
         }}
       />
 
-      {/* Hide component routes from navigation */}
-      <Tabs.Screen
-        name="client/components"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="client/_components"
-        options={{
-          href: null,
-        }}
-      />
     </Tabs>
   );
 }
@@ -119,6 +115,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   activeIconBg: {
-    backgroundColor: COLORS.gray100,
+    backgroundColor: '#EEF2FF', // Very light indigo
   },
 });

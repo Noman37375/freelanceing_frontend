@@ -31,6 +31,6 @@ export const API_BASE_URL = getApiUrl();
 
 // Log the API URL for debugging
 if (typeof window !== 'undefined') {
-  console.log('[Config] API_BASE_URL:', API_BASE_URL);
-  console.log('[Config] Backend should be running at:', API_BASE_URL);
+  // console.log('[Config] API_BASE_URL:', API_BASE_URL);
+  // console.log('[Config] Backend should be running at:', API_BASE_URL);
 }

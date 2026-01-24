@@ -1,16 +1,21 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Switch, Platform } from 'react-native';
-import { Trash2, Edit2, X } from 'lucide-react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Switch, Platform, StatusBar } from 'react-native';
+import { Trash2, Edit2, X, ChevronLeft } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
 import { ClientProfile } from '@/models/User';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 export default function ManageClients() {
+    const router = useRouter();
     const [clients, setClients] = useState<ClientProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [editModalVisible, setEditModalVisible] = useState(false);
     const [editingUser, setEditingUser] = useState<ClientProfile | null>(null);
-    const [editName, setEditName] = useState('');
+    const [editUserName, setEditUserName] = useState('');
     const [editIsVerified, setEditIsVerified] = useState(false);
+    const [isActionLoading, setIsActionLoading] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const loadClients = useCallback(async () => {
         try {
@@ -28,21 +33,24 @@ export default function ManageClients() {
         loadClients();
     }, [loadClients]);
 
-    const handleDelete = async (id: string, name: string) => {
+    const handleDelete = async (id: string, userName: string) => {
         if (Platform.OS === 'web') {
-            const confirmed = window.confirm(`Are you sure you want to delete ${name}?`);
+            const confirmed = window.confirm(`Are you sure you want to delete ${userName}?`);
             if (confirmed) {
                 try {
+                    setDeletingId(id);
                     await adminService.deleteUser(id);
                     setClients(prev => prev.filter(u => u.id !== id));
                 } catch (error) {
                     Alert.alert('Error', 'Failed to delete client');
+                } finally {
+                    setDeletingId(null);
                 }
             }
         } else {
             Alert.alert(
                 'Delete Client',
-                `Are you sure you want to delete ${name}?`,
+                `Are you sure you want to delete ${userName}?`,
                 [
                     { text: 'Cancel', style: 'cancel' },
                     {
@@ -50,10 +58,13 @@ export default function ManageClients() {
                         style: 'destructive',
                         onPress: async () => {
                             try {
+                                setDeletingId(id);
                                 await adminService.deleteUser(id);
                                 setClients(prev => prev.filter(u => u.id !== id));
                             } catch (error) {
                                 Alert.alert('Error', 'Failed to delete client');
+                            } finally {
+                                setDeletingId(null);
                             }
                         }
                     },
@@ -64,7 +75,7 @@ export default function ManageClients() {
 
     const handleEdit = (user: ClientProfile) => {
         setEditingUser(user);
-        setEditName(user.name);
+        setEditUserName(user.userName);
         setEditIsVerified(user.isVerified);
         setEditModalVisible(true);
     };
@@ -72,8 +83,9 @@ export default function ManageClients() {
     const handleUpdate = async () => {
         if (!editingUser) return;
         try {
+            setIsActionLoading(true);
             const updatedUser = await adminService.updateUser(editingUser.id, {
-                name: editName,
+                userName: editUserName,
                 isVerified: editIsVerified
             });
 
@@ -82,6 +94,8 @@ export default function ManageClients() {
             Alert.alert('Success', 'Client updated successfully');
         } catch (error) {
             Alert.alert('Error', 'Failed to update client');
+        } finally {
+            setIsActionLoading(false);
         }
     };
 
@@ -90,26 +104,38 @@ export default function ManageClients() {
             <View style={styles.cardHeader}>
                 <View style={styles.profileInfo}>
                     <View style={styles.avatarPlaceholder}>
-                        <Text style={styles.avatarText}>{item.name?.[0] || '?'}</Text>
+                        <Text style={styles.avatarText}>{item.userName?.[0] || '?'}</Text>
                     </View>
                     <View>
-                        <Text style={styles.name}>{item.name}</Text>
+                        <Text style={styles.userName}>{item.userName}</Text>
                         <Text style={styles.email}>{item.email}</Text>
                     </View>
                 </View>
                 <View style={styles.actionButtons}>
-                    <TouchableOpacity onPress={() => handleEdit(item)} style={styles.iconButton}>
-                        <Edit2 size={20} color="#3B82F6" />
+                    <TouchableOpacity
+                        onPress={() => handleEdit(item)}
+                        style={styles.iconButton}
+                        disabled={!!deletingId}
+                    >
+                        <Edit2 size={18} color={deletingId ? "#CBD5E1" : "#4F46E5"} />
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => handleDelete(item.id, item.name)} style={styles.iconButton}>
-                        <Trash2 size={20} color="#d9534f" />
+                    <TouchableOpacity
+                        onPress={() => handleDelete(item.id, item.userName)}
+                        style={styles.iconButton}
+                        disabled={!!deletingId}
+                    >
+                        {deletingId === item.id ? (
+                            <ActivityIndicator size="small" color="#EF4444" />
+                        ) : (
+                            <Trash2 size={18} color={deletingId ? "#CBD5E1" : "#EF4444"} />
+                        )}
                     </TouchableOpacity>
                 </View>
             </View>
 
             <View style={styles.cardBody}>
-                <Text style={styles.companyText}>
-                    {item.companyName || 'No company info'}
+                <Text style={styles.bioText} numberOfLines={2}>
+                    {item.bio || item.about || 'No bio provided'}
                 </Text>
             </View>
 
@@ -124,10 +150,23 @@ export default function ManageClients() {
     );
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
+            <StatusBar barStyle="light-content" />
+            <View style={styles.topGradient} />
+
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                    <ChevronLeft size={24} color="#FFF" />
+                </TouchableOpacity>
+                <View>
+                    <Text style={styles.headerTitle}>Clients</Text>
+                    <Text style={styles.headerSubtitle}>Manage client accounts</Text>
+                </View>
+            </View>
+
             {isLoading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#1dbf73" />
+                    <ActivityIndicator size="large" color="#FFF" />
                 </View>
             ) : (
                 <FlatList
@@ -135,8 +174,11 @@ export default function ManageClients() {
                     renderItem={renderItem}
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
-                        <Text style={styles.emptyText}>No clients found.</Text>
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>No clients found.</Text>
+                        </View>
                     }
                 />
             )}
@@ -144,7 +186,7 @@ export default function ManageClients() {
             {/* Edit Modal */}
             <Modal
                 visible={editModalVisible}
-                animationType="slide"
+                animationType="fade"
                 transparent={true}
                 onRequestClose={() => setEditModalVisible(false)}
             >
@@ -152,8 +194,8 @@ export default function ManageClients() {
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Edit Client</Text>
-                            <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                                <X size={24} color="#62646a" />
+                            <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.closeButton}>
+                                <X size={20} color="#64748B" />
                             </TouchableOpacity>
                         </View>
 
@@ -161,37 +203,84 @@ export default function ManageClients() {
                             <Text style={styles.label}>Name</Text>
                             <TextInput
                                 style={styles.input}
-                                value={editName}
-                                onChangeText={setEditName}
-                                placeholder="Enter name"
-                                placeholderTextColor="#95979d"
+                                value={editUserName}
+                                onChangeText={setEditUserName}
+                                placeholder="Enter username"
+                                placeholderTextColor="#94A3B8"
                             />
                         </View>
 
                         <View style={styles.switchContainer}>
-                            <Text style={styles.label}>Verified Status</Text>
+                            <View>
+                                <Text style={styles.label}>Verified Status</Text>
+                                <Text style={styles.switchHelp}>Toggle to verify this client</Text>
+                            </View>
                             <Switch
                                 value={editIsVerified}
                                 onValueChange={setEditIsVerified}
-                                trackColor={{ false: '#e4e5e7', true: '#1dbf73' }}
-                                thumbColor={editIsVerified ? '#fff' : '#fff'}
+                                trackColor={{ false: '#E2E8F0', true: '#10B981' }}
+                                thumbColor={Platform.OS === 'ios' ? undefined : '#FFF'}
                             />
                         </View>
 
-                        <TouchableOpacity style={styles.saveButton} onPress={handleUpdate}>
-                            <Text style={styles.saveButtonText}>Save Changes</Text>
+                        <TouchableOpacity
+                            style={[styles.saveButton, isActionLoading && styles.disabledButton]}
+                            onPress={handleUpdate}
+                            disabled={isActionLoading}
+                        >
+                            {isActionLoading ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                <Text style={styles.saveButtonText}>Save Changes</Text>
+                            )}
                         </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
-        </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f7f7f7',
+        backgroundColor: '#F8FAFC',
+    },
+    topGradient: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 180,
+        backgroundColor: '#1E1B4B',
+        borderBottomLeftRadius: 32,
+        borderBottomRightRadius: 32,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 10,
+        paddingBottom: 25,
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: '800',
+        color: '#FFFFFF',
+    },
+    headerSubtitle: {
+        fontSize: 14,
+        color: '#C7D2FE',
+        fontWeight: '500',
     },
     loadingContainer: {
         flex: 1,
@@ -199,25 +288,40 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     listContent: {
-        padding: 16,
+        padding: 20,
+        paddingTop: 5,
+    },
+    emptyContainer: {
+        backgroundColor: '#FFF',
+        borderRadius: 20,
+        padding: 40,
+        alignItems: 'center',
+        marginTop: 20,
     },
     emptyText: {
-        color: '#62646a',
-        textAlign: 'center',
-        marginTop: 32,
+        color: '#64748B',
+        fontSize: 15,
+        fontWeight: '500',
     },
     card: {
-        backgroundColor: '#ffffff',
-        borderRadius: 12,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
         padding: 16,
         marginBottom: 12,
-        borderWidth: 1,
-        borderColor: '#e4e5e7',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.05,
+                shadowRadius: 10,
+            },
+            android: {
+                elevation: 4,
+            },
+            web: {
+                boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.05)',
+            },
+        }),
     },
     cardHeader: {
         flexDirection: 'row',
@@ -234,87 +338,97 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: '#fff7ed',
+        backgroundColor: '#FEF3C7',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
-        borderWidth: 1,
-        borderColor: '#e4e5e7',
     },
     avatarText: {
-        color: '#F59E0B',
+        color: '#D97706',
         fontSize: 18,
         fontWeight: 'bold',
     },
-    name: {
-        color: '#222325',
+    userName: {
+        color: '#1E293B',
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '700',
     },
     email: {
-        color: '#62646a',
-        fontSize: 14,
+        color: '#64748B',
+        fontSize: 13,
     },
     actionButtons: {
         flexDirection: 'row',
         gap: 8,
     },
     iconButton: {
-        padding: 6,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 8,
+        padding: 8,
+        backgroundColor: '#F8FAFC',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
     },
     cardBody: {
         marginBottom: 12,
     },
-    companyText: {
-        color: '#404145',
+    bioText: {
+        color: '#475569',
         fontSize: 14,
-        fontWeight: '500',
+        lineHeight: 20,
     },
     cardFooter: {
         paddingTop: 12,
         borderTopWidth: 1,
-        borderTopColor: '#f0f0f0',
+        borderTopColor: '#F1F5F9',
     },
     statusBadge: {
         paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 12,
+        paddingVertical: 4,
+        borderRadius: 8,
         alignSelf: 'flex-start',
     },
     activeBadge: {
-        backgroundColor: '#f0fdf4',
+        backgroundColor: '#ECFDF5',
     },
     suspendedBadge: {
-        backgroundColor: '#fff0f0',
+        backgroundColor: '#FEF2F2',
     },
     statusText: {
-        fontSize: 12,
-        fontWeight: '600',
+        fontSize: 11,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     activeText: {
-        color: '#15803d',
+        color: '#10B981',
     },
     suspendedText: {
-        color: '#d9534f',
+        color: '#EF4444',
     },
-    // Modal Styles
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(15, 23, 42, 0.6)',
         justifyContent: 'center',
-        padding: 20,
+        padding: 24,
     },
     modalContent: {
-        backgroundColor: '#ffffff',
-        borderRadius: 16,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 24,
         padding: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
-        elevation: 10,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 10 },
+                shadowOpacity: 0.1,
+                shadowRadius: 20,
+            },
+            android: {
+                elevation: 10,
+            },
+            web: {
+                boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.1)',
+            }
+        }),
     },
     modalHeader: {
         flexDirection: 'row',
@@ -323,44 +437,72 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     modalTitle: {
-        color: '#222325',
+        color: '#1E293B',
         fontSize: 20,
-        fontWeight: 'bold',
+        fontWeight: '800',
+    },
+    closeButton: {
+        padding: 4,
     },
     inputContainer: {
         marginBottom: 20,
     },
     label: {
-        color: '#62646a',
+        color: '#475569',
         marginBottom: 8,
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '700',
     },
     input: {
-        backgroundColor: '#fff',
+        backgroundColor: '#F8FAFC',
         borderWidth: 1,
-        borderColor: '#e4e5e7',
-        borderRadius: 8,
+        borderColor: '#E2E8F0',
+        borderRadius: 12,
         padding: 12,
-        color: '#222325',
-        fontSize: 16,
+        color: '#1E293B',
+        fontSize: 15,
     },
     switchContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 24,
-        paddingVertical: 8,
+        marginBottom: 28,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        backgroundColor: '#F8FAFC',
+        borderRadius: 12,
+    },
+    switchHelp: {
+        fontSize: 12,
+        color: '#94A3B8',
+        marginTop: 2,
     },
     saveButton: {
-        backgroundColor: '#1dbf73',
+        backgroundColor: '#4F46E5',
         padding: 16,
-        borderRadius: 8,
+        borderRadius: 16,
         alignItems: 'center',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#4F46E5',
+                shadowOpacity: 0.2,
+                shadowRadius: 10,
+                shadowOffset: { width: 0, height: 4 },
+            },
+            android: {
+                elevation: 6,
+            },
+            web: {
+                boxShadow: '0px 4px 10px rgba(79, 70, 229, 0.2)',
+            }
+        }),
     },
     saveButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
+        color: '#FFF',
+        fontWeight: '700',
         fontSize: 16,
+    },
+    disabledButton: {
+        opacity: 0.6,
     },
 });

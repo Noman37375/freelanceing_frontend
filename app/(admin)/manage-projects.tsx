@@ -1,17 +1,22 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Platform } from 'react-native';
-import { Trash2, Edit2, X, Check } from 'lucide-react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Platform, StatusBar } from 'react-native';
+import { Trash2, Edit2, X, Check, ChevronLeft, Calendar, DollarSign } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
 import { Project } from '@/models/Project';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 export default function ManageProjects() {
+    const router = useRouter();
     const [projects, setProjects] = useState<Project[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [editModalVisible, setEditModalVisible] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [editTitle, setEditTitle] = useState('');
     const [editBudget, setEditBudget] = useState('');
-    const [editStatus, setEditStatus] = useState<'open' | 'in_progress' | 'completed' | 'cancelled'>('open');
+    const [editStatus, setEditStatus] = useState<'ACTIVE' | 'COMPLETED' | 'CANCELLED'>('ACTIVE');
+    const [isActionLoading, setIsLoadingAction] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const loadProjects = useCallback(async () => {
         try {
@@ -34,10 +39,13 @@ export default function ManageProjects() {
             const confirmed = window.confirm(`Are you sure you want to delete "${title}"?`);
             if (confirmed) {
                 try {
+                    setDeletingId(id);
                     await adminService.deleteProject(id);
                     setProjects(prev => prev.filter(p => p.id !== id));
                 } catch (error) {
                     Alert.alert('Error', 'Failed to delete project');
+                } finally {
+                    setDeletingId(null);
                 }
             }
         } else {
@@ -51,10 +59,13 @@ export default function ManageProjects() {
                         style: 'destructive',
                         onPress: async () => {
                             try {
+                                setDeletingId(id);
                                 await adminService.deleteProject(id);
                                 setProjects(prev => prev.filter(p => p.id !== id));
                             } catch (error) {
                                 Alert.alert('Error', 'Failed to delete project');
+                            } finally {
+                                setDeletingId(null);
                             }
                         }
                     },
@@ -66,17 +77,18 @@ export default function ManageProjects() {
     const handleEdit = (project: Project) => {
         setEditingProject(project);
         setEditTitle(project.title);
-        setEditBudget(project.budget.max.toString());
-        setEditStatus(project.status as any);
+        setEditBudget(project.budget.toString());
+        setEditStatus(project.status);
         setEditModalVisible(true);
     };
 
     const handleUpdate = async () => {
         if (!editingProject) return;
         try {
+            setIsLoadingAction(true);
             const updatedProject = await adminService.updateProject(editingProject.id, {
                 title: editTitle,
-                budget: { ...editingProject.budget, min: parseFloat(editBudget) * 0.5, max: parseFloat(editBudget) },
+                budget: parseFloat(editBudget),
                 status: editStatus
             });
 
@@ -85,16 +97,17 @@ export default function ManageProjects() {
             Alert.alert('Success', 'Project updated successfully');
         } catch (error) {
             Alert.alert('Error', 'Failed to update project');
+        } finally {
+            setIsLoadingAction(false);
         }
     };
 
-    const getStatusColor = (status: string) => {
+    const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'open': return '#10B981';
-            case 'in_progress': return '#F59E0B';
-            case 'completed': return '#3B82F6';
-            case 'cancelled': return '#EF4444';
-            default: return '#9CA3AF';
+            case 'ACTIVE': return { bg: '#ECFDF5', text: '#10B981' };
+            case 'COMPLETED': return { bg: '#EEF2FF', text: '#4F46E5' };
+            case 'CANCELLED': return { bg: '#FEF2F2', text: '#EF4444' };
+            default: return { bg: '#F8FAFC', text: '#64748B' };
         }
     };
 
@@ -102,51 +115,90 @@ export default function ManageProjects() {
         return status.replace('_', ' ').toUpperCase();
     };
 
-    const renderItem = ({ item }: { item: Project }) => (
-        <View style={styles.card}>
-            <View style={styles.cardHeader}>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.title}>{item.title}</Text>
-                    <Text style={styles.subtitle}>Budget: ${item.budget.max}</Text>
-                </View>
-                <View style={styles.actionButtons}>
-                    <TouchableOpacity onPress={() => handleEdit(item)} style={styles.iconButton}>
-                        <Edit2 size={20} color="#3B82F6" />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => handleDelete(item.id, item.title)} style={styles.iconButton}>
-                        <Trash2 size={20} color="#d9534f" />
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-            <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
-
-            <View style={styles.tagsContainer}>
-                {item.skills?.map((skill, index) => (
-                    <View key={index} style={styles.tag}>
-                        <Text style={styles.tagText}>{skill}</Text>
+    const renderItem = ({ item }: { item: Project }) => {
+        const statusStyle = getStatusStyle(item.status);
+        return (
+            <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+                        <View style={styles.budgetRow}>
+                            <Text style={styles.budgetAmount}>${item.budget}</Text>
+                            <Text style={styles.budgetLabel}>Budget</Text>
+                        </View>
                     </View>
-                ))}
-            </View>
-
-            <View style={styles.cardFooter}>
-                <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}15` }]}>
-                    <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-                        {formatStatus(item.status)}
-                    </Text>
+                    <View style={styles.actionButtons}>
+                        <TouchableOpacity
+                            onPress={() => handleEdit(item)}
+                            style={styles.iconButton}
+                            disabled={!!deletingId}
+                        >
+                            <Edit2 size={18} color={deletingId ? "#CBD5E1" : "#4F46E5"} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => handleDelete(item.id, item.title)}
+                            style={styles.iconButton}
+                            disabled={!!deletingId}
+                        >
+                            {deletingId === item.id ? (
+                                <ActivityIndicator size="small" color="#EF4444" />
+                            ) : (
+                                <Trash2 size={18} color={deletingId ? "#CBD5E1" : "#EF4444"} />
+                            )}
+                        </TouchableOpacity>
+                    </View>
                 </View>
-                <Text style={styles.dateText}>
-                    {new Date(item.createdAt || '').toLocaleDateString()}
-                </Text>
+
+                <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
+
+                <View style={styles.tagsContainer}>
+                    {item.skills?.slice(0, 3).map((skill, index) => (
+                        <View key={index} style={styles.tag}>
+                            <Text style={styles.tagText}>{skill}</Text>
+                        </View>
+                    ))}
+                    {(item.skills?.length || 0) > 3 && (
+                        <View style={styles.tag}>
+                            <Text style={styles.tagText}>+{(item.skills?.length || 0) - 3}</Text>
+                        </View>
+                    )}
+                </View>
+
+                <View style={styles.cardFooter}>
+                    <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                        <Text style={[styles.statusText, { color: statusStyle.text }]}>
+                            {formatStatus(item.status)}
+                        </Text>
+                    </View>
+                    <View style={styles.dateRow}>
+                        <Calendar size={12} color="#94A3B8" />
+                        <Text style={styles.dateText}>
+                            {new Date(item.createdAt || '').toLocaleDateString()}
+                        </Text>
+                    </View>
+                </View>
             </View>
-        </View>
-    );
+        );
+    };
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
+            <StatusBar barStyle="light-content" />
+            <View style={styles.topGradient} />
+
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                    <ChevronLeft size={24} color="#FFF" />
+                </TouchableOpacity>
+                <View>
+                    <Text style={styles.headerTitle}>Projects</Text>
+                    <Text style={styles.headerSubtitle}>Monitor marketplace listings</Text>
+                </View>
+            </View>
+
             {isLoading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#1dbf73" />
+                    <ActivityIndicator size="large" color="#FFF" />
                 </View>
             ) : (
                 <FlatList
@@ -154,8 +206,11 @@ export default function ManageProjects() {
                     renderItem={renderItem}
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
-                        <Text style={styles.emptyText}>No projects found.</Text>
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>No projects found.</Text>
+                        </View>
                     }
                 />
             )}
@@ -163,7 +218,7 @@ export default function ManageProjects() {
             {/* Edit Modal */}
             <Modal
                 visible={editModalVisible}
-                animationType="slide"
+                animationType="fade"
                 transparent={true}
                 onRequestClose={() => setEditModalVisible(false)}
             >
@@ -171,8 +226,8 @@ export default function ManageProjects() {
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Edit Project</Text>
-                            <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                                <X size={24} color="#62646a" />
+                            <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.closeButton}>
+                                <X size={20} color="#64748B" />
                             </TouchableOpacity>
                         </View>
 
@@ -183,7 +238,7 @@ export default function ManageProjects() {
                                 value={editTitle}
                                 onChangeText={setEditTitle}
                                 placeholder="Project Title"
-                                placeholderTextColor="#95979d"
+                                placeholderTextColor="#94A3B8"
                             />
                         </View>
 
@@ -195,50 +250,97 @@ export default function ManageProjects() {
                                 onChangeText={setEditBudget}
                                 placeholder="500"
                                 keyboardType="numeric"
-                                placeholderTextColor="#95979d"
+                                placeholderTextColor="#94A3B8"
                             />
                         </View>
 
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Status</Text>
                             <View style={styles.statusOptions}>
-                                {['open', 'in_progress', 'completed', 'cancelled'].map((status) => (
-                                    <TouchableOpacity
-                                        key={status}
-                                        style={[
-                                            styles.statusOption,
-                                            editStatus === status && { borderColor: getStatusColor(status), backgroundColor: `${getStatusColor(status)}10` }
-                                        ]}
-                                        onPress={() => setEditStatus(status as any)}
-                                    >
-                                        <Text style={[
-                                            styles.statusOptionText,
-                                            editStatus === status && { color: getStatusColor(status) }
-                                        ]}>
-                                            {formatStatus(status)}
-                                        </Text>
-                                        {editStatus === status && (
-                                            <Check size={16} color={getStatusColor(status)} />
-                                        )}
-                                    </TouchableOpacity>
-                                ))}
+                                {['ACTIVE', 'COMPLETED', 'CANCELLED'].map((status) => {
+                                    const style = getStatusStyle(status);
+                                    return (
+                                        <TouchableOpacity
+                                            key={status}
+                                            style={[
+                                                styles.statusOption,
+                                                editStatus === status && { borderColor: style.text, backgroundColor: style.bg }
+                                            ]}
+                                            onPress={() => setEditStatus(status as any)}
+                                        >
+                                            <Text style={[
+                                                styles.statusOptionText,
+                                                editStatus === status && { color: style.text }
+                                            ]}>
+                                                {formatStatus(status)}
+                                            </Text>
+                                            {editStatus === status && (
+                                                <Check size={16} color={style.text} />
+                                            )}
+                                        </TouchableOpacity>
+                                    );
+                                })}
                             </View>
                         </View>
 
-                        <TouchableOpacity style={styles.saveButton} onPress={handleUpdate}>
-                            <Text style={styles.saveButtonText}>Save Changes</Text>
+                        <TouchableOpacity
+                            style={[styles.saveButton, isActionLoading && styles.disabledButton]}
+                            onPress={handleUpdate}
+                            disabled={isActionLoading}
+                        >
+                            {isActionLoading ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                <Text style={styles.saveButtonText}>Save Changes</Text>
+                            )}
                         </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
-        </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f7f7f7',
+        backgroundColor: '#F8FAFC',
+    },
+    topGradient: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 180,
+        backgroundColor: '#1E1B4B',
+        borderBottomLeftRadius: 32,
+        borderBottomRightRadius: 32,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 10,
+        paddingBottom: 25,
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: '800',
+        color: '#FFFFFF',
+    },
+    headerSubtitle: {
+        fontSize: 14,
+        color: '#C7D2FE',
+        fontWeight: '500',
     },
     loadingContainer: {
         flex: 1,
@@ -246,42 +348,68 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     listContent: {
-        padding: 16,
+        padding: 20,
+        paddingTop: 5,
+    },
+    emptyContainer: {
+        backgroundColor: '#FFF',
+        borderRadius: 20,
+        padding: 40,
+        alignItems: 'center',
+        marginTop: 20,
     },
     emptyText: {
-        color: '#62646a',
-        textAlign: 'center',
-        marginTop: 32,
+        color: '#64748B',
+        fontSize: 15,
+        fontWeight: '500',
     },
     card: {
-        backgroundColor: '#ffffff',
-        borderRadius: 12,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
         padding: 16,
         marginBottom: 12,
-        borderWidth: 1,
-        borderColor: '#e4e5e7',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.05,
+                shadowRadius: 10,
+            },
+            android: {
+                elevation: 4,
+            },
+            web: {
+                boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.05)',
+            },
+        }),
     },
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: 8,
+        marginBottom: 12,
     },
     title: {
-        color: '#222325',
+        color: '#1E293B',
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '700',
         marginBottom: 4,
     },
-    subtitle: {
-        color: '#1dbf73',
-        fontWeight: '600',
+    budgetRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    budgetAmount: {
+        color: '#10B981',
+        fontWeight: '800',
         fontSize: 14,
+    },
+    budgetLabel: {
+        color: '#94A3B8',
+        fontSize: 12,
+        fontWeight: '600',
+        textTransform: 'uppercase',
     },
     actionButtons: {
         flexDirection: 'row',
@@ -289,32 +417,34 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     iconButton: {
-        padding: 6,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 8,
+        padding: 8,
+        backgroundColor: '#F8FAFC',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
     },
     description: {
-        color: '#62646a',
+        color: '#64748B',
         fontSize: 14,
-        marginBottom: 12,
+        marginBottom: 16,
         lineHeight: 20,
     },
     tagsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
-        marginBottom: 12,
+        marginBottom: 16,
     },
     tag: {
-        backgroundColor: '#f5f7f9',
-        paddingHorizontal: 8,
+        backgroundColor: '#F1F5F9',
+        paddingHorizontal: 10,
         paddingVertical: 4,
-        borderRadius: 6,
+        borderRadius: 8,
     },
     tagText: {
-        color: '#62646a',
-        fontSize: 12,
-        fontWeight: '500',
+        color: '#475569',
+        fontSize: 11,
+        fontWeight: '700',
     },
     cardFooter: {
         flexDirection: 'row',
@@ -322,37 +452,53 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingTop: 12,
         borderTopWidth: 1,
-        borderTopColor: '#f0f0f0',
+        borderTopColor: '#F1F5F9',
     },
     statusBadge: {
         paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 12,
+        paddingVertical: 4,
+        borderRadius: 8,
     },
     statusText: {
-        fontSize: 12,
-        fontWeight: '600',
+        fontSize: 11,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    dateRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
     },
     dateText: {
-        color: '#95979d',
+        color: '#94A3B8',
         fontSize: 12,
+        fontWeight: '500',
     },
-    // Modal Styles
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(15, 23, 42, 0.6)',
         justifyContent: 'center',
-        padding: 20,
+        padding: 24,
     },
     modalContent: {
-        backgroundColor: '#ffffff',
-        borderRadius: 16,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 24,
         padding: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
-        elevation: 10,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 10 },
+                shadowOpacity: 0.1,
+                shadowRadius: 20,
+            },
+            android: {
+                elevation: 10,
+            },
+            web: {
+                boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.1)',
+            }
+        }),
     },
     modalHeader: {
         flexDirection: 'row',
@@ -361,38 +507,55 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     modalTitle: {
-        color: '#222325',
+        color: '#1E293B',
         fontSize: 20,
-        fontWeight: 'bold',
+        fontWeight: '800',
+    },
+    closeButton: {
+        padding: 4,
     },
     inputContainer: {
         marginBottom: 20,
     },
     label: {
-        color: '#62646a',
+        color: '#475569',
         marginBottom: 8,
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '700',
     },
     input: {
-        backgroundColor: '#fff',
+        backgroundColor: '#F8FAFC',
         borderWidth: 1,
-        borderColor: '#e4e5e7',
-        borderRadius: 8,
+        borderColor: '#E2E8F0',
+        borderRadius: 12,
         padding: 12,
-        color: '#222325',
-        fontSize: 16,
+        color: '#1E293B',
+        fontSize: 15,
     },
     saveButton: {
-        backgroundColor: '#1dbf73',
+        backgroundColor: '#4F46E5',
         padding: 16,
-        borderRadius: 8,
+        borderRadius: 16,
         alignItems: 'center',
-        marginTop: 8,
+        marginTop: 12,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#4F46E5',
+                shadowOpacity: 0.2,
+                shadowRadius: 10,
+                shadowOffset: { width: 0, height: 4 },
+            },
+            android: {
+                elevation: 6,
+            },
+            web: {
+                boxShadow: '0px 4px 10px rgba(79, 70, 229, 0.2)',
+            }
+        }),
     },
     saveButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
+        color: '#FFF',
+        fontWeight: '700',
         fontSize: 16,
     },
     statusOptions: {
@@ -404,13 +567,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 12,
         borderWidth: 1,
-        borderColor: '#e4e5e7',
-        borderRadius: 8,
-        backgroundColor: '#fff',
+        borderColor: '#E2E8F0',
+        borderRadius: 12,
+        backgroundColor: '#F8FAFC',
     },
     statusOptionText: {
-        color: '#62646a',
+        color: '#475569',
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '700',
+    },
+    disabledButton: {
+        opacity: 0.6,
     },
 });

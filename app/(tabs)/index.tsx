@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   StatusBar,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -84,12 +85,12 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
+
       {/* Dynamic Background Element */}
       <View style={styles.topGradient} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
+
         {/* Header Section */}
         <View style={styles.header}>
           <View>
@@ -99,7 +100,7 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View style={styles.headerIcons}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.iconCircle}
               onPress={() => router.push('../notifications')}
               activeOpacity={0.7}
@@ -116,7 +117,7 @@ export default function HomeScreen() {
             <Text style={styles.balanceLabel}>Available Balance</Text>
             <Text style={styles.balanceAmount}>${balance}</Text>
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.withdrawButton}
             onPress={() => router.push('../wallet')}
           >
@@ -147,7 +148,7 @@ export default function HomeScreen() {
 
         {/* Quick Actions - Floating Style */}
         <View style={styles.actionContainer}>
-           <TouchableOpacity 
+          <TouchableOpacity
             style={styles.primaryAction}
             onPress={() => router.push('../find-projects')}
           >
@@ -171,7 +172,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Support Footer */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.supportCard}
           onPress={() => router.push('../FDisputes')}
         >
@@ -203,7 +204,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 32,
   },
   scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
-  
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -240,11 +241,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 10,
+      },
+      web: {
+        boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.1)',
+      },
+    }),
     marginBottom: 24,
   },
   balanceLabel: { color: '#64748B', fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
@@ -272,10 +282,20 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
     borderRadius: 16,
-    shadowColor: '#4F46E5',
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
+    ...Platform.select({
+      ios: {
+        shadowColor: '#4F46E5',
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 6 },
+      },
+      android: {
+        elevation: 6,
+      },
+      web: {
+        boxShadow: '0px 6px 12px rgba(79, 70, 229, 0.3)',
+      },
+    }),
   },
   primaryActionText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
 

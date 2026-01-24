@@ -8,17 +8,18 @@ import {
   TouchableOpacity,
   StatusBar,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Briefcase, CheckCircle, FileText, Bell, Search, LayoutDashboard, Filter } from "lucide-react-native";
+import { Briefcase, CheckCircle, FileText, Bell, Search, LayoutDashboard, Filter, ChevronLeft } from "lucide-react-native";
 import WorkCard from "@/components/WorkCard";
-import { projectService } from "@/services/projectService";
-import { proposalService } from "@/services/projectService";
+import { projectService, proposalService } from "@/services/projectService";
 import { useAuth } from "@/contexts/AuthContext";
-import { Project } from "@/models/Project";
-import { Proposal } from "@/models/Project";
+import { Project, Proposal } from "@/models/Project";
+import { useRouter } from "expo-router";
 
 export default function MyWorkScreen() {
+  const router = useRouter();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"Active" | "Completed" | "Proposals">("Active");
   const [projects, setProjects] = useState<Project[]>([]);
@@ -78,11 +79,11 @@ export default function MyWorkScreen() {
   const getStats = () => {
     if (activeTab === "Active") {
       const total = projects.reduce((sum, p) => sum + Number(p.budget || 0), 0);
-      return { label: "Current Earnings", value: `$${total.toFixed(2)}`, color: "#4F46E5" };
+      return { label: "Current Earnings", value: `$${total.toLocaleString()}`, color: "#4F46E5" };
     }
     if (activeTab === "Completed") {
       const total = projects.reduce((sum, p) => sum + Number(p.budget || 0), 0);
-      return { label: "Lifetime Earnings", value: `$${total.toFixed(2)}`, color: "#10B981" };
+      return { label: "Lifetime Earnings", value: `$${total.toLocaleString()}`, color: "#10B981" };
     }
     const shortlisted = proposals.filter((p) => p.status === "ACCEPTED").length;
     return { label: "Shortlisted Bids", value: shortlisted.toString(), color: "#F59E0B" };
@@ -93,28 +94,23 @@ export default function MyWorkScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-
-      {/* Dynamic Background Element - Matching Home Screen */}
       <View style={styles.topGradient} />
 
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerTop}>
-            <View>
-              <Text style={styles.headerSubtitle}>Freelancer Portal</Text>
-              <Text style={styles.headerTitle}>My Workspace</Text>
-            </View>
-            <View style={styles.headerIcons}>
-              <TouchableOpacity style={styles.iconCircle}>
-                <Search size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconCircle}>
-                <Filter size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ChevronLeft size={24} color="#FFF" />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>My Workspace</Text>
+            <Text style={styles.headerSubtitle}>Manage your tasks and earnings</Text>
           </View>
+          <TouchableOpacity style={styles.iconCircle}>
+            <Filter size={20} color="#FFF" />
+          </TouchableOpacity>
+        </View>
 
-          {/* Stats Card */}
+        <View style={styles.statsWrapper}>
           <View style={styles.statsCard}>
             <View style={styles.statInfo}>
               <Text style={styles.statLabel}>{stats.label}</Text>
@@ -130,7 +126,6 @@ export default function MyWorkScreen() {
             </View>
           </View>
 
-          {/* Tab Bar */}
           <View style={styles.tabBar}>
             {[
               { key: "Active", icon: Briefcase },
@@ -141,6 +136,7 @@ export default function MyWorkScreen() {
               return (
                 <TouchableOpacity
                   key={tab.key}
+                  activeOpacity={0.8}
                   style={[styles.tabItem, isActive && styles.tabItemActive]}
                   onPress={() => setActiveTab(tab.key as any)}
                 >
@@ -151,71 +147,95 @@ export default function MyWorkScreen() {
           </View>
         </View>
 
-        <View style={styles.contentBody}>
-          <ScrollView
-            style={styles.scrollContainer}
-            contentContainerStyle={{ paddingBottom: 100 }}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl refreshing={loading} onRefresh={fetchData} tintColor="#4F46E5" />
-            }
-          >
-            {loading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#4F46E5" />
-              </View>
-            ) : displayProjects.length > 0 ? (
-              displayProjects.map((project) => (
+        <ScrollView
+          style={styles.contentBody}
+          contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 20 }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={loading} onRefresh={fetchData} tintColor="#4F46E5" />
+          }
+        >
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#4F46E5" />
+            </View>
+          ) : displayProjects.length > 0 ? (
+            displayProjects.map((project) => (
+              <View key={project.id} style={styles.cardWrapper}>
                 <WorkCard
-                  key={project.id}
                   project={project as any}
                   type={activeTab.toLowerCase()}
                 />
-              ))
-            ) : (
-              <View style={styles.emptyState}>
-                <View style={styles.emptyIconBg}>
-                  <Briefcase size={32} color="#CBD5E1" />
-                </View>
-                <Text style={styles.emptyText}>No {activeTab.toLowerCase()} items</Text>
-                <Text style={styles.emptySubtext}>Your projects will appear here once you start working.</Text>
               </View>
-            )}
-          </ScrollView>
-        </View>
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconBg}>
+                <Briefcase size={32} color="#CBD5E1" />
+              </View>
+              <Text style={styles.emptyText}>No items found</Text>
+              <Text style={styles.emptySubtext}>Items in the "{activeTab}" category will appear here once available.</Text>
+            </View>
+          )}
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  container: {
+    flex: 1,
+    backgroundColor: "#F8FAFC"
+  },
   topGradient: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 280,
-    backgroundColor: '#1E1B4B', // Deep Indigo
+    height: 300,
+    backgroundColor: '#1E1B4B',
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
   },
-
-  headerContent: { paddingHorizontal: 20, paddingBottom: 20 },
-  headerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10, marginBottom: 24 },
-  headerSubtitle: { color: "#C7D2FE", fontSize: 13, fontWeight: "600", letterSpacing: 0.5, marginBottom: 4 },
-  headerTitle: { color: "#FFFFFF", fontSize: 28, fontWeight: "800" },
-
-  headerIcons: { flexDirection: "row", gap: 12 },
-  iconCircle: {
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#FFFFFF"
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#C7D2FE',
+    fontWeight: '500'
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: "center",
     alignItems: "center"
   },
-
+  statsWrapper: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
   statsCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
@@ -223,55 +243,130 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: 'space-between',
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 8,
-    marginBottom: 24,
+    marginBottom: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.08,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 8,
+      },
+      web: {
+        boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.08)',
+      },
+    }),
   },
-  statInfo: {},
-  statLabel: { color: "#64748B", fontSize: 13, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
-  statValue: { fontSize: 32, fontWeight: "800", marginTop: 4 },
-
-  statRight: { alignItems: 'flex-end', justifyContent: 'center' },
-  statCount: { color: "#64748B", fontSize: 14, fontWeight: "600", marginBottom: 8 },
+  statInfo: {
+    flex: 1,
+  },
+  statLabel: {
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5
+  },
+  statValue: {
+    fontSize: 28,
+    fontWeight: "800",
+    marginTop: 4
+  },
+  statRight: {
+    alignItems: 'flex-end',
+  },
+  statCount: {
+    color: "#64748B",
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 8
+  },
   statIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  tabBar: { flexDirection: "row", gap: 12 },
+  tabBar: {
+    flexDirection: "row",
+    gap: 10,
+  },
   tabItem: {
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 20,
+    borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   tabItemActive: {
     backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
   },
-  tabText: { color: "#C7D2FE", fontSize: 14, fontWeight: "600" },
-  tabTextActive: { color: "#1E1B4B", fontWeight: "700" },
-
-  contentBody: { flex: 1 },
-  scrollContainer: { flex: 1, paddingHorizontal: 20, paddingTop: 10 },
-
-  emptyState: { marginTop: 60, alignItems: "center" },
+  tabText: {
+    color: "#C7D2FE",
+    fontSize: 13,
+    fontWeight: "700"
+  },
+  tabTextActive: {
+    color: "#1E1B4B",
+  },
+  contentBody: {
+    flex: 1,
+  },
+  cardWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.03,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.03)',
+      },
+    }),
+  },
+  emptyState: {
+    marginTop: 60,
+    alignItems: "center"
+  },
   emptyIconBg: {
     width: 64,
     height: 64,
-    borderRadius: 32,
-    backgroundColor: '#F1F5F9',
+    borderRadius: 20,
+    backgroundColor: '#EEF2FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
-  emptyText: { fontSize: 18, fontWeight: "700", color: "#1E293B" },
-  emptySubtext: { fontSize: 14, color: "#94A3B8", marginTop: 8, textAlign: 'center', maxWidth: 240 },
-
-  loadingContainer: { padding: 60, alignItems: "center", justifyContent: "center" },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#1E293B"
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: "#64748B",
+    marginTop: 8,
+    textAlign: 'center',
+    maxWidth: 260,
+    lineHeight: 20,
+  },
+  loadingContainer: {
+    padding: 60,
+    alignItems: "center",
+    justifyContent: "center"
+  },
 });

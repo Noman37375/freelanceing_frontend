@@ -1,13 +1,21 @@
 //This first checks “Are you a freelancer or a client?” Then it shows the right kind of profile (its a blueprint).
 export interface User {
   id: string;
-  name: string;
+  userName: string;
   email: string;
   avatar?: string;
   role: 'freelancer' | 'client' | 'Admin';
   isVerified: boolean;
   createdAt: string;
   updatedAt: string;
+  bio?: string;
+  about?: string;
+  rating?: number;
+  projectsCompleted?: number;
+  hourlyRate?: number;
+  location?: string;
+  skills?: string[];
+  languages?: string[];
 }
 
 export interface FreelancerProfile extends User {

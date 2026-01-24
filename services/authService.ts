@@ -88,8 +88,8 @@ const apiCall = async (
 
   try {
     const fullUrl = `${API_BASE_URL}${endpoint}`;
-    console.log(`[API] Calling: ${fullUrl}`);
-    console.log(`[API] Method: ${options.method || 'GET'}`);
+    // console.log(`[API] Calling: ${fullUrl}`);
+    // console.log(`[API] Method: ${options.method || 'GET'}`);
     if (options.body) {
       console.log(`[API] Body:`, JSON.parse(options.body as string));
     }
@@ -100,7 +100,7 @@ const apiCall = async (
       credentials: 'include', // For cookies
     });
 
-    console.log(`[API] Response Status: ${response.status} ${response.statusText}`);
+    // console.log(`[API] Response Status: ${response.status} ${response.statusText}`);
 
     // Handle non-JSON responses
     const contentType = response.headers.get('content-type');
@@ -114,7 +114,7 @@ const apiCall = async (
       throw new Error(`Server returned non-JSON response: ${text}`);
     }
 
-    console.log(`[API] Response Data:`, data);
+    // console.log(`[API] Response Data:`, data);
 
     if (!response.ok) {
       const errorMessage = data.message || data.error || `API Error: ${response.status}`;

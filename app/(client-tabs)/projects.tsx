@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl } from 'react-native';
-import { Search, Filter, Plus } from 'lucide-react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Platform, StatusBar } from 'react-native';
+import { Search, Filter, Plus, ChevronLeft, Calendar, DollarSign, Briefcase } from 'lucide-react-native';
 import ProjectCard from '@/components/ClientProjectCard';
 import { useRouter } from 'expo-router';
 import { projectService } from '@/services/projectService';
 import { Project, getProjectDisplayStatus } from '@/models/Project';
 import { useAuth } from '@/contexts/AuthContext';
-import { COLORS } from '@/utils/constants';
-import ScreenHeader from '@/components/ScreenHeader';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Projects() {
   const router = useRouter();
@@ -61,7 +60,6 @@ export default function Projects() {
     active: projects.filter(p => p.status === 'ACTIVE' && !p.freelancerId).length,
     completed: projects.filter(p => p.status === 'COMPLETED').length,
     cancelled: projects.filter(p => p.status === 'CANCELLED').length,
-    inProgress: projects.filter(p => p.freelancerId && p.status !== 'COMPLETED' && p.status !== 'CANCELLED').length,
   };
 
   const filteredProjects = projects.filter(project =>
@@ -69,62 +67,58 @@ export default function Projects() {
   );
 
   return (
-    <View style={styles.container}>
-      <ScreenHeader
-        title="My Projects"
-        right={
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => router.push('/create-project' as any)}
-            activeOpacity={0.85}
-          >
-            <Plus size={20} color={COLORS.white} strokeWidth={2} />
-          </TouchableOpacity>
-        }
-      />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.topGradient} />
 
-      {/* Search and Filter */}
-      <View style={styles.searchContainer}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <ChevronLeft size={24} color="#FFF" />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>My Projects</Text>
+          <Text style={styles.headerSubtitle}>Manage your listings</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => router.push('/create-project' as any)}
+        >
+          <Plus size={22} color="#FFF" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Search and Stats */}
+      <View style={styles.contentHeader}>
         <View style={styles.searchBar}>
-          <Search size={20} color={COLORS.gray500} strokeWidth={2} />
+          <Search size={20} color="#94A3B8" />
           <TextInput
             style={styles.searchInput}
             placeholder="Search projects..."
-            placeholderTextColor={COLORS.gray400}
+            placeholderTextColor="#94A3B8"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
         </View>
-        <TouchableOpacity style={styles.filterButton}>
-          <Filter size={20} color={COLORS.primary} strokeWidth={2} />
-        </TouchableOpacity>
-      </View>
 
-      {/* Stats Row */}
-      <View style={styles.statsRow}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{stats.total}</Text>
-          <Text style={styles.statLabel}>Total</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={[styles.statValue, { color: COLORS.primary }]}>{stats.active}</Text>
-          <Text style={styles.statLabel}>Active</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={[styles.statValue, { color: COLORS.success }]}>{stats.completed}</Text>
-          <Text style={styles.statLabel}>Completed</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={[styles.statValue, { color: COLORS.accent }]}>{stats.cancelled}</Text>
-          <Text style={styles.statLabel}>Cancelled</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{stats.total}</Text>
+            <Text style={styles.statLabel}>All</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={[styles.statValue, { color: '#4F46E5' }]}>{stats.active}</Text>
+            <Text style={styles.statLabel}>Active</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={[styles.statValue, { color: '#10B981' }]}>{stats.completed}</Text>
+            <Text style={styles.statLabel}>Done</Text>
+          </View>
         </View>
       </View>
 
-      {/* Projects List */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Loading projects...</Text>
+          <ActivityIndicator size="large" color="#4F46E5" />
         </View>
       ) : (
         <FlatList
@@ -145,109 +139,184 @@ export default function Projects() {
               }
             />
           )}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             error ? (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorTitle}>Couldn’t load projects</Text>
-                <Text style={styles.errorMessage}>{error}</Text>
-                <TouchableOpacity style={styles.retryButton} onPress={fetchProjects} activeOpacity={0.85}>
-                  <Text style={styles.retryButtonText}>Retry</Text>
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyTitle}>Couldn't load projects</Text>
+                <Text style={styles.emptySubtitle}>{error}</Text>
+                <TouchableOpacity style={styles.retryBtn} onPress={fetchProjects}>
+                  <Text style={styles.retryBtnText}>Retry Now</Text>
                 </TouchableOpacity>
               </View>
             ) : (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No projects found</Text>
-                <Text style={styles.emptySubtext}>
-                  {searchQuery ? 'Try a different search term' : 'Create your first project!'}
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyTitle}>No projects found</Text>
+                <Text style={styles.emptySubtitle}>
+                  {searchQuery ? 'Try a different search term' : 'Post your first project today!'}
                 </Text>
               </View>
             )
           }
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.gray100 },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchContainer: { flexDirection: 'row', padding: 20, gap: 12 },
-  searchBar: {
+  container: {
     flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  topGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 180,
+    backgroundColor: '#1E1B4B',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 25,
   },
-  searchInput: { flex: 1, fontSize: 16, color: COLORS.gray800 },
-  filterButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: COLORS.white,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginRight: 16,
   },
-  statsRow: { flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 16, gap: 12 },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#C7D2FE',
+    fontWeight: '500',
+  },
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#4F46E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#4F46E5',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  contentHeader: {
+    paddingHorizontal: 20,
+    marginTop: 0,
+    marginBottom: 20,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 4,
+      },
+      web: {
+        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.05)',
+      },
+    }),
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 15,
+    color: '#1E293B',
+    fontWeight: '500',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   statItem: {
     flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     padding: 12,
     alignItems: 'center',
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statValue: { fontSize: 20, fontWeight: '700', color: COLORS.gray800, marginBottom: 4 },
-  statLabel: { fontSize: 12, color: COLORS.gray500, fontWeight: '500' },
-  listContent: { padding: 20, paddingTop: 0, paddingBottom: 100 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 },
-  loadingText: { marginTop: 12, color: COLORS.gray500, fontSize: 14 },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
-  emptyText: { fontSize: 18, fontWeight: '600', color: COLORS.gray700, marginBottom: 8 },
-  emptySubtext: { fontSize: 14, color: COLORS.gray500 },
-  errorContainer: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.gray200,
+    borderColor: '#F1F5F9',
   },
-  errorTitle: { fontSize: 16, fontWeight: '800', color: COLORS.gray800, marginBottom: 6, textAlign: 'center' },
-  errorMessage: { fontSize: 14, color: COLORS.gray600, lineHeight: 20, textAlign: 'center' },
-  retryButton: {
-    marginTop: 12,
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    paddingVertical: 12,
+  statValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 2,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  retryButtonText: { color: COLORS.white, fontSize: 14, fontWeight: '800' },
+  emptyCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  retryBtn: {
+    marginTop: 16,
+    backgroundColor: '#4F46E5',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  retryBtnText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
 });

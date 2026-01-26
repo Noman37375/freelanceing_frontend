@@ -13,8 +13,15 @@ import {
 } from "react-native";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import { ArrowLeft, CircleDollarSign } from "lucide-react-native";
 import { API_BASE_URL } from "@/config";
+
+// Currency Options
+const CURRENCIES = [
+  { id: 'USD', symbol: '$', color: '#6366F1' },
+  { id: 'EUR', symbol: '€', color: '#10B981' },
+  { id: 'PKR', symbol: '₨', color: '#F59E0B' },
+];
 
 export default function BidNow() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,6 +29,7 @@ export default function BidNow() {
 
   const [projectTitle, setProjectTitle] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
+  const [selectedCurrency, setSelectedCurrency] = useState(CURRENCIES[0]); // Default to USD
   const [coverLetter, setCoverLetter] = useState<string>("");
   const [duration, setDuration] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -49,7 +57,12 @@ export default function BidNow() {
 
     try {
       setSubmitting(true);
-      const payload = { amount, coverLetter, duration };
+      const payload = { 
+        amount, 
+        currency: selectedCurrency.id, // Added currency to payload
+        coverLetter, 
+        duration 
+      };
       await axios.post(`${API_BASE_URL}/projects/${id}/bid`, payload);
 
       Alert.alert("Success", "Your bid has been submitted.", [
@@ -77,27 +90,55 @@ export default function BidNow() {
       style={{ flex: 1 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Header with back button */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ArrowLeft size={24} color="#111827" />
           </TouchableOpacity>
           <Text style={styles.heading}>Bid on Project</Text>
-          <View style={{ width: 24 }} /> {/* spacer for alignment */}
+          <View style={{ width: 24 }} />
         </View>
 
         <View style={styles.card}>
           <Text style={styles.projectTitle}>{projectTitle || "Project"}</Text>
 
+          {/* 💰 Currency & Amount Section */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Your Bid Amount (USD)</Text>
-            <TextInput
-              placeholder="e.g. 500"
-              keyboardType="numeric"
-              value={amount}
-              onChangeText={setAmount}
-              style={styles.input}
-            />
+            <Text style={styles.label}>Your Bid Amount</Text>
+            
+            <View style={styles.currencySelectorRow}>
+              {CURRENCIES.map((curr) => (
+                <TouchableOpacity
+                  key={curr.id}
+                  onPress={() => setSelectedCurrency(curr)}
+                  style={[
+                    styles.currencyTab,
+                    selectedCurrency.id === curr.id && { borderColor: curr.color, backgroundColor: `${curr.color}10` }
+                  ]}
+                >
+                  <Text style={[
+                    styles.currencyTabText, 
+                    selectedCurrency.id === curr.id && { color: curr.color }
+                  ]}>
+                    {curr.symbol} {curr.id}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <View style={styles.symbolPrefix}>
+                <Text style={[styles.prefixText, { color: selectedCurrency.color }]}>
+                  {selectedCurrency.symbol}
+                </Text>
+              </View>
+              <TextInput
+                placeholder="0.00"
+                keyboardType="numeric"
+                value={amount}
+                onChangeText={setAmount}
+                style={styles.amountInput}
+              />
+            </View>
           </View>
 
           <View style={styles.fieldContainer}>
@@ -140,50 +181,34 @@ export default function BidNow() {
 
 const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 40, backgroundColor: "#F2F4F7" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  backButton: {
-    padding: 6,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 8,
-  },
-  heading: { flex: 1, textAlign: "center", fontSize: 24, fontWeight: "700", color: "#111827" },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  projectTitle: { fontSize: 18, fontWeight: "700", marginBottom: 16, color: "#1F2937" },
+  header: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
+  backButton: { padding: 6, backgroundColor: "#E5E7EB", borderRadius: 8 },
+  heading: { flex: 1, textAlign: "center", fontSize: 22, fontWeight: "700", color: "#111827" },
+  card: { backgroundColor: "#fff", borderRadius: 16, padding: 20, shadowColor: "#000", shadowOpacity: 0.08, shadowOffset: { width: 0, height: 4 }, shadowRadius: 10, elevation: 5 },
+  projectTitle: { fontSize: 18, fontWeight: "700", marginBottom: 20, color: "#1F2937" },
   fieldContainer: { marginBottom: 16 },
-  label: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 6 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    padding: 14,
-    backgroundColor: "#F9FAFB",
-    fontSize: 14,
-    color: "#111827",
+  label: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 10 },
+  
+  // Currency Selector Styles
+  currencySelectorRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  currencyTab: { 
+    flex: 1, 
+    paddingVertical: 8, 
+    alignItems: 'center', 
+    borderRadius: 10, 
+    borderWidth: 1.5, 
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB'
   },
-  submitBtn: {
-    backgroundColor: "#2563EB",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 8,
-    shadowColor: "#2563EB",
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-  },
+  currencyTabText: { fontSize: 12, fontWeight: '700', color: '#9CA3AF' },
+  
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: "#F9FAFB", borderRadius: 12, borderWidth: 1, borderColor: "#E5E7EB" },
+  symbolPrefix: { paddingLeft: 16, paddingRight: 8 },
+  prefixText: { fontSize: 18, fontWeight: '700' },
+  amountInput: { flex: 1, padding: 14, fontSize: 16, fontWeight: '600', color: "#111827" },
+  
+  input: { borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 12, padding: 14, backgroundColor: "#F9FAFB", fontSize: 14, color: "#111827" },
+  submitBtn: { backgroundColor: "#2563EB", paddingVertical: 16, borderRadius: 12, alignItems: "center", marginTop: 8, shadowColor: "#2563EB", shadowOpacity: 0.3, shadowOffset: { width: 0, height: 4 }, shadowRadius: 8 },
   submitText: { color: "#fff", fontWeight: "700", fontSize: 16 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 });

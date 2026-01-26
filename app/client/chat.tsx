@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,103 +8,68 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  StatusBar,
 } from 'react-native';
 import {
   ArrowLeft,
   Send,
   Paperclip,
   Mic,
+  MoreVertical,
+  Circle,
+  Image as ImageIcon,
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type Message = {
   id: string;
   text: string;
   sender: 'me' | 'them';
   time: string;
+  type?: 'text' | 'image';
 };
 
 const INITIAL_MESSAGES: Message[] = [
-  {
-    id: '1',
-    text: 'Hi! I’ve started working on the UI.',
-    sender: 'them',
-    time: '10:20 AM',
-  },
-  {
-    id: '2',
-    text: 'Great! Let me know if you need anything.',
-    sender: 'me',
-    time: '10:22 AM',
-  },
-  {
-    id: '3',
-    text: 'I’ll send the first draft today.',
-    sender: 'them',
-    time: '10:25 AM',
-  },
+  { id: '1', text: 'Hi! I’ve started working on the mobile app UI.', sender: 'them', time: '10:20 AM' },
+  { id: '2', text: 'Great! Let me know if you need any brand assets.', sender: 'me', time: '10:22 AM' },
+  { id: '3', text: 'I’ll send the first draft of the Login screen today.', sender: 'them', time: '10:25 AM' },
 ];
 
 export default function ChatScreen() {
   const router = useRouter();
-  const { name } = useLocalSearchParams<{ name: string }>();
-
+  const { name, id } = useLocalSearchParams<{ name: string; id: string }>();
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [input, setInput] = useState('');
+  const flatListRef = useRef<FlatList>(null);
 
   const sendMessage = () => {
     if (!input.trim()) return;
-
-    setMessages([
-      ...messages,
-      {
-        id: Date.now().toString(),
-        text: input,
-        sender: 'me',
-        time: 'Now',
-      },
-    ]);
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      text: input,
+      sender: 'me',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    setMessages([...messages, newMessage]);
     setInput('');
+    setTimeout(() => flatListRef.current?.scrollToEnd(), 100);
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isMe = item.sender === 'me';
-    const initial = name?.charAt(0).toUpperCase() || 'U';
-
     return (
-      <View
-        style={[
-          styles.messageRow,
-          isMe && { justifyContent: 'flex-end' },
-        ]}
-      >
-        {/* PROFILE CIRCLE (ONLY FOR THEM) */}
+      <View style={[styles.messageRow, isMe ? styles.myRow : styles.theirRow]}>
         {!isMe && (
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initial}</Text>
+          <View style={styles.chatAvatar}>
+            <Text style={styles.avatarText}>{name?.charAt(0)}</Text>
           </View>
         )}
-
-        <View
-          style={[
-            styles.messageBubble,
-            isMe ? styles.myMessage : styles.theirMessage,
-          ]}
-        >
-          <Text
-            style={[
-              styles.messageText,
-              !isMe && { color: '#1F2937' },
-            ]}
-          >
+        <View style={[styles.bubble, isMe ? styles.myBubble : styles.theirBubble]}>
+          <Text style={[styles.messageText, isMe ? styles.myText : styles.theirText]}>
             {item.text}
           </Text>
-          <Text
-            style={[
-              styles.time,
-              !isMe && { color: '#6B7280' },
-            ]}
-          >
+          <Text style={[styles.timeText, isMe ? styles.myTime : styles.theirTime]}>
             {item.time}
           </Text>
         </View>
@@ -113,173 +78,132 @@ export default function ChatScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      {/* HEADER */}
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* HEADER: EXECUTIVE STYLE */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#1F2937" />
+        <View style={styles.headerLeft}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <ArrowLeft size={22} color="#1E293B" strokeWidth={2.5} />
+          </TouchableOpacity>
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{name || 'Freelancer'}</Text>
+            <View style={styles.statusRow}>
+              <View style={styles.onlineDot} />
+              <Text style={styles.statusText}>Active on Project</Text>
+            </View>
+          </View>
+        </View>
+        <TouchableOpacity style={styles.moreBtn}>
+          <MoreVertical size={20} color="#94A3B8" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{name || 'Chat'}</Text>
-        <View style={{ width: 24 }} />
       </View>
 
-      {/* MESSAGES */}
       <FlatList
+        ref={flatListRef}
         data={messages}
         keyExtractor={(item) => item.id}
         renderItem={renderMessage}
-        contentContainerStyle={styles.messagesContainer}
+        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />
 
-      {/* INPUT BAR */}
-      <View style={styles.inputContainer}>
-        <TouchableOpacity style={styles.iconButton}>
-          <Paperclip size={20} color="#6B7280" />
-        </TouchableOpacity>
+      {/* INPUT: MODULAR STYLE */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={10}>
+        <View style={styles.inputArea}>
+          <View style={styles.inputWrapper}>
+            <TouchableOpacity style={styles.attachBtn}>
+              <Paperclip size={20} color="#64748B" />
+            </TouchableOpacity>
+            
+            <TextInput
+              value={input}
+              onChangeText={setInput}
+              placeholder="Message..."
+              placeholderTextColor="#94A3B8"
+              style={styles.textInput}
+              multiline
+            />
 
-        <TextInput
-          value={input}
-          onChangeText={setInput}
-          placeholder="Type a message..."
-          placeholderTextColor="#9CA3AF"
-          style={styles.input}
-        />
-
-        {input.trim() ? (
-          <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-            <Send size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.micButton}>
-            <Mic size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        )}
-      </View>
-    </KeyboardAvoidingView>
+            {input.trim() ? (
+              <TouchableOpacity onPress={sendMessage}>
+                <LinearGradient colors={['#6366F1', '#4F46E5']} style={styles.sendBtn}>
+                  <Send size={18} color="#FFF" />
+                </LinearGradient>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.inputActions}>
+                <TouchableOpacity style={styles.actionIcon}><ImageIcon size={20} color="#64748B" /></TouchableOpacity>
+                <TouchableOpacity style={styles.micBtn}><Mic size={20} color="#FFF" /></TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
-/* ================= STYLES ================= */
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-  },
-
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    paddingTop: 60,
-    backgroundColor: '#FFFFFF',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    elevation: 3,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 20,
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  backBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' },
+  userName: { fontSize: 18, fontWeight: '900', color: '#1E293B' },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  onlineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#10B981' },
+  statusText: { fontSize: 12, color: '#64748B', fontWeight: '600' },
+  moreBtn: { padding: 8 },
 
-  messagesContainer: {
-    padding: 16,
-    paddingBottom: 90,
-  },
+  listContent: { padding: 20, paddingBottom: 40 },
+  messageRow: { marginBottom: 20, flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
+  myRow: { justifyContent: 'flex-end' },
+  theirRow: { justifyContent: 'flex-start' },
+  
+  chatAvatar: { width: 32, height: 32, borderRadius: 12, backgroundColor: '#6366F1', justifyContent: 'center', alignItems: 'center' },
+  avatarText: { color: '#FFF', fontWeight: '800', fontSize: 14 },
 
-  messageRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    marginBottom: 12,
-  },
+  bubble: { maxWidth: '80%', padding: 16, borderRadius: 24 },
+  myBubble: { backgroundColor: '#1E293B', borderBottomRightRadius: 4 },
+  theirBubble: { backgroundColor: '#FFF', borderBottomLeftRadius: 4, borderWidth: 1, borderColor: '#F1F5F9' },
 
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E5E7EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  avatarText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#374151',
-  },
+  messageText: { fontSize: 15, lineHeight: 22, fontWeight: '500' },
+  myText: { color: '#FFF' },
+  theirText: { color: '#334155' },
 
-  messageBubble: {
-    maxWidth: '72%',
-    padding: 14,
-    borderRadius: 18,
-  },
-  myMessage: {
-    backgroundColor: '#3B82F6',
-    borderTopRightRadius: 6,
-  },
-  theirMessage: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 6,
-  },
+  timeText: { fontSize: 10, marginTop: 6, fontWeight: '700' },
+  myTime: { color: '#94A3B8', alignSelf: 'flex-end' },
+  theirTime: { color: '#CBD5E1' },
 
-  messageText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-  },
-
-  time: {
-    fontSize: 10,
-    marginTop: 4,
-    color: '#DBEAFE',
-    alignSelf: 'flex-end',
-  },
-
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-
-  iconButton: {
+  inputArea: { paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 30 : 20, backgroundColor: 'transparent' },
+  inputWrapper: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#FFF', 
+    borderRadius: 24, 
     padding: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
+      android: { elevation: 3 }
+    })
   },
-
-  input: {
-    flex: 1,
-    height: 44,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    fontSize: 14,
-    color: '#1F2937',
-    marginHorizontal: 8,
-  },
-
-  sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#3B82F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  micButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  attachBtn: { padding: 10 },
+  textInput: { flex: 1, paddingHorizontal: 12, fontSize: 15, color: '#1E293B', maxHeight: 100 },
+  inputActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  actionIcon: { padding: 10 },
+  micBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#10B981', justifyContent: 'center', alignItems: 'center' },
+  sendBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }
 });

@@ -1,4 +1,4 @@
-// HomeScreen.tsx (ULTRA-POLISHED VERSION)
+// HomeScreen.tsx (ULTRA-POLISHED VERSION - FIXED SCROLL)
 
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -163,7 +163,7 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        {/* Support Footer */}
+        {/* Support Footer - Resolution Center */}
         <TouchableOpacity 
           style={styles.supportCard}
           onPress={() => router.push('/FDisputes')}
@@ -191,11 +191,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 240,
-    backgroundColor: '#1E1B4B', // Deep Indigo
+    backgroundColor: '#1E1B4B', 
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
   },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
+  scrollContent: { 
+    paddingHorizontal: 20, 
+    paddingTop: 20, 
+    paddingBottom: 100 // INCREASED: This ensures the dispute button clears the tab bar
+  },
   
   header: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from "react-native";
+import React, { useEffect, useState, useMemo } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Dimensions } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { 
   ArrowLeft, 
@@ -7,16 +7,24 @@ import {
   Calendar, 
   MapPin, 
   Users, 
-  DollarSign, 
   Clock, 
   ChevronRight,
-  Zap
+  Zap,
+  CircleDollarSign
 } from "lucide-react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-/* =======================
-    STATIC PROJECT DATA
-======================= */
+const { width } = Dimensions.get('window');
+
+// --- Currency Configuration ---
+const CURRENCIES = {
+  USD: { symbol: '$', rate: 1, color: '#6366F1' },
+  EUR: { symbol: '€', rate: 0.92, color: '#10B981' },
+  PKR: { symbol: '₨', rate: 280, color: '#F59E0B' },
+};
+
+type CurrencyKey = keyof typeof CURRENCIES;
+
 const STATIC_PROJECTS = [
   {
     id: "1",
@@ -29,9 +37,9 @@ const STATIC_PROJECTS = [
     description: "We are looking for an experienced React Native developer to build a modern and scalable mobile application. The ideal candidate has experience with high-performance animations and Redux Toolkit.",
     skills: ["React Native", "JavaScript", "API Integration", "UI/UX"],
     milestones: [
-      { title: "UI Design", details: "Design application screens", duration: "3 days", priceUSD: "$100" },
-      { title: "Development", details: "Develop app functionality", duration: "7 days", priceUSD: "$300" },
-      { title: "Testing & Delivery", details: "Final testing and deployment", duration: "4 days", priceUSD: "$100" },
+      { title: "UI Design", details: "Design application screens", duration: "3 days", basePrice: 100 },
+      { title: "Development", details: "Develop app functionality", duration: "7 days", basePrice: 300 },
+      { title: "Testing & Delivery", details: "Final testing and deployment", duration: "4 days", basePrice: 100 },
     ],
   },
 ];
@@ -40,26 +48,44 @@ export default function ProjectDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [project, setProject] = useState<any>(null);
+  const [curKey, setCurKey] = useState<CurrencyKey>('USD');
 
   useEffect(() => {
     const foundProject = STATIC_PROJECTS.find((p) => p.id === id) || STATIC_PROJECTS[0];
     setProject(foundProject);
   }, [id]);
 
+  const switchCurrency = () => {
+    const keys = Object.keys(CURRENCIES) as CurrencyKey[];
+    setCurKey(keys[(keys.indexOf(curKey) + 1) % keys.length]);
+  };
+
+  const activeRate = CURRENCIES[curKey].rate;
+  const activeSymbol = CURRENCIES[curKey].symbol;
+
+  // Format Helper
+  const formatVal = (val: number) => 
+    (val * activeRate).toLocaleString(undefined, { maximumFractionDigits: 0 });
+
   if (!project) return null;
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <SafeAreaView style={styles.header}>
+      <SafeAreaView style={styles.header} edges={['top']}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={22} color="#1E293B" />
         </TouchableOpacity>
+        
         <Text style={styles.headerTitle}>Job Details</Text>
-        <View style={{ width: 40 }} />
+
+        <TouchableOpacity style={styles.currencyPill} onPress={switchCurrency}>
+          <CircleDollarSign size={16} color={CURRENCIES[curKey].color} />
+          <Text style={styles.currencyText}>{curKey}</Text>
+        </TouchableOpacity>
       </SafeAreaView>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
         {/* HERO SECTION */}
         <View style={styles.heroSection}>
           <View style={styles.categoryBadge}>
@@ -71,11 +97,13 @@ export default function ProjectDetails() {
           <View style={styles.metaGrid}>
             <View style={styles.metaItem}>
               <View style={styles.metaIcon}>
-                <DollarSign size={18} color="#10B981" />
+                <Text style={[styles.symbolInIcon, { color: CURRENCIES[curKey].color }]}>{activeSymbol}</Text>
               </View>
               <View>
-                <Text style={styles.metaLabel}>Budget</Text>
-                <Text style={styles.metaValue}>${project.budgetMin}-${project.budgetMax}</Text>
+                <Text style={styles.metaLabel}>Budget ({curKey})</Text>
+                <Text style={styles.metaValue}>
+                   {activeSymbol}{formatVal(project.budgetMin)}-{formatVal(project.budgetMax)}
+                </Text>
               </View>
             </View>
             <View style={styles.metaItem}>
@@ -116,13 +144,13 @@ export default function ProjectDetails() {
         {/* SKILLS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Skills Required</Text>
-          <View style={styles.skillContainer}>
+          <div style={styles.skillContainer}>
             {project.skills.map((skill: string, i: number) => (
               <View key={i} style={styles.skillTag}>
                 <Text style={styles.skillText}>{skill}</Text>
               </View>
             ))}
-          </View>
+          </div>
         </View>
 
         {/* MILESTONES */}
@@ -137,7 +165,9 @@ export default function ProjectDetails() {
               <View style={styles.milestoneContent}>
                 <View style={styles.milestoneHeader}>
                   <Text style={styles.milestoneTitle}>{m.title}</Text>
-                  <Text style={styles.milestonePrice}>{m.priceUSD}</Text>
+                  <Text style={[styles.milestonePrice, { color: CURRENCIES[curKey].color }]}>
+                    {activeSymbol}{formatVal(m.basePrice)}
+                  </Text>
                 </View>
                 <Text style={styles.milestoneDetail}>{m.details}</Text>
                 <View style={styles.milestoneFooter}>
@@ -150,7 +180,7 @@ export default function ProjectDetails() {
         </View>
       </ScrollView>
 
-      {/* FLOATING ACTION BUTTON */}
+      {/* FOOTER ACTION */}
       <View style={styles.footerAction}>
         <TouchableOpacity 
           activeOpacity={0.9}
@@ -176,7 +206,13 @@ const styles = StyleSheet.create({
     paddingBottom: 10
   },
   backButton: { padding: 8, backgroundColor: '#F1F5F9', borderRadius: 12 },
-  headerTitle: { fontSize: 17, fontWeight: "700", color: "#1E293B" },
+  headerTitle: { fontSize: 16, fontWeight: "700", color: "#1E293B" },
+  currencyPill: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC',
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, gap: 4,
+    borderWidth: 1, borderColor: '#E2E8F0',
+  },
+  currencyText: { fontSize: 12, fontWeight: '800', color: '#1E293B' },
 
   heroSection: { backgroundColor: '#FFF', padding: 20, paddingBottom: 25, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
   categoryBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignSelf: 'flex-start', marginBottom: 15, gap: 6 },
@@ -186,11 +222,12 @@ const styles = StyleSheet.create({
   metaGrid: { flexDirection: 'row', gap: 20 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   metaIcon: { width: 38, height: 38, backgroundColor: '#F8FAFC', borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#F1F5F9' },
+  symbolInIcon: { fontSize: 18, fontWeight: '800' },
   metaLabel: { fontSize: 11, color: '#94A3B8', fontWeight: '600', textTransform: 'uppercase' },
   metaValue: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
 
   section: { paddingHorizontal: 20, marginTop: 25 },
-  sectionTitle: { fontSize: 18, fontWeight: "800", color: "#1E293B", marginBottom: 12 },
+  sectionTitle: { fontSize: 17, fontWeight: "800", color: "#1E293B", marginBottom: 12 },
   
   clientCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#F1F5F9' },
   clientAvatar: { width: 45, height: 45, backgroundColor: '#EEF2FF', borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
@@ -211,12 +248,12 @@ const styles = StyleSheet.create({
   milestoneContent: { flex: 1, backgroundColor: '#FFF', padding: 16, borderRadius: 16, marginBottom: 15, borderWidth: 1, borderColor: '#F1F5F9' },
   milestoneHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   milestoneTitle: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
-  milestonePrice: { fontSize: 15, fontWeight: '800', color: '#10B981' },
+  milestonePrice: { fontSize: 15, fontWeight: '800' },
   milestoneDetail: { fontSize: 13, color: '#64748B', lineHeight: 20 },
   milestoneFooter: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
   milestoneDuration: { fontSize: 12, color: '#94A3B8', fontWeight: '600' },
 
-  footerAction: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(255,255,255,0.9)', padding: 20, paddingBottom: 30, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
+  footerAction: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(255,255,255,0.95)', padding: 20, paddingBottom: 30, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
   applyButton: { backgroundColor: "#4F46E5", height: 56, borderRadius: 18, flexDirection: 'row', alignItems: "center", justifyContent: "center", gap: 10, shadowColor: '#4F46E5', shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 },
   applyButtonText: { color: "#FFFFFF", fontWeight: "800", fontSize: 16 },
 });

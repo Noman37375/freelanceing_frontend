@@ -1,15 +1,23 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router"; // 🔹 Added for back navigation
-import { ArrowLeft, CheckCircle2, Clock4, FileText, User, DollarSign, Calendar, MapPin, Award } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { ArrowLeft, CheckCircle2, FileText, User, DollarSign, Calendar, MapPin, Award, CircleDollarSign } from "lucide-react-native";
+
+// --- Currency Configuration ---
+const CURRENCIES = {
+  USD: { symbol: '$', rate: 1, color: '#6366F1' },
+  EUR: { symbol: '€', rate: 0.92, color: '#10B981' },
+  PKR: { symbol: '₨', rate: 280, color: '#F59E0B' },
+};
+
+type CurrencyKey = keyof typeof CURRENCIES;
 
 type Milestone = {
   title: string;
   duration?: string;
   details?: string;
-  pricePKR?: string;
-  priceUSD?: string;
+  basePrice: number; // Changed to number for calculation
   status: "completed" | "pending";
 };
 
@@ -17,7 +25,7 @@ type Project = {
   id: string;
   title: string;
   client: string;
-  budget: string;
+  baseBudget: number; // Changed to number
   deadline: string;
   status: string;
   location?: string;
@@ -27,14 +35,15 @@ type Project = {
 };
 
 export default function CompletedDetails() {
-  const router = useRouter(); // 🔹 Initialize router
+  const router = useRouter();
+  const [curKey, setCurKey] = useState<CurrencyKey>('USD');
 
-  // 🔹 Static project data (Logic Maintained)
+  // Static project data with numeric values
   const [project] = useState<Project>({
     id: "1",
     title: "Website Redesign Project",
     client: "Acme Corp",
-    budget: "$1500",
+    baseBudget: 1500,
     deadline: "Dec 15, 2025",
     status: "completed",
     location: "Remote",
@@ -45,28 +54,37 @@ export default function CompletedDetails() {
         title: "Design Mockups",
         duration: "3 days",
         details: "Create Figma mockups for all pages",
-        priceUSD: "$500",
-        pricePKR: "PKR 100,000",
+        basePrice: 500,
         status: "completed",
       },
       {
         title: "Frontend Implementation",
         duration: "5 days",
         details: "Develop responsive React components",
-        priceUSD: "$600",
-        pricePKR: "PKR 120,000",
+        basePrice: 600,
         status: "completed",
       },
       {
         title: "Backend Integration",
         duration: "4 days",
         details: "Connect frontend with API endpoints",
-        priceUSD: "$400",
-        pricePKR: "PKR 80,000",
+        basePrice: 400,
         status: "completed",
       },
     ],
   });
+
+  // --- Currency Conversion Logic ---
+  const switchCurrency = () => {
+    const keys = Object.keys(CURRENCIES) as CurrencyKey[];
+    setCurKey(keys[(keys.indexOf(curKey) + 1) % keys.length]);
+  };
+
+  const activeRate = CURRENCIES[curKey].rate;
+  const activeSymbol = CURRENCIES[curKey].symbol;
+
+  const formatPrice = (val: number) => 
+    `${activeSymbol}${(val * activeRate).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
   return (
     <View style={styles.container}>
@@ -74,15 +92,21 @@ export default function CompletedDetails() {
       
       {/* INDIGO HEADER */}
       <View style={styles.darkHeader}>
-        <SafeAreaView>
+        <SafeAreaView edges={['top']}>
           <View style={styles.navRow}>
             <TouchableOpacity 
               style={styles.backButton} 
-              onPress={() => router.back()} // 🔹 Logic Fixed: Works now
+              onPress={() => router.back()}
             >
               <ArrowLeft color="#F8FAFC" size={22} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Project Archive</Text>
+
+            {/* Currency Switcher Pill */}
+            <TouchableOpacity style={styles.currencyToggle} onPress={switchCurrency}>
+              <CircleDollarSign size={16} color="#FFF" />
+              <Text style={styles.currencyLabel}>{curKey}</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.summaryGrid}>
@@ -92,7 +116,7 @@ export default function CompletedDetails() {
             </View>
             <View style={styles.tag}>
               <DollarSign size={12} color="#C7D2FE" />
-              <Text style={styles.tagText}>{project.budget}</Text>
+              <Text style={styles.tagText}>{formatPrice(project.baseBudget)}</Text>
             </View>
             <View style={styles.tag}>
               <MapPin size={12} color="#C7D2FE" />
@@ -143,7 +167,7 @@ export default function CompletedDetails() {
 
             <View style={styles.milestoneFooter}>
               <Text style={styles.footerInfo}>⏳ {m.duration}</Text>
-              <Text style={styles.footerPrice}>{m.priceUSD} ({m.pricePKR})</Text>
+              <Text style={styles.footerPrice}>{formatPrice(m.basePrice)}</Text>
             </View>
           </View>
         ))}
@@ -164,17 +188,28 @@ export default function CompletedDetails() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0F172A" },
   
-  // Header
   darkHeader: { paddingHorizontal: 20, paddingBottom: 20 },
   navRow: { flexDirection: "row", alignItems: "center", marginTop: 10, gap: 12 },
   backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: "#1E293B", justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#334155" },
-  headerTitle: { fontSize: 20, fontWeight: "800", color: "#F8FAFC" },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: "#F8FAFC", flex: 1 },
   
+  currencyToggle: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 6, 
+    backgroundColor: '#1E293B', 
+    paddingHorizontal: 12, 
+    paddingVertical: 8, 
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155'
+  },
+  currencyLabel: { color: '#FFF', fontWeight: '800', fontSize: 12 },
+
   summaryGrid: { flexDirection: "row", flexWrap: "wrap", marginTop: 15, gap: 8 },
   tag: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(99, 102, 241, 0.2)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   tagText: { color: "#C7D2FE", fontSize: 12, fontWeight: "600" },
 
-  // Content
   contentBody: { flex: 1, backgroundColor: "#F8FAFC", borderTopLeftRadius: 32, borderTopRightRadius: 32 },
   mainCard: { backgroundColor: "#FFF", padding: 20, borderRadius: 24, marginBottom: 20, marginTop: 10, borderWidth: 1, borderColor: "#E2E8F0" },
   projectTitle: { fontSize: 22, fontWeight: "800", color: "#1E293B", marginBottom: 8 },

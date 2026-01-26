@@ -1,21 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   View, 
   Text, 
   TextInput, 
   StyleSheet, 
   TouchableOpacity, 
-  FlatList 
+  FlatList,
+  StatusBar
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, CircleDollarSign } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import ProjectCard from '@/components/ProjectCard';
+
+// --- Currency Configuration ---
+const CURRENCIES = {
+  USD: { symbol: '$', rate: 1, color: '#6366F1' },
+  EUR: { symbol: '€', rate: 0.92, color: '#10B981' },
+  PKR: { symbol: '₨', rate: 280, color: '#F59E0B' },
+};
+
+type CurrencyKey = keyof typeof CURRENCIES;
 
 export default function FindProjectsScreen() {
   const router = useRouter();
 
-  // 🔹 Static project data
   const STATIC_PROJECTS = [
     {
       id: '1',
@@ -67,14 +76,22 @@ export default function FindProjectsScreen() {
     },
   ];
 
-  const [projects, setProjects] = useState(STATIC_PROJECTS);
-  const [filteredProjects, setFilteredProjects] = useState(STATIC_PROJECTS);
+  const [curKey, setCurKey] = useState<CurrencyKey>('USD');
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState('All');
 
-  // 🔍 Search & filter logic
-  useEffect(() => {
-    let result = projects.filter((p) =>
+  // --- Currency Toggle ---
+  const switchCurrency = () => {
+    const keys = Object.keys(CURRENCIES) as CurrencyKey[];
+    setCurKey(keys[(keys.indexOf(curKey) + 1) % keys.length]);
+  };
+
+  const activeRate = CURRENCIES[curKey].rate;
+  const activeSymbol = CURRENCIES[curKey].symbol;
+
+  // 🔍 Filter logic
+  const filteredProjects = useMemo(() => {
+    let result = STATIC_PROJECTS.filter((p) =>
       p.title.toLowerCase().includes(searchText.toLowerCase())
     );
 
@@ -85,24 +102,33 @@ export default function FindProjectsScreen() {
           : p.category === filterType
       );
     }
-
-    setFilteredProjects(result);
-  }, [searchText, filterType, projects]);
+    return result;
+  }, [searchText, filterType]);
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      
       {/* 🔙 Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#111827" />
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ArrowLeft size={22} color="#111827" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Find Projects</Text>
+        </View>
+
+        <TouchableOpacity style={styles.currencyPill} onPress={switchCurrency}>
+          <CircleDollarSign size={16} color={CURRENCIES[curKey].color} />
+          <Text style={styles.currencyText}>{curKey}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Find Projects</Text>
       </View>
 
       {/* 🔎 Search Bar */}
       <View style={styles.searchContainer}>
         <TextInput
           placeholder="Search projects..."
+          placeholderTextColor="#9CA3AF"
           value={searchText}
           onChangeText={setSearchText}
           style={styles.searchInput}
@@ -110,34 +136,43 @@ export default function FindProjectsScreen() {
       </View>
 
       {/* 🎯 Filter Buttons */}
-      <View style={styles.filterContainer}>
-        {['All', 'Web Development', 'UI/UX Design', 'Mobile App', 'Backend'].map((type) => (
-          <TouchableOpacity
-            key={type}
-            style={[
-              styles.filterButton,
-              filterType === type && styles.filterButtonActive,
-            ]}
-            onPress={() => setFilterType(type)}
-          >
-            <Text
+      <View>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={['All', 'Web Development', 'UI/UX Design', 'Mobile App', 'Backend']}
+          contentContainerStyle={styles.filterContainer}
+          renderItem={({ item }) => (
+            <TouchableOpacity
               style={[
-                styles.filterButtonText,
-                filterType === type && styles.filterButtonTextActive,
+                styles.filterButton,
+                filterType === item && styles.filterButtonActive,
               ]}
+              onPress={() => setFilterType(item)}
             >
-              {type}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text style={[
+                styles.filterButtonText,
+                filterType === item && styles.filterButtonTextActive,
+              ]}>
+                {item}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
       </View>
 
       {/* 🧩 Project List */}
       <FlatList
         data={filteredProjects}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <ProjectCard project={item} />}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <ProjectCard 
+            project={item} 
+            currencyRate={activeRate} 
+            currencySymbol={activeSymbol} 
+          />
+        )}
+        contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16 }}
       />
     </SafeAreaView>
   );
@@ -145,20 +180,41 @@ export default function FindProjectsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between',
+    padding: 16 
+  },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  backButton: { padding: 4 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#111827' },
+  currencyPill: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF',
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, gap: 4,
+    borderWidth: 1, borderColor: '#E5E7EB',
+  },
+  currencyText: { fontSize: 12, fontWeight: '800', color: '#111827' },
   searchContainer: { marginHorizontal: 16, marginBottom: 12 },
   searchInput: {
     backgroundColor: '#fff',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    fontSize: 15,
   },
-  filterContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, marginBottom: 16 },
-  filterButton: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: '#FFFFFF' },
+  filterContainer: { paddingHorizontal: 16, marginBottom: 16, gap: 8 },
+  filterButton: { 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB', 
+    borderRadius: 20, 
+    paddingVertical: 8, 
+    paddingHorizontal: 16, 
+    backgroundColor: '#FFFFFF' 
+  },
   filterButtonActive: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' },
-  filterButtonText: { color: '#374151', fontWeight: '600' },
+  filterButtonText: { color: '#4B5563', fontWeight: '600', fontSize: 13 },
   filterButtonTextActive: { color: '#FFFFFF' },
 });

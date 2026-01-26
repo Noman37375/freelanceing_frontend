@@ -1,395 +1,253 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
-import { Search, Filter, User, Star, MapPin, Briefcase } from 'lucide-react-native';
+import React, { useState, useMemo } from 'react';
+import { 
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, 
+  TextInput, Platform, StatusBar, Modal 
+} from 'react-native';
+import { 
+  Search, Filter, User, Star, MapPin, Heart, X, 
+  Globe, ArrowLeft, UserCheck, DollarSign 
+} from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router'; // Added router
 
-interface Freelancer {
-  id: string;
-  name: string;
-  title: string;
-  rating: number;
-  reviews: number;
-  hourlyRate: string;
-  location: string;
-  skills: string[];
-  completedProjects: number;
-  availability: 'Available' | 'Busy' | 'Not Available';
-}
+// --- CONFIG & DATA ---
+const CURRENCIES = {
+  USD: { symbol: '$', rate: 1, label: 'USD', locale: 'en-US', maxSlider: 200 },
+  PKR: { symbol: 'Rs.', rate: 280.50, label: 'PKR', locale: 'en-PK', maxSlider: 60000 },
+  EUR: { symbol: '€', rate: 0.92, label: 'EUR', locale: 'de-DE', maxSlider: 180 },
+};
 
-const FREELANCERS_DATA: Freelancer[] = [
-  {
-    id: '1',
-    name: 'Sarah Johnson',
-    title: 'UI/UX Designer',
-    rating: 4.9,
-    reviews: 127,
-    hourlyRate: '$85/hr',
-    location: 'San Francisco, CA',
-    skills: ['UI Design', 'Figma', 'Prototyping'],
-    completedProjects: 127,
-    availability: 'Available',
-  },
-  {
-    id: '2',
-    name: 'Michael Chen',
-    title: 'Full Stack Developer',
-    rating: 4.8,
-    reviews: 94,
-    hourlyRate: '$95/hr',
-    location: 'New York, NY',
-    skills: ['React', 'Node.js', 'MongoDB'],
-    completedProjects: 94,
-    availability: 'Available',
-  },
-  {
-    id: '3',
-    name: 'Emma Davis',
-    title: 'Graphic Designer',
-    rating: 5.0,
-    reviews: 156,
-    hourlyRate: '$70/hr',
-    location: 'Los Angeles, CA',
-    skills: ['Illustration', 'Branding', 'Adobe CC'],
-    completedProjects: 156,
-    availability: 'Busy',
-  },
-  {
-    id: '4',
-    name: 'David Wilson',
-    title: 'SEO Specialist',
-    rating: 4.7,
-    reviews: 82,
-    hourlyRate: '$60/hr',
-    location: 'Chicago, IL',
-    skills: ['SEO', 'Content Strategy', 'Analytics'],
-    completedProjects: 82,
-    availability: 'Available',
-  },
-  {
-    id: '5',
-    name: 'Lisa Anderson',
-    title: 'Social Media Manager',
-    rating: 4.9,
-    reviews: 103,
-    hourlyRate: '$55/hr',
-    location: 'Miami, FL',
-    skills: ['Instagram', 'Facebook Ads', 'Content'],
-    completedProjects: 103,
-    availability: 'Available',
-  },
+const FREELANCERS_DATA = [
+  { id: '1', name: 'Sarah Johnson', title: 'UI/UX Designer', rating: 4.9, reviews: 127, hourlyRate: 85, location: 'San Francisco', skills: ['Figma', 'Prototyping'], availability: 'Available' },
+  { id: '2', name: 'Michael Chen', title: 'Full Stack Dev', rating: 4.2, reviews: 94, hourlyRate: 95, location: 'New York', skills: ['React', 'Node.js'], availability: 'Available' },
+  { id: '3', name: 'Emma Davis', title: 'Graphic Designer', rating: 5.0, reviews: 156, hourlyRate: 45, location: 'London', skills: ['Branding', 'Adobe CC'], availability: 'Busy' },
+  { id: '4', name: 'Zain Ahmed', title: 'Mobile Specialist', rating: 4.7, reviews: 88, hourlyRate: 65, location: 'Karachi, PK', skills: ['React Native', 'Firebase'], availability: 'Available' },
 ];
 
-export default function Freelancers() {
-  const getAvailabilityColor = (availability: Freelancer['availability']) => {
-    switch (availability) {
-      case 'Available':
-        return '#10B981';
-      case 'Busy':
-        return '#F59E0B';
-      case 'Not Available':
-        return '#EF4444';
-    }
+export default function MidnightPrismApp() {
+  const router = useRouter(); // Initialize router
+  
+  // --- STATE ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCurrency, setActiveCurrency] = useState(CURRENCIES.USD);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [showFavsOnly, setShowFavsOnly] = useState(false);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  
+  const [minRating, setMinRating] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(CURRENCIES.USD.maxSlider); 
+
+  // --- ACTIONS ---
+  const toggleFavorite = (id: string) => {
+    setFavorites(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
   };
+
+  const cycleCurrency = () => {
+    const sequence = [CURRENCIES.USD, CURRENCIES.PKR, CURRENCIES.EUR];
+    const nextIndex = (sequence.findIndex(c => c.label === activeCurrency.label) + 1) % sequence.length;
+    const nextCurrency = sequence[nextIndex];
+    setActiveCurrency(nextCurrency);
+    setMaxPrice(nextCurrency.maxSlider); 
+  };
+
+  const formatPrice = (usdBase: number) => {
+    const converted = usdBase * activeCurrency.rate;
+    return `${activeCurrency.symbol}${converted.toLocaleString(activeCurrency.locale, { maximumFractionDigits: 0 })}`;
+  };
+
+  const filteredData = useMemo(() => {
+    return FREELANCERS_DATA.filter(item => {
+      const currentPrice = item.hourlyRate * activeCurrency.rate;
+      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           item.skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesRating = item.rating >= minRating;
+      const matchesPrice = currentPrice <= maxPrice;
+      const matchesFav = showFavsOnly ? favorites.includes(item.id) : true;
+      return matchesSearch && matchesRating && matchesPrice && matchesFav;
+    });
+  }, [searchQuery, minRating, maxPrice, favorites, showFavsOnly, activeCurrency]);
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* HEADER */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Find Freelancers</Text>
-      </View>
-
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Search size={20} color="#6B7280" strokeWidth={2} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by skills, name..."
-            placeholderTextColor="#9CA3AF"
-          />
-        </View>
-        <TouchableOpacity style={styles.filterButton}>
-          <Filter size={20} color="#3B82F6" strokeWidth={2} />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.filtersRow}>
-        <TouchableOpacity style={[styles.filterChip, styles.activeChip]}>
-          <Text style={styles.activeChipText}>All</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.filterChip}>
-          <Text style={styles.chipText}>Top Rated</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.filterChip}>
-          <Text style={styles.chipText}>Available</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.filterChip}>
-          <Text style={styles.chipText}>New</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.freelancersList} showsVerticalScrollIndicator={false}>
-        <View style={styles.freelancersContent}>
-          {FREELANCERS_DATA.map((freelancer) => (
-            <TouchableOpacity key={freelancer.id} style={styles.freelancerCard}>
-              <View style={styles.cardHeader}>
-                <View style={styles.avatarContainer}>
-                  <User size={28} color="#3B82F6" strokeWidth={2} />
-                </View>
-                <View style={styles.freelancerInfo}>
-                  <Text style={styles.freelancerName}>{freelancer.name}</Text>
-                  <Text style={styles.freelancerTitle}>{freelancer.title}</Text>
-                </View>
-                <View
-                  style={[
-                    styles.availabilityDot,
-                    { backgroundColor: getAvailabilityColor(freelancer.availability) },
-                  ]}
-                />
-              </View>
-
-              <View style={styles.ratingRow}>
-                <View style={styles.ratingItem}>
-                  <Star size={16} color="#F59E0B" strokeWidth={2} fill="#F59E0B" />
-                  <Text style={styles.ratingText}>
-                    {freelancer.rating} ({freelancer.reviews})
-                  </Text>
-                </View>
-                <View style={styles.divider} />
-                <Text style={styles.hourlyRate}>{freelancer.hourlyRate}</Text>
-              </View>
-
-              <View style={styles.metaRow}>
-                <View style={styles.metaItem}>
-                  <MapPin size={14} color="#6B7280" strokeWidth={2} />
-                  <Text style={styles.metaText}>{freelancer.location}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Briefcase size={14} color="#6B7280" strokeWidth={2} />
-                  <Text style={styles.metaText}>{freelancer.completedProjects} projects</Text>
-                </View>
-              </View>
-
-              <View style={styles.skillsRow}>
-                {freelancer.skills.map((skill, index) => (
-                  <View key={index} style={styles.skillBadge}>
-                    <Text style={styles.skillText}>{skill}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <TouchableOpacity style={styles.viewProfileButton}>
-                <Text style={styles.viewProfileText}>View Profile</Text>
-              </TouchableOpacity>
+        <View style={styles.headerTop}>
+          <View style={styles.headerLeft}>
+            {/* GOING BACK ARROW */}
+            <TouchableOpacity style={styles.backArrow} onPress={() => router.back()}>
+               <ArrowLeft size={24} color="#1E293B" strokeWidth={2.5} />
             </TouchableOpacity>
-          ))}
+            <Text style={styles.headerTitle}>{showFavsOnly ? 'Favorites' : 'Talent Hub'}</Text>
+          </View>
+
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.currencyBadge} onPress={cycleCurrency}>
+              <Globe size={14} color="#6366F1" />
+              <Text style={styles.currencyText}>{activeCurrency.label}</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.iconBtn, showFavsOnly && styles.favBtnActive]} 
+              onPress={() => setShowFavsOnly(!showFavsOnly)}
+            >
+              {favorites.length > 0 && (
+                <View style={styles.badge}><Text style={styles.badgeText}>{favorites.length}</Text></View>
+              )}
+              <Heart size={20} color={showFavsOnly ? "#FFF" : "#1E293B"} fill={showFavsOnly ? "#FFF" : "none"} />
+            </TouchableOpacity>
+          </View>
         </View>
+
+        <View style={styles.actionRow}>
+          <View style={styles.searchBar}>
+            <Search size={18} color="#94A3B8" />
+            <TextInput 
+              placeholder="Search developers..." 
+              style={styles.searchInput} 
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          <TouchableOpacity 
+            style={[styles.filterBtn, (minRating > 0 || maxPrice < activeCurrency.maxSlider) && styles.filterBtnActive]} 
+            onPress={() => setIsFilterVisible(true)}
+          >
+            <Filter size={20} color={(minRating > 0 || maxPrice < activeCurrency.maxSlider) ? "#FFF" : "#6366F1"} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* LIST */}
+      <ScrollView style={styles.list} contentContainerStyle={{ paddingBottom: 40 }}>
+        <Text style={styles.resultsCount}>FOUND {filteredData.length} TALENTS</Text>
+        
+        {filteredData.length === 0 ? (
+          <View style={styles.empty}><UserCheck size={40} color="#CBD5E1" /><Text style={styles.emptyText}>No matches found</Text></View>
+        ) : (
+          filteredData.map(item => (
+            <View key={item.id} style={styles.card}>
+              <View style={styles.cardTop}>
+                <LinearGradient colors={['#6366F1', '#A855F7']} style={styles.avatar}>
+                  <View style={styles.avatarInner}><User size={24} color="#6366F1" /></View>
+                </LinearGradient>
+                <View style={styles.info}>
+                  <Text style={styles.name}>{item.name}</Text>
+                  <Text style={styles.title}>{item.title}</Text>
+                </View>
+                <TouchableOpacity onPress={() => toggleFavorite(item.id)}>
+                  <Heart size={22} color={favorites.includes(item.id) ? "#EF4444" : "#CBD5E1"} fill={favorites.includes(item.id) ? "#EF4444" : "none"} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.cardFooter}>
+                <View style={styles.priceRow}>
+                  <Text style={styles.price}>{formatPrice(item.hourlyRate)}</Text>
+                  <Text style={styles.unit}>/hr</Text>
+                </View>
+                <View style={styles.ratingBox}>
+                   <Star size={12} color="#F59E0B" fill="#F59E0B" />
+                   <Text style={styles.ratingText}>{item.rating}</Text>
+                </View>
+              </View>
+            </View>
+          ))
+        )}
       </ScrollView>
+
+      {/* FILTER MODAL - No changes here */}
+      <Modal visible={isFilterVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filter Results</Text>
+              <TouchableOpacity onPress={() => setIsFilterVisible(false)}><X size={24} color="#1E293B" /></TouchableOpacity>
+            </View>
+
+            <Text style={styles.label}>Max Hourly Rate: {activeCurrency.symbol}{maxPrice}</Text>
+            <View style={styles.priceOptions}>
+               {[0.25, 0.5, 0.75, 1].map(percent => {
+                 const val = Math.round(activeCurrency.maxSlider * percent);
+                 return (
+                   <TouchableOpacity 
+                    key={percent} 
+                    onPress={() => setMaxPrice(val)}
+                    style={[styles.chip, maxPrice === val && styles.chipActive]}
+                   >
+                     <Text style={[styles.chipText, maxPrice === val && styles.chipTextActive]}>
+                       {activeCurrency.symbol}{val}
+                     </Text>
+                   </TouchableOpacity>
+                 );
+               })}
+            </View>
+
+            <Text style={styles.label}>Minimum Rating</Text>
+            <View style={styles.priceOptions}>
+               {[0, 4.0, 4.5, 4.8].map(r => (
+                 <TouchableOpacity key={r} onPress={() => setMinRating(r)} style={[styles.chip, minRating === r && styles.chipActive]}>
+                   <Text style={[styles.chipText, minRating === r && styles.chipTextActive]}>{r === 0 ? 'Any' : `${r}★`}</Text>
+                 </TouchableOpacity>
+               ))}
+            </View>
+
+            <TouchableOpacity style={styles.applyBtn} onPress={() => setIsFilterVisible(false)}>
+              <Text style={styles.applyBtnText}>Apply Filters</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-  },
-  header: {
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: '#FFFFFF',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 12,
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1F2937',
-  },
-  filterButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  filtersRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    gap: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  activeChip: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
-  },
-  chipText: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  activeChipText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  freelancersList: {
-    flex: 1,
-  },
-  freelancersContent: {
-    padding: 20,
-    paddingTop: 0,
-  },
-  freelancerCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#EFF6FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  freelancerInfo: {
-    flex: 1,
-  },
-  freelancerName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  freelancerTitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  availabilityDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 12,
-  },
-  ratingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  ratingText: {
-    fontSize: 14,
-    color: '#1F2937',
-    fontWeight: '600',
-  },
-  divider: {
-    width: 1,
-    height: 16,
-    backgroundColor: '#E5E7EB',
-  },
-  hourlyRate: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#3B82F6',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 12,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  metaText: {
-    fontSize: 13,
-    color: '#6B7280',
-  },
-  skillsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
-  skillBadge: {
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  skillText: {
-    fontSize: 12,
-    color: '#3B82F6',
-    fontWeight: '600',
-  },
-  viewProfileButton: {
-    backgroundColor: '#3B82F6',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  viewProfileText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  header: { backgroundColor: '#FFF', paddingTop: 60, paddingBottom: 20, borderBottomWidth: 1, borderColor: '#F1F5F9' },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginBottom: 20 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center' }, // New container
+  backArrow: { marginRight: 12, padding: 4 }, // Added spacing
+  headerTitle: { fontSize: 24, fontWeight: '900', color: '#1E293B' },
+  headerActions: { flexDirection: 'row', gap: 12 },
+  currencyBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#EEF2FF', padding: 8, borderRadius: 12 },
+  currencyText: { fontSize: 12, fontWeight: '800', color: '#6366F1' },
+  iconBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' },
+  favBtnActive: { backgroundColor: '#EF4444' },
+  badge: { position: 'absolute', top: -4, right: -4, backgroundColor: '#6366F1', width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF' },
+  badgeText: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
+  actionRow: { flexDirection: 'row', paddingHorizontal: 24, gap: 10 },
+  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', borderRadius: 12, paddingHorizontal: 12, height: 48 },
+  searchInput: { flex: 1, marginLeft: 8, fontWeight: '600', color: '#1E293B' },
+  filterBtn: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' },
+  filterBtnActive: { backgroundColor: '#6366F1', borderColor: '#6366F1' },
+  list: { paddingHorizontal: 24 },
+  resultsCount: { fontSize: 10, fontWeight: '800', color: '#94A3B8', marginTop: 20, marginBottom: 10 },
+  card: { backgroundColor: '#FFF', borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9' },
+  cardTop: { flexDirection: 'row', alignItems: 'center' },
+  avatar: { width: 48, height: 48, borderRadius: 16, padding: 2 },
+  avatarInner: { flex: 1, backgroundColor: '#FFF', borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  info: { flex: 1, marginLeft: 12 },
+  name: { fontSize: 16, fontWeight: '800', color: '#1E293B' },
+  title: { fontSize: 12, color: '#64748B' },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 15, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F8FAFC' },
+  priceRow: { flexDirection: 'row', alignItems: 'baseline' },
+  price: { fontSize: 18, fontWeight: '900', color: '#1E293B' },
+  unit: { fontSize: 11, color: '#94A3B8' },
+  ratingBox: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFFBEB', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  ratingText: { fontSize: 12, fontWeight: '800', color: '#B45309' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFF', padding: 24, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  modalTitle: { fontSize: 18, fontWeight: '900' },
+  label: { fontSize: 12, fontWeight: '800', color: '#94A3B8', marginBottom: 12, marginTop: 10 },
+  priceOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: '#F1F5F9' },
+  chipActive: { backgroundColor: '#1E293B' },
+  chipText: { fontSize: 13, fontWeight: '700', color: '#64748B' },
+  chipTextActive: { color: '#FFF' },
+  applyBtn: { backgroundColor: '#6366F1', height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
+  applyBtnText: { color: '#FFF', fontWeight: '800' },
+  empty: { alignItems: 'center', marginTop: 40, opacity: 0.4 },
+  emptyText: { marginTop: 10, fontWeight: '700' }
 });

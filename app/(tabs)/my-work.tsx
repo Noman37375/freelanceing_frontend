@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -8,22 +8,31 @@ import {
   StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Briefcase, CheckCircle, FileText, Bell, Search, LayoutDashboard } from "lucide-react-native";
+import { Briefcase, CheckCircle, FileText, Bell, Search, LayoutDashboard, CircleDollarSign } from "lucide-react-native";
 import WorkCard from "@/components/WorkCard";
+
+// --- Currency Configuration ---
+const CURRENCIES = {
+  USD: { symbol: '$', rate: 1, color: '#6366F1' },
+  EUR: { symbol: '€', rate: 0.92, color: '#10B981' },
+  PKR: { symbol: '₨', rate: 280, color: '#F59E0B' },
+};
+
+type CurrencyKey = keyof typeof CURRENCIES;
 
 interface Milestone {
   title: string;
   approvalStatus: "pending" | "approved" | "requested";
-  priceUSD?: string;
+  basePrice: number; // Changed to number for easier calculation
 }
 
 interface Project {
   id: string;
   title: string;
-  client: string; // Made mandatory to match detail screens
-  budget: string; // Made mandatory
+  client: string;
+  baseBudget: number; // Changed to number
   deadline: string; 
-  location: string; // Added mandatory location
+  location: string;
   status: "available" | "proposal" | "inProgress" | "completed";
   description?: string;
   milestones?: Milestone[];
@@ -33,40 +42,48 @@ interface Project {
 
 export default function MyWorkScreen() {
   const [activeTab, setActiveTab] = useState<"Active" | "Completed" | "Proposals">("Active");
+  const [curKey, setCurKey] = useState<CurrencyKey>('USD');
 
-  // 🔹 UPDATED DATA: Added Location and synced names with Detail screens
+  const switchCurrency = () => {
+    const keys = Object.keys(CURRENCIES) as CurrencyKey[];
+    setCurKey(keys[(keys.indexOf(curKey) + 1) % keys.length]);
+  };
+
+  const activeRate = CURRENCIES[curKey].rate;
+  const activeSymbol = CURRENCIES[curKey].symbol;
+
   const allProjects: Project[] = [
     {
       id: "1",
       title: "Mobile App Redesign",
       client: "Acme Corp",
-      budget: "$1200",
+      baseBudget: 1200,
       deadline: "Dec 2025",
-      location: "Remote", // Matches details logic
+      location: "Remote",
       status: "inProgress",
       milestones: [
-        { title: "UI Design", approvalStatus: "approved", priceUSD: "$300" },
-        { title: "Prototype", approvalStatus: "pending", priceUSD: "$200" },
+        { title: "UI Design", approvalStatus: "approved", basePrice: 300 },
+        { title: "Prototype", approvalStatus: "pending", basePrice: 200 },
       ],
     },
     {
       id: "2",
       title: "Website Development",
       client: "Globex Inc",
-      budget: "$2000",
+      baseBudget: 2000,
       deadline: "Nov 2025",
-      location: "New York, US", // Matches details logic
+      location: "New York, US",
       status: "completed",
       milestones: [
-        { title: "Backend Setup", approvalStatus: "approved", priceUSD: "$1000" },
-        { title: "Frontend Implementation", approvalStatus: "approved", priceUSD: "$1000" },
+        { title: "Backend Setup", approvalStatus: "approved", basePrice: 1000 },
+        { title: "Frontend Implementation", approvalStatus: "approved", basePrice: 1000 },
       ],
     },
     {
       id: "3",
       title: "Landing Page Proposal",
       client: "Soylent Corp",
-      budget: "$500",
+      baseBudget: 500,
       deadline: "Dec 2025",
       location: "Remote",
       status: "proposal",
@@ -75,7 +92,7 @@ export default function MyWorkScreen() {
     },
   ];
 
-  const projects = allProjects.filter((p) => {
+  const filteredProjects = allProjects.filter((p) => {
     if (activeTab === "Active") return p.status === "inProgress";
     if (activeTab === "Completed") return p.status === "completed";
     if (activeTab === "Proposals") return p.status === "proposal";
@@ -84,21 +101,29 @@ export default function MyWorkScreen() {
 
   const getStats = () => {
     if (activeTab === "Active") {
-      const total = projects.reduce((sum, p) => {
+      const total = filteredProjects.reduce((sum, p) => {
         const earned = p.milestones?.filter((m) => m.approvalStatus === "approved")
-          .reduce((s, m) => s + Number(m.priceUSD?.replace("$", "") || 0), 0) || 0;
+          .reduce((s, m) => s + m.basePrice, 0) || 0;
         return sum + earned;
       }, 0);
-      return { label: "Current Earnings", value: `$${total}`, color: "#6366F1" };
+      return { 
+        label: "Current Earnings", 
+        value: `${activeSymbol}${(total * activeRate).toLocaleString()}`, 
+        color: "#6366F1" 
+      };
     }
     if (activeTab === "Completed") {
-      const total = projects.reduce((sum, p) => {
-        const earned = p.milestones?.reduce((s, m) => s + Number(m.priceUSD?.replace("$", "") || 0), 0) || 0;
+      const total = filteredProjects.reduce((sum, p) => {
+        const earned = p.milestones?.reduce((s, m) => s + m.basePrice, 0) || 0;
         return sum + earned;
       }, 0);
-      return { label: "Lifetime Earnings", value: `$${total}`, color: "#10B981" };
+      return { 
+        label: "Lifetime Earnings", 
+        value: `${activeSymbol}${(total * activeRate).toLocaleString()}`, 
+        color: "#10B981" 
+      };
     }
-    const shortlisted = projects.filter((p) => p.proposalStatus === "shortlisted").length;
+    const shortlisted = filteredProjects.filter((p) => p.proposalStatus === "shortlisted").length;
     return { label: "Shortlisted Bids", value: shortlisted.toString(), color: "#F59E0B" };
   };
 
@@ -116,19 +141,23 @@ export default function MyWorkScreen() {
               <Text style={styles.headerTitle}>My Workspace</Text>
             </View>
             <View style={styles.headerIcons}>
-              <TouchableOpacity style={styles.iconCircle}><Search size={20} color="#F8FAFC" /></TouchableOpacity>
+              {/* Currency Selector */}
+              <TouchableOpacity style={styles.currencyToggle} onPress={switchCurrency}>
+                <CircleDollarSign size={18} color="#FFF" />
+                <Text style={styles.currencyLabel}>{curKey}</Text>
+              </TouchableOpacity>
               <TouchableOpacity style={styles.iconCircle}><Bell size={20} color="#F8FAFC" /></TouchableOpacity>
             </View>
           </View>
 
-          {/* DYNAMIC STATS CARD (Changes Indigo/Green/Orange) */}
+          {/* DYNAMIC STATS CARD */}
           <View style={[styles.statsCard, { backgroundColor: stats.color, shadowColor: stats.color }]}>
             <View style={styles.statInfo}>
               <Text style={styles.statLabel}>{stats.label}</Text>
               <Text style={styles.statValue}>{stats.value}</Text>
             </View>
             <View style={styles.statRight}>
-               <Text style={styles.statCount}>{projects.length} Projects</Text>
+               <Text style={styles.statCount}>{filteredProjects.length} Projects</Text>
                <LayoutDashboard size={20} color="rgba(255,255,255,0.7)" />
             </View>
           </View>
@@ -161,12 +190,14 @@ export default function MyWorkScreen() {
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
         >
-          {projects.length > 0 ? (
-            projects.map((project) => (
+          {filteredProjects.length > 0 ? (
+            filteredProjects.map((project) => (
               <WorkCard 
                 key={project.id} 
                 project={project} 
                 type={activeTab.toLowerCase()} 
+                currencyRate={activeRate}
+                currencySymbol={activeSymbol}
               />
             ))
           ) : (
@@ -187,7 +218,19 @@ const styles = StyleSheet.create({
   headerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
   headerSubtitle: { color: "#94A3B8", fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1.2 },
   headerTitle: { color: "#F8FAFC", fontSize: 28, fontWeight: "900" },
-  headerIcons: { flexDirection: "row", gap: 10 },
+  headerIcons: { flexDirection: "row", gap: 10, alignItems: 'center' },
+  currencyToggle: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 6, 
+    backgroundColor: 'rgba(255,255,255,0.1)', 
+    paddingHorizontal: 12, 
+    paddingVertical: 8, 
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)'
+  },
+  currencyLabel: { color: '#FFF', fontWeight: '800', fontSize: 12 },
   iconCircle: { width: 42, height: 42, borderRadius: 14, backgroundColor: "#1E293B", justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#334155" },
 
   statsCard: { 

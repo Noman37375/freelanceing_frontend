@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Clock, DollarSign, User, Zap, Bookmark } from 'lucide-react-native';
+import { Clock, User, Zap, Bookmark } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
 interface Project {
@@ -12,6 +12,14 @@ interface Project {
   postedAt?: string;
   skills: string[];
   description?: string;
+}
+
+// Define props to receive currency data from FindProjectsScreen
+interface ProjectCardProps {
+  project?: Project;
+  currencyRate?: number;
+  currencySymbol?: string;
+  curKey?: string;
 }
 
 const STATIC_PROJECT: Project = {
@@ -39,8 +47,17 @@ const timeAgo = (timestamp?: string) => {
   return `${diffWeeks}w ago`;
 };
 
-export default function ProjectCard({ project = STATIC_PROJECT }: { project?: Project }) {
+export default function ProjectCard({ 
+  project = STATIC_PROJECT, 
+  currencyRate = 1, 
+  currencySymbol = '$',
+  curKey = 'USD'
+}: ProjectCardProps) {
   const router = useRouter();
+
+  // Helper to format the converted numbers
+  const formatValue = (val: number) => 
+    (val * currencyRate).toLocaleString(undefined, { maximumFractionDigits: 0 });
 
   return (
     <TouchableOpacity
@@ -55,10 +72,10 @@ export default function ProjectCard({ project = STATIC_PROJECT }: { project?: Pr
         </View>
         <View style={styles.titleContainer}>
           <Text style={styles.title} numberOfLines={1}>{project.title}</Text>
-          <View style={styles.clientRow}>
+          <div style={styles.clientRow}>
             <User size={12} color="#94A3B8" />
             <Text style={styles.clientName}>{project.client?.name || 'Unknown'}</Text>
-          </View>
+          </div>
         </View>
       </View>
 
@@ -70,9 +87,10 @@ export default function ProjectCard({ project = STATIC_PROJECT }: { project?: Pr
       {/* Meta Information Badges */}
       <View style={styles.infoRow}>
         <View style={[styles.badge, styles.budgetBadge]}>
-          <DollarSign size={14} color="#059669" />
+          {/* We replace the static DollarSign icon with the dynamic symbol text for clarity */}
+          <Text style={styles.symbolText}>{currencySymbol}</Text>
           <Text style={styles.budgetText}>
-            ${project.budgetMin ?? '0'} – ${project.budgetMax ?? '0'}
+            {formatValue(project.budgetMin ?? 0)} – {formatValue(project.budgetMax ?? 0)}
           </Text>
         </View>
 
@@ -180,6 +198,11 @@ const styles = StyleSheet.create({
   budgetBadge: {
     backgroundColor: '#ECFDF5',
   },
+  symbolText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#059669',
+  },
   budgetText: {
     fontSize: 13,
     fontWeight: '700',
@@ -226,7 +249,7 @@ const styles = StyleSheet.create({
   },
   applyButton: {
     flex: 1,
-    backgroundColor: '#4F46E5', // Indigo
+    backgroundColor: '#4F46E5', 
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',

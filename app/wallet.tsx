@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,24 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
-  Platform,
+  StatusBar,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Search, Plus, ArrowUpRight, History, Settings2, CheckCircle2, Clock, AlertCircle } from 'lucide-react-native';
+import { ArrowLeft, Search, Plus, ArrowUpRight, History, Settings2, CircleDollarSign } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useWallet } from '@/contexts/WalletContext';
+
+const { width } = Dimensions.get('window');
+
+// --- Currency Configuration ---
+const CURRENCIES = {
+  USD: { symbol: '$', rate: 1, color: '#6366F1' },
+  EUR: { symbol: '€', rate: 0.92, color: '#10B981' },
+  PKR: { symbol: '₨', rate: 280, color: '#F59E0B' },
+};
+
+type CurrencyKey = keyof typeof CURRENCIES;
 
 export default function WalletScreen() {
   const router = useRouter();
@@ -26,11 +38,34 @@ export default function WalletScreen() {
 
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
+  const [curKey, setCurKey] = useState<CurrencyKey>('USD');
   const [autoReplenish, setAutoReplenish] = useState(autoReplenishSettings.enabled);
 
   useEffect(() => {
     getTransactionHistory();
   }, []);
+
+  // --- Currency Toggle Logic ---
+  const switchCurrency = () => {
+    const keys = Object.keys(CURRENCIES) as CurrencyKey[];
+    setCurKey(keys[(keys.indexOf(curKey) + 1) % keys.length]);
+  };
+
+  const activeRate = CURRENCIES[curKey].rate;
+  const activeSymbol = CURRENCIES[curKey].symbol;
+
+  // Format helper for converted values
+  const formatVal = (val: number) => 
+    (val * activeRate).toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+  // --- Filter & Conversion Memo ---
+  const filteredTxns = useMemo(() => {
+    return transactions.filter((txn) => {
+      const matchesFilter = filter === 'All' || txn.status?.toLowerCase() === filter.toLowerCase();
+      const matchesSearch = txn.description?.toLowerCase().includes(search.toLowerCase());
+      return matchesFilter && matchesSearch;
+    });
+  }, [transactions, filter, search]);
 
   if (isLoading) {
     return (
@@ -40,49 +75,53 @@ export default function WalletScreen() {
     );
   }
 
-  const filteredTxns = transactions.filter((txn) => {
-    const matchesFilter = filter === 'All' || txn.status?.toLowerCase() === filter.toLowerCase();
-    const matchesSearch = txn.description?.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
-
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={22} color="#1E293B" />
         </TouchableOpacity>
+        
         <Text style={styles.headerTitle}>Financial Wallet</Text>
-        <TouchableOpacity style={styles.headerRight}>
-          <Settings2 size={22} color="#1E293B" />
+        
+        <TouchableOpacity style={styles.currencyPill} onPress={switchCurrency}>
+          <CircleDollarSign size={16} color={CURRENCIES[curKey].color} />
+          <Text style={styles.currencyText}>{curKey}</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        
         {/* MAIN WALLET CARD */}
         <View style={styles.walletCard}>
+          <View style={styles.circleBlur} />
           <View style={styles.cardTop}>
             <View>
-              <Text style={styles.balanceLabel}>Total Balance</Text>
-              <Text style={styles.balanceValue}>${balance.toLocaleString()}</Text>
+              <Text style={styles.balanceLabel}>Total Balance ({curKey})</Text>
+              <Text style={styles.balanceValue}>
+                <Text style={{ color: CURRENCIES[curKey].color }}>{activeSymbol}</Text>
+                {formatVal(balance)}
+              </Text>
             </View>
-            <View style={styles.chipBranding}>
-              <View style={styles.circleBlur} />
-            </View>
+            <TouchableOpacity style={styles.settingsBtn}>
+               <Settings2 size={20} color="#C7D2FE" />
+            </TouchableOpacity>
           </View>
 
           <View style={styles.walletStats}>
             <View style={styles.statBox}>
               <Text style={styles.statLabel}>On Hold</Text>
               <Text style={styles.statValue}>
-                ${transactions.filter(t => t.status?.toLowerCase() === 'pending').reduce((sum, t) => sum + (t.amount || 0), 0)}
+                {activeSymbol}{formatVal(transactions.filter(t => t.status?.toLowerCase() === 'pending').reduce((sum, t) => sum + (t.amount || 0), 0))}
               </Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statBox}>
               <Text style={styles.statLabel}>Lifetime</Text>
-              <Text style={styles.statValue}>${balance + 1250} {/* Example offset */}</Text>
+              <Text style={styles.statValue}>{activeSymbol}{formatVal(balance + 1250)}</Text>
             </View>
           </View>
 
@@ -98,7 +137,7 @@ export default function WalletScreen() {
           </View>
         </View>
 
-        {/* AUTO-REPLENISH MODULAR CARD */}
+        {/* AUTO-REPLENISH */}
         <View style={styles.autoSection}>
           <View style={styles.autoInfo}>
             <View style={styles.autoHeader}>
@@ -106,7 +145,7 @@ export default function WalletScreen() {
               <View style={[styles.statusIndicator, { backgroundColor: autoReplenish ? '#10B981' : '#94A3B8' }]} />
             </View>
             <Text style={styles.autoDesc}>
-              Smart-fill ${autoReplenishSettings.amount} if balance {'<'} ${autoReplenishSettings.threshold}
+              Fill {activeSymbol}{formatVal(autoReplenishSettings.amount)} if balance {'<'} {activeSymbol}{formatVal(autoReplenishSettings.threshold)}
             </Text>
           </View>
           <TouchableOpacity
@@ -125,7 +164,6 @@ export default function WalletScreen() {
             <History size={18} color="#64748B" />
           </View>
 
-          {/* Styled Search */}
           <View style={styles.searchWrapper}>
             <Search size={18} color="#94A3B8" />
             <TextInput
@@ -137,7 +175,6 @@ export default function WalletScreen() {
             />
           </View>
 
-          {/* Filters Scroll */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
             {['All', 'Completed', 'Pending', 'Withdrawn', 'Deposit'].map((item) => (
               <TouchableOpacity
@@ -177,7 +214,7 @@ export default function WalletScreen() {
 
                 <View style={styles.txnAmountWrapper}>
                   <Text style={[styles.txnAmount, { color: txn.type === 'credit' ? '#10B981' : '#1E293B' }]}>
-                    {txn.type === 'credit' ? '+' : '-'}${txn.amount}
+                    {txn.type === 'credit' ? '+' : '-'}{activeSymbol}{formatVal(txn.amount)}
                   </Text>
                 </View>
               </View>
@@ -192,115 +229,87 @@ export default function WalletScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#FFFFFF',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingVertical: 12, backgroundColor: '#FFFFFF',
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1E293B' },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
   backButton: { padding: 8, backgroundColor: '#F1F5F9', borderRadius: 12 },
-  headerRight: { padding: 8 },
+  currencyPill: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC',
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, gap: 4,
+    borderWidth: 1, borderColor: '#E2E8F0',
+  },
+  currencyText: { fontSize: 12, fontWeight: '800', color: '#1E293B' },
   
   walletCard: {
-    backgroundColor: '#1E1B4B',
-    margin: 20,
-    borderRadius: 24,
-    padding: 24,
-    overflow: 'hidden',
+    backgroundColor: '#1E1B4B', margin: 20, borderRadius: 28, padding: 24, overflow: 'hidden',
   },
   circleBlur: {
-    position: 'absolute',
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: '#4F46E5',
-    top: -50,
-    right: -50,
-    opacity: 0.3,
+    position: 'absolute', width: 200, height: 200, borderRadius: 100,
+    backgroundColor: '#4F46E5', top: -80, right: -60, opacity: 0.2,
   },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25 },
-  balanceLabel: { color: '#C7D2FE', fontSize: 14, fontWeight: '500' },
-  balanceValue: { color: '#FFFFFF', fontSize: 34, fontWeight: '800', marginTop: 4 },
+  balanceLabel: { color: '#C7D2FE', fontSize: 13, fontWeight: '500' },
+  balanceValue: { color: '#FFFFFF', fontSize: 32, fontWeight: '800', marginTop: 4 },
+  settingsBtn: { padding: 4 },
   
   walletStats: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
+    flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 20, padding: 16, marginBottom: 24,
   },
   statBox: { flex: 1, alignItems: 'center' },
   statDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.1)', height: '100%' },
-  statLabel: { color: '#94A3B8', fontSize: 12, marginBottom: 4 },
-  statValue: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  statLabel: { color: '#94A3B8', fontSize: 11, marginBottom: 4, textTransform: 'uppercase' },
+  statValue: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
   
   actionRow: { flexDirection: 'row', gap: 12 },
-  primaryAction: { flex: 1, backgroundColor: '#FFFFFF', height: 50, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  primaryActionText: { color: '#4F46E5', fontWeight: '700' },
-  secondaryAction: { flex: 1, backgroundColor: '#4F46E5', height: 50, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  secondaryActionText: { color: '#FFF', fontWeight: '700' },
+  primaryAction: { flex: 1, backgroundColor: '#FFFFFF', height: 48, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  primaryActionText: { color: '#4F46E5', fontWeight: '800', fontSize: 14 },
+  secondaryAction: { flex: 1, backgroundColor: '#4F46E5', height: 48, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  secondaryActionText: { color: '#FFF', fontWeight: '800', fontSize: 14 },
 
   autoSection: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    padding: 20,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF', marginHorizontal: 20, padding: 20, borderRadius: 24,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    borderWidth: 1, borderColor: '#F1F5F9',
   },
   autoHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  autoTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
-  statusIndicator: { width: 8, height: 8, borderRadius: 4 },
-  autoDesc: { fontSize: 13, color: '#64748B', marginTop: 4 },
-  toggle: { width: 44, height: 24, borderRadius: 12, justifyContent: 'center', paddingHorizontal: 3 },
+  autoTitle: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
+  statusIndicator: { width: 6, height: 6, borderRadius: 3 },
+  autoDesc: { fontSize: 12, color: '#64748B', marginTop: 4, fontWeight: '500' },
+  toggle: { width: 42, height: 22, borderRadius: 11, justifyContent: 'center', paddingHorizontal: 2 },
   knob: { width: 18, height: 18, borderRadius: 9, backgroundColor: '#FFF' },
 
   section: { paddingHorizontal: 20, marginTop: 30 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B' },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: '#1E293B' },
   
   searchWrapper: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#FFF', 
-    borderRadius: 14, 
-    paddingHorizontal: 15, 
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginBottom: 15 
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', 
+    borderRadius: 16, paddingHorizontal: 15, height: 48,
+    borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 15 
   },
-  searchBar: { flex: 1, marginLeft: 10, fontSize: 15, color: '#1E293B' },
+  searchBar: { flex: 1, marginLeft: 10, fontSize: 14, color: '#1E293B' },
   
   filterRow: { marginBottom: 20 },
   chip: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#FFF', borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#E2E8F0' },
-  activeChip: { backgroundColor: '#4F46E5', borderColor: '#4F46E5' },
-  chipText: { color: '#64748B', fontWeight: '600', fontSize: 13 },
+  activeChip: { backgroundColor: '#1E293B', borderColor: '#1E293B' },
+  chipText: { color: '#64748B', fontWeight: '700', fontSize: 12 },
   activeChipText: { color: '#FFF' },
 
   transactionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    padding: 15,
-    borderRadius: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF',
+    padding: 14, borderRadius: 18, marginBottom: 10,
+    borderWidth: 1, borderColor: '#F1F5F9',
   },
-  txnIconWrapper: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#F1F5F9' },
+  txnIconWrapper: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' },
   txnContent: { flex: 1, marginLeft: 12 },
-  txnDesc: { fontSize: 15, fontWeight: '600', color: '#1E293B', marginBottom: 4 },
+  txnDesc: { fontSize: 14, fontWeight: '700', color: '#1E293B', marginBottom: 2 },
   txnMetaRow: { flexDirection: 'row', alignItems: 'center' },
-  txnDate: { fontSize: 12, color: '#94A3B8' },
-  dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#CBD5E1', marginHorizontal: 8 },
-  txnStatusText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
-  txnAmount: { fontSize: 16, fontWeight: '800' },
+  txnDate: { fontSize: 11, color: '#94A3B8', fontWeight: '500' },
+  dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#CBD5E1', marginHorizontal: 6 },
+  txnStatusText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+  txnAmount: { fontSize: 15, fontWeight: '800' },
   
   text_completed: { color: '#10B981' },
   text_pending: { color: '#F59E0B' },

@@ -38,6 +38,9 @@ export default function AdminLayout() {
             <Stack.Screen name="manage-freelancers" options={{ headerShown: false }} />
             <Stack.Screen name="manage-clients" options={{ headerShown: false }} />
             <Stack.Screen name="manage-projects" options={{ headerShown: false }} />
+            <Stack.Screen name="manage-services" options={{ headerShown: false }} />
+            <Stack.Screen name="manage-notifications" options={{ headerShown: false }} />
+            <Stack.Screen name="manage-disputes" options={{ headerShown: false }} />
         </Stack>
     );
 }

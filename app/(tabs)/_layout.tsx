@@ -1,118 +1,153 @@
 // app/(tabs)/_layout.tsx
 
-import { Tabs } from 'expo-router';
-import { View, StyleSheet, Platform } from 'react-native';
-import { Home, Search, MessageCircle, User, Briefcase } from 'lucide-react-native';
+import { Tabs } from 'expo-router'
+import { View, StyleSheet, Platform } from 'react-native'
+import {
+  Home,
+  Search,
+  MessageCircle,
+  User,
+  PanelsTopLeft,
+} from 'lucide-react-native'
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#4F46E5', // Electric Indigo to match Home
-        tabBarInactiveTintColor: '#94A3B8', // Slate-400
+        tabBarActiveTintColor: '#4F46E5',
+        tabBarInactiveTintColor: '#94A3B8',
+
         tabBarShowLabel: true,
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: '600',
-          marginBottom: 10,
+          marginTop: 2,
         },
+
+        tabBarItemStyle: {
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
+
         tabBarStyle: {
-          position: 'absolute', // Makes it look modern/floating
           backgroundColor: '#FFFFFF',
           borderTopWidth: 0,
-          height: Platform.OS === 'ios' ? 88 : 70,
-          paddingTop: 10,
+          height: Platform.OS === 'ios' ? 86 : 64,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+          paddingTop: 8,
+
           ...Platform.select({
             ios: {
               shadowColor: '#000',
               shadowOffset: { width: 0, height: -4 },
-              shadowOpacity: 0.05,
-              shadowRadius: 10,
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
             },
             android: {
-              elevation: 20,
+              elevation: 18,
             },
             web: {
-              boxShadow: '0px -4px 10px rgba(0, 0, 0, 0.05)',
+              boxShadow: '0px -4px 12px rgba(0,0,0,0.06)',
             },
           }),
         },
-      }}>
-
+      }}
+    >
+      {/** Home */}
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: '',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.activeIconBg]}>
+            <IconWrapper focused={focused}>
               <Home size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-            </View>
+            </IconWrapper>
           ),
         }}
       />
 
-      <Tabs.Screen
-        name="projects"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.activeIconBg]}>
-              <Search size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-            </View>
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="my-work"
-        options={{
-          title: 'Projects',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.activeIconBg]}>
-              <Briefcase size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-            </View>
-          ),
-        }}
-      />
-
+      {/** Messages */}
       <Tabs.Screen
         name="messages"
         options={{
-          title: 'Chat',
+          title: '',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.activeIconBg]}>
+            <IconWrapper focused={focused}>
               <MessageCircle size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-            </View>
+            </IconWrapper>
           ),
         }}
       />
 
+      {/** Projects */}
+      <Tabs.Screen
+        name="projects"
+        options={{
+          title: '',
+          tabBarIcon: ({ color, focused }) => (
+            <IconWrapper focused={focused}>
+              <Search size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+            </IconWrapper>
+          ),
+        }}
+      />
+
+      {/** My Work */}
+      <Tabs.Screen
+        name="my-work"
+        options={{
+          title: '',
+          tabBarIcon: ({ color, focused }) => (
+            <IconWrapper focused={focused}>
+              <PanelsTopLeft size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+            </IconWrapper>
+          ),
+        }}
+      />
+
+      {/** Profile */}
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Account',
+          title: '',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.activeIconBg]}>
+            <IconWrapper focused={focused}>
               <User size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-            </View>
+            </IconWrapper>
           ),
         }}
       />
     </Tabs>
-  );
+  )
+}
+
+/** Reusable icon wrapper */
+function IconWrapper({
+  children,
+  focused,
+}: {
+  children: React.ReactNode
+  focused: boolean
+}) {
+  return (
+    <View
+      style={[
+        styles.iconContainer
+      ]}
+    >
+      {children}
+    </View>
+  )
 }
 
 const styles = StyleSheet.create({
   iconContainer: {
-    width: 44,
-    height: 30,
+    width: 40,
+    height: 32,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 15,
-    marginBottom: 4,
   },
-  activeIconBg: {
-    backgroundColor: '#EEF2FF', // Very light indigo tint for active state
-  },
-});
+
+})

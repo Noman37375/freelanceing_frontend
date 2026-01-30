@@ -1,18 +1,58 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Platform, Animated, StatusBar } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    ScrollView,
+    RefreshControl,
+    Platform,
+    StatusBar,
+    TextInput,
+    useWindowDimensions
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { Users, Briefcase, UserCheck, TrendingUp, DollarSign, Activity, ArrowRight, LogOut, Bell } from 'lucide-react-native';
+import {
+    Search,
+    Bell,
+    Menu,
+    ChevronRight,
+    Activity,
+    Users,
+    UserCheck,
+    Briefcase,
+    FileText,
+    Layers
+} from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminService, DashboardStats } from '@/services/adminService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+// Import newly created components
+import AdminSidebar from '@/components/admin/AdminSidebar';
+import AdminAnalyticsCard from '@/components/admin/AdminAnalyticsCard';
+import AdminProfileCard from '@/components/admin/AdminProfileCard';
+import AdminEarningReport from '@/components/admin/AdminEarningReport';
+import AdminApplicationStatus from '@/components/admin/AdminApplicationStatus';
+import AdminActivityTable from '@/components/admin/AdminActivityTable';
+
 export default function AdminDashboard() {
     const router = useRouter();
     const { logout, user } = useAuth();
+    const { width } = useWindowDimensions(); // Dynamic width for responsiveness
+    const isDesktop = width > 1024;
+    const isTablet = width > 768 && width <= 1024;
+    const isMobile = width <= 768;
+
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [refreshing, setRefreshing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const pulseAnim = React.useRef(new Animated.Value(0.3)).current;
+    const [sidebarVisible, setSidebarVisible] = useState(isDesktop);
+
+    // Update sidebar visibility when screen size changes
+    useEffect(() => {
+        setSidebarVisible(isDesktop);
+    }, [isDesktop]);
 
     const loadStats = useCallback(async (showLoading = true) => {
         try {
@@ -20,30 +60,15 @@ export default function AdminDashboard() {
             const data = await adminService.getDashboardStats();
             setStats(data);
         } catch (error) {
-            // Silently ignore or handle error
+            console.error('Failed to load stats:', error);
         } finally {
             setIsLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(pulseAnim, {
-                    toValue: 0.7,
-                    duration: 1000,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(pulseAnim, {
-                    toValue: 0.3,
-                    duration: 1000,
-                    useNativeDriver: true,
-                }),
-            ])
-        ).start();
-
         loadStats();
-    }, [loadStats, pulseAnim]);
+    }, [loadStats]);
 
     const onRefresh = async () => {
         setRefreshing(true);
@@ -56,342 +81,460 @@ export default function AdminDashboard() {
         router.replace('/login' as any);
     };
 
-    const StatCard = ({ title, value, icon: Icon, color, subValue }: any) => (
-        <View style={styles.statCardWrapper}>
-            <View style={styles.statCard}>
-                <View style={styles.statHeader}>
-                    <View style={[styles.iconBox, { backgroundColor: `${color}15` }]}>
-                        <Icon size={20} color={color} />
-                    </View>
-                    {subValue && (
-                        <View style={styles.trendBadge}>
-                            <TrendingUp size={12} color="#10B981" />
-                            <Text style={styles.trendText}>{subValue}</Text>
-                        </View>
-                    )}
-                </View>
-                <Text style={styles.statValue}>{value}</Text>
-                <Text style={styles.statLabel}>{title}</Text>
-            </View>
-        </View>
-    );
+    const StatusItems: any[] = [
+        { id: '1', title: 'Chinese Translator', subTitle: 'Tech Troopsy (Jurong East, Singapore)', type: 'Remote', date: 'Applied on Jan 22', status: 'Applied' },
+        { id: '2', title: 'Frontend Developer', subTitle: 'PT Nirala Digital (South Jakarta)', type: 'Freelance', date: 'Applied on Jan 09', status: 'Not selected' },
+        { id: '3', title: 'Website Designer', subTitle: 'Verganis Studio (Sydney, Australia)', type: '3 months contract', date: 'Applied on Dec 29', status: 'Interview' },
+    ];
 
-    const MenuCard = ({ title, description, icon: Icon, color, route, count }: any) => (
-        <TouchableOpacity
-            style={styles.menuCard}
-            onPress={() => router.push(route)}
-            activeOpacity={0.7}
-        >
-            <View style={styles.menuCardContent}>
-                <View style={[styles.menuIconContainer, { backgroundColor: `${color}15` }]}>
-                    <Icon size={24} color={color} />
-                </View>
+    const ActiveProjects = [
+        { id: '1', clientName: 'Steven Terry', projectName: 'Landing page', price: '$800', deliveredIn: '1 days 2 hours', progress: 90 },
+        { id: '2', clientName: 'Audrey Jones', projectName: 'Development', price: '$300', deliveredIn: '4 days 8 hours', progress: 50 },
+        { id: '3', clientName: 'Brian Fisher', projectName: 'Translator', price: '$180', deliveredIn: '14 days 2 hours', progress: 95 },
+        { id: '4', clientName: 'Molly Mills', projectName: 'Data Analyst', price: '$920', deliveredIn: '8 days 20 hours', progress: 20 },
+    ];
 
-                <View style={styles.menuInfo}>
-                    <Text style={styles.menuTitle}>{title}</Text>
-                    <Text style={styles.menuDescription}>{count} Active Records</Text>
-                </View>
+    const ManagementCards = [
+        { title: 'Freelancers', icon: Users, color: '#3B82F6', route: '/(admin)/manage-freelancers', count: stats?.totalFreelancers || 0 },
+        { title: 'Clients', icon: UserCheck, color: '#F59E0B', route: '/(admin)/manage-clients', count: stats?.totalClients || 0 },
+        { title: 'Services', icon: Layers, color: '#10B981', route: '/(admin)/manage-services', count: 0 },
+        { title: 'Notifications', icon: Bell, color: '#6366F1', route: '/(admin)/manage-notifications', count: 0 },
+        { title: 'Projects', icon: Briefcase, color: '#EC4899', route: '/(admin)/manage-projects', count: stats?.activeProjects || 0 },
+        { title: 'Disputes', icon: Activity, color: '#8B5CF6', route: '/(admin)/manage-disputes', count: 0 },
+    ];
 
-                <View style={styles.arrowContainer}>
-                    <ArrowRight size={20} color="#94A3B8" />
-                </View>
-            </View>
-        </TouchableOpacity>
-    );
-
-    const StatCardSkeleton = () => (
-        <View style={styles.statCardWrapper}>
-            <Animated.View style={[styles.statCard, { opacity: pulseAnim }]}>
-                <View style={styles.statHeader}>
-                    <View style={[styles.iconBox, { backgroundColor: '#E2E8F0' }]} />
-                </View>
-                <View style={[styles.skeletonText, { width: '60%', height: 24, marginBottom: 8 }]} />
-                <View style={[styles.skeletonText, { width: '40%', height: 14 }]} />
-            </Animated.View>
-        </View>
-    );
-
-    const MenuCardSkeleton = () => (
-        <Animated.View style={[styles.menuCard, { opacity: pulseAnim, padding: 16, flexDirection: 'row', alignItems: 'center' }]}>
-            <View style={[styles.menuIconContainer, { backgroundColor: '#E2E8F0', marginRight: 16 }]} />
-            <View style={{ flex: 1 }}>
-                <View style={[styles.skeletonText, { width: '50%', height: 18, marginBottom: 8 }]} />
-                <View style={[styles.skeletonText, { width: '30%', height: 14 }]} />
-            </View>
-        </Animated.View>
-    );
+    // Dynamic styles based on screen size
+    const dynamicStyles = {
+        mainLayout: {
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? 16 : 24,
+        } as any,
+        chartsGrid: {
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? 16 : 20,
+        } as any,
+        managementCard: {
+            flexBasis: isDesktop ? '23%' : isTablet ? '47%' : '100%',
+        } as any,
+        greetingHeader: {
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            gap: isMobile ? 12 : 0,
+        } as any,
+        greetingText: {
+            fontSize: isMobile ? 22 : 28,
+        },
+        scrollContent: {
+            padding: isMobile ? 16 : 24,
+        },
+        topBar: {
+            height: isMobile ? 64 : 80,
+            paddingHorizontal: isMobile ? 16 : 24,
+        },
+    };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" />
+        <View style={styles.outerContainer}>
+            <StatusBar barStyle="dark-content" />
 
-            {/* Dynamic Background Element */}
-            <View style={styles.topGradient} />
+            {/* Sidebar Overlay for Mobile */}
+            {!isDesktop && sidebarVisible && (
+                <TouchableOpacity
+                    style={styles.sidebarOverlay}
+                    activeOpacity={1}
+                    onPress={() => setSidebarVisible(false)}
+                />
+            )}
 
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFF" />}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* Header */}
-                <View style={styles.header}>
-                    <View>
-                        <Text style={styles.greetingText}>Admin Portal</Text>
-                        <Text style={styles.userNameText}>Dashboard Overview</Text>
+            {/* Sidebar */}
+            {(sidebarVisible || isDesktop) && (
+                <View style={isDesktop ? styles.desktopSidebar : styles.mobileSidebar}>
+                    <AdminSidebar onLogout={handleLogout} />
+                </View>
+            )}
+
+            <SafeAreaView style={styles.container}>
+                {/* Header Bar */}
+                <View style={[styles.topBar, dynamicStyles.topBar]}>
+                    <View style={styles.topBarLeft}>
+                        {!isDesktop && (
+                            <TouchableOpacity
+                                style={styles.menuButton}
+                                onPress={() => setSidebarVisible(!sidebarVisible)}
+                            >
+                                <Menu size={24} color="#1E293B" />
+                            </TouchableOpacity>
+                        )}
+                        <Text style={[styles.pageTitle, { fontSize: isMobile ? 20 : 24 }]}>Dashboard</Text>
+
+                        {!isMobile && (
+                            <View style={styles.companyToggleContainer}>
+                                <Text style={styles.companyToggleLabel}>Company</Text>
+                                <View style={styles.toggleSwitch}>
+                                    <View style={styles.toggleCircle} />
+                                </View>
+                            </View>
+                        )}
                     </View>
-                    <View style={styles.headerIcons}>
-                        <TouchableOpacity onPress={handleLogout} style={styles.iconCircle}>
-                            <LogOut size={20} color="#FFF" />
+
+                    <View style={styles.topBarRight}>
+                        {!isMobile && (
+                            <View style={[styles.searchContainer, { width: isDesktop ? 300 : 200 }]}>
+                                <Search size={18} color="#94A3B8" />
+                                <TextInput
+                                    placeholder="Search"
+                                    style={styles.searchInput}
+                                    placeholderTextColor="#94A3B8"
+                                />
+                            </View>
+                        )}
+                        <TouchableOpacity style={styles.notificationButton}>
+                            <Bell size={20} color="#1E293B" />
+                            <View style={styles.notifBadge} />
                         </TouchableOpacity>
                     </View>
                 </View>
 
-                {/* Stats Grid */}
-                <View style={styles.statsGrid}>
-                    {isLoading ? (
-                        <>
-                            <StatCardSkeleton />
-                            <StatCardSkeleton />
-                            <StatCardSkeleton />
-                            <StatCardSkeleton />
-                        </>
-                    ) : (
-                        <>
-                            <StatCard
-                                title="Total Revenue"
-                                value={`$${(stats?.totalRevenue || 0).toLocaleString()}`}
-                                icon={DollarSign}
-                                color="#10B981"
-                                subValue="+12%"
-                            />
-                            <StatCard
-                                title="Active Projects"
-                                value={stats?.activeProjects || '0'}
-                                icon={Activity}
-                                color="#8B5CF6"
-                            />
-                            <StatCard
-                                title="Freelancers"
-                                value={stats?.totalFreelancers || '0'}
-                                icon={Users}
-                                color="#3B82F6"
-                            />
-                            <StatCard
-                                title="Clients"
-                                value={stats?.totalClients || '0'}
-                                icon={UserCheck}
-                                color="#F59E0B"
-                            />
-                        </>
-                    )}
-                </View>
+                <ScrollView
+                    style={styles.content}
+                    contentContainerStyle={dynamicStyles.scrollContent}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={dynamicStyles.mainLayout}>
+                        {/* Left Column (Main Stats) */}
+                        <View style={isMobile ? {} : styles.leftColumn}>
+                            <View style={styles.greeting}>
+                                <View style={dynamicStyles.greetingHeader}>
+                                    <Text style={[styles.greetingText, dynamicStyles.greetingText]}>
+                                        Welcome back, {user?.userName || 'Admin'}! 👋
+                                    </Text>
+                                    {!isMobile && (
+                                        <TouchableOpacity style={styles.reportButton}>
+                                            <FileText size={16} color="#6366F1" />
+                                            <Text style={styles.reportButtonText}>Download report</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            </View>
 
-                <Text style={styles.sectionTitle}>Management View</Text>
-                <View style={styles.menuGrid}>
-                    {isLoading ? (
-                        <>
-                            <MenuCardSkeleton />
-                            <MenuCardSkeleton />
-                            <MenuCardSkeleton />
-                        </>
-                    ) : (
-                        <>
-                            <MenuCard
-                                title="Freelancers"
-                                description="View and manage freelancer profiles"
-                                icon={Users}
-                                color="#3B82F6"
-                                route="/(admin)/manage-freelancers"
-                                count={stats?.totalFreelancers || 0}
-                            />
-                            <MenuCard
-                                title="Clients"
-                                description="View and verify client accounts"
-                                icon={UserCheck}
-                                color="#F59E0B"
-                                route="/(admin)/manage-clients"
-                                count={stats?.totalClients || 0}
-                            />
-                            <MenuCard
-                                title="Projects"
-                                description="Monitor and moderate project listings"
-                                icon={Briefcase}
-                                color="#EC4899"
-                                route="/(admin)/manage-projects"
-                                count={stats?.activeProjects || 0}
-                            />
-                        </>
-                    )}
-                </View>
-            </ScrollView>
-        </SafeAreaView>
+                            <View style={[styles.chartsGrid, dynamicStyles.chartsGrid]}>
+                                <View style={{ flex: isMobile ? undefined : 1, width: isMobile ? '100%' : undefined }}>
+                                    <AdminAnalyticsCard
+                                        percentage={90}
+                                        title="Analytics"
+                                        subTitle="Performance"
+                                        value={stats?.totalClients?.toString() || '0'}
+                                        subValue="1,298"
+                                    />
+                                </View>
+                                <View style={{ flex: isMobile ? undefined : 1.6, width: isMobile ? '100%' : undefined }}>
+                                    <AdminEarningReport
+                                        revenue={`$${(stats?.totalRevenue || 0).toLocaleString()}`}
+                                        trend="+2.3%"
+                                    />
+                                </View>
+                            </View>
+
+                            <View style={styles.sectionHeader}>
+                                <Text style={[styles.sectionTitle, { fontSize: isMobile ? 18 : 22 }]}>
+                                    Management View
+                                </Text>
+                                {/* <TouchableOpacity
+                                    style={styles.viewMoreButton}
+                                    onPress={() => router.push('/(admin)/manage-projects' as any)}
+                                >
+                                    <Text style={styles.viewMoreText}>View all</Text>
+                                    <ChevronRight size={14} color="#6366F1" />
+                                </TouchableOpacity> */}
+                            </View>
+
+                            <View style={styles.managementGrid}>
+                                {ManagementCards.map((card) => (
+                                    <TouchableOpacity
+                                        key={card.title}
+                                        style={[styles.managementCard, dynamicStyles.managementCard]}
+                                        onPress={() => router.push(card.route as any)}
+                                    >
+                                        <View style={[styles.cardIconBox, { backgroundColor: `${card.color}15` }]}>
+                                            <card.icon size={22} color={card.color} />
+                                        </View>
+                                        <View style={styles.cardInfo}>
+                                            <Text style={styles.cardCount}>{card.count}</Text>
+                                            <Text style={styles.cardTitle}>{card.title}</Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            {/* <View style={styles.projectsSection}>
+                                <View style={styles.sectionHeader}>
+                                    <Text style={[styles.sectionTitle, { fontSize: isMobile ? 18 : 22 }]}>
+                                        Active projects <Text style={styles.countText}>(12)</Text>
+                                    </Text>
+                                </View>
+                                <AdminActivityTable projects={ActiveProjects} />
+                            </View> */}
+                            <View style={styles.projectsSection}>
+                                <View style={styles.sectionHeader}>
+                                    <Text style={[styles.sectionTitle, { fontSize: isMobile ? 18 : 22 }]}>
+                                        Active projects <Text style={styles.countText}>(12)</Text>
+                                    </Text>
+                                </View>
+
+                                <View style={styles?.projectsCard}>
+                                    <AdminActivityTable projects={ActiveProjects} />
+                                </View>
+                            </View>
+
+                        </View>
+
+                        {/* Right Column (Profile & Activity) */}
+                        <View style={isMobile ? {} : styles.rightColumn}>
+                            {/* <AdminProfileCard
+                                name={user?.userName || 'Admin'}
+                                role="System Administrator"
+                                location="Platform Control Center"
+                                avatarUrl={undefined}
+                            /> */}
+                            {/* <View style={{ height: 24 }} /> */}
+                            <AdminApplicationStatus items={StatusItems} />
+                        </View>
+                    </View>
+                </ScrollView>
+            </SafeAreaView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    outerContainer: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
+        flexDirection: 'row',
+        backgroundColor: '#FFFFFF',
     },
-    topGradient: {
+    sidebarOverlay: {
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
-        height: 240,
-        backgroundColor: '#1E1B4B', // Deep Indigo
-        borderBottomLeftRadius: 32,
-        borderBottomRightRadius: 32,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        zIndex: 90,
     },
-    scrollContent: {
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 40,
+    desktopSidebar: {
+        width: 240,
+        height: '100%',
     },
-    header: {
+    mobileSidebar: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        zIndex: 100,
+        width: 240,
+        ...Platform.select({
+            ios: { shadowColor: '#000', shadowOffset: { width: 5, height: 0 }, shadowOpacity: 0.1, shadowRadius: 10 },
+            android: { elevation: 20 },
+        }),
+    },
+    projectsCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+    },
+    container: {
+        flex: 1,
+        backgroundColor: '#FCFCFD',
+    },
+    topBar: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 25,
+        justifyContent: 'space-between',
+        backgroundColor: '#FFFFFF',
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F5F9',
     },
-    greetingText: {
-        color: '#C7D2FE',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    userNameText: {
-        color: '#FFFFFF',
-        fontSize: 24,
-        fontWeight: '800',
-    },
-    headerIcons: {
+    topBarLeft: {
         flexDirection: 'row',
-        gap: 10,
+        alignItems: 'center',
+        gap: 16,
     },
-    iconCircle: {
+    companyToggleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        marginLeft: 20,
+    },
+    companyToggleLabel: {
+        fontSize: 14,
+        color: '#64748B',
+        fontWeight: '600',
+    },
+    toggleSwitch: {
+        width: 40,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: '#6366F1',
+        justifyContent: 'center',
+        paddingHorizontal: 2,
+    },
+    toggleCircle: {
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        backgroundColor: '#FFFFFF',
+        alignSelf: 'flex-end',
+    },
+    menuButton: {
+        padding: 8,
+    },
+    pageTitle: {
+        fontWeight: '800',
+        color: '#1E293B',
+    },
+    topBarRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F8FAFC',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        gap: 10,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#1E293B',
+    },
+    notificationButton: {
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: 'rgba(255,255,255,0.15)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    statsGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 12,
-        marginBottom: 24,
-    },
-    statCardWrapper: {
-        width: '48%',
-    },
-    statCard: {
-        padding: 16,
-        borderRadius: 24,
-        backgroundColor: 'rgba(255,255,255,0.95)',
-        minHeight: 130,
-        justifyContent: 'space-between',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 10 },
-                shadowOpacity: 0.1,
-                shadowRadius: 20,
-            },
-            android: {
-                elevation: 10,
-            },
-            web: {
-                boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.1)',
-            },
-        }),
-    },
-    statHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 12,
-    },
-    iconBox: {
-        width: 36,
-        height: 36,
-        borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    trendBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 2,
-        backgroundColor: '#f2fbf6',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 100,
-    },
-    trendText: {
-        color: '#1dbf73',
-        fontSize: 10,
-        fontWeight: '600',
-    },
-    statValue: {
-        color: '#1E293B',
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 4,
-    },
-    statLabel: {
-        color: '#64748B',
-        fontSize: 13,
-        fontWeight: '600',
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '800',
-        color: '#1E293B',
-        marginBottom: 16,
-        marginTop: 8,
-    },
-    menuGrid: {
-        gap: 12,
-    },
-    menuCard: {
-        backgroundColor: '#FFF',
-        borderRadius: 20,
+        backgroundColor: '#F8FAFC',
         borderWidth: 1,
         borderColor: '#F1F5F9',
-        overflow: 'hidden',
     },
-    menuCardContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
+    notifBadge: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#EF4444',
+        borderWidth: 1.5,
+        borderColor: '#FFFFFF',
     },
-    menuIconContainer: {
-        width: 52,
-        height: 52,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 16,
-    },
-    menuInfo: {
+    content: {
         flex: 1,
     },
-    menuTitle: {
+    leftColumn: {
+        flex: 2.5,
+    },
+    rightColumn: {
+        flex: 1,
+    },
+    greeting: {
+        marginBottom: 24,
+    },
+    greetingText: {
+        fontWeight: '800',
         color: '#1E293B',
-        fontSize: 16,
+    },
+    reportButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    reportButtonText: {
+        fontSize: 14,
         fontWeight: '700',
-        marginBottom: 2,
+        color: '#6366F1',
     },
-    menuDescription: {
+    chartsGrid: {
+        marginBottom: 32,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    sectionTitle: {
+        fontWeight: '800',
+        color: '#1E293B',
+    },
+    countText: {
         color: '#94A3B8',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    viewMoreButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    viewMoreText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#6366F1',
+    },
+    managementGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 16,
+        marginBottom: 32,
+    },
+    managementCard: {
+        backgroundColor: '#FFFFFF',
+        padding: 20,
+        borderRadius: 24,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    cardIconBox: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cardInfo: {
+        flex: 1,
+    },
+    cardCount: {
+        fontSize: 22,
+        fontWeight: '800',
+        color: '#1E293B',
+    },
+    cardTitle: {
         fontSize: 13,
+        fontWeight: '600',
+        color: '#94A3B8',
     },
-    arrowContainer: {
-        padding: 4,
-    },
-    skeletonText: {
-        backgroundColor: '#E2E8F0',
-        borderRadius: 4,
+    projectsSection: {
+        marginBottom: 32,
     },
 });

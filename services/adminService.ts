@@ -84,7 +84,100 @@ export const adminService = {
             method: 'GET',
         });
         return response?.data;
-    }
+    },
+
+    // Disputes
+    getAllDisputes: async (filters: any = {}): Promise<any[]> => {
+        const params = new URLSearchParams();
+        if (filters.status) params.append('status', filters.status);
+        if (filters.priority) params.append('priority', filters.priority);
+
+        const response = await apiCall(`/api/v1/admin/disputes?${params.toString()}`, {
+            method: 'GET',
+        });
+        return response?.data?.disputes || [];
+    },
+
+    resolveDispute: async (disputeId: string, resolutionData: any): Promise<any> => {
+        const response = await apiCall(`/api/v1/admin/disputes/${disputeId}/resolve`, {
+            method: 'PUT',
+            body: JSON.stringify(resolutionData),
+        });
+        return response?.data?.dispute;
+    },
+
+    assignMediator: async (disputeId: string, mediatorId: string): Promise<any> => {
+        const response = await apiCall(`/api/v1/admin/disputes/${disputeId}/assign`, {
+            method: 'PUT',
+            body: JSON.stringify({ mediatorId }),
+        });
+        return response?.data?.dispute;
+    },
+
+    updateDisputePriority: async (disputeId: string, priority: string): Promise<any> => {
+        const response = await apiCall(`/api/v1/admin/disputes/${disputeId}/priority`, {
+            method: 'PUT',
+            body: JSON.stringify({ priority }),
+        });
+        return response?.data?.dispute;
+    },
+
+    // Service Categories
+    getServiceCategories: async (): Promise<any[]> => {
+        const response = await apiCall('/api/v1/services');
+        console.log(response?.data);
+        return response?.data;
+    },
+
+    createServiceCategory: async (data: any): Promise<any> => {
+        const response = await apiCall('/api/v1/services', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        return response?.data;
+    },
+
+    updateServiceCategory: async (id: string, data: any): Promise<any> => {
+        const response = await apiCall(`/api/v1/services/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+        return response?.data;
+    },
+
+    deleteServiceCategory: async (id: string): Promise<void> => {
+        await apiCall(`/api/v1/services/${id}`, {
+            method: 'DELETE'
+        });
+    },
+
+    // System Notifications
+    getSystemNotifications: async (): Promise<any[]> => {
+        const response = await apiCall('/api/v1/notifications');
+        return response?.data?.notifications;
+    },
+
+    sendSystemNotification: async (data: any): Promise<any> => {
+        const response = await apiCall('/api/v1/notifications', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        return response?.data;
+    },
+
+    updateSystemNotification: async (id: string, data: any): Promise<any> => {
+        const response = await apiCall(`/api/v1/notifications/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+        return response?.data;
+    },
+
+    deleteSystemNotification: async (id: string): Promise<void> => {
+        await apiCall(`/api/v1/notifications/${id}`, {
+            method: 'DELETE'
+        });
+    },
 };
 
 export interface DashboardStats {

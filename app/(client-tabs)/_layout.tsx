@@ -52,6 +52,7 @@ export default function ClientTabLayout() {
           ),
         }}
       />
+      
 
       <Tabs.Screen
         name="projects"
@@ -76,6 +77,7 @@ export default function ClientTabLayout() {
           ),
         }}
       />
+      
 
       <Tabs.Screen
         name="proposals"

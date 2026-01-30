@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '@/config';
 import { storageGet } from '@/utils/storage';
+import type { Dispute } from '@/models/Dispute';
 
 const getAuthToken = async (): Promise<string | null> => {
   return await storageGet('accessToken');
@@ -7,7 +8,7 @@ const getAuthToken = async (): Promise<string | null> => {
 
 const apiCall = async (endpoint: string, options: RequestInit = {}): Promise<any> => {
   const token = await getAuthToken();
-  
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> || {}),
@@ -26,7 +27,7 @@ const apiCall = async (endpoint: string, options: RequestInit = {}): Promise<any
 
     const contentType = response.headers.get('content-type');
     let data;
-    
+
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
     } else {
@@ -49,34 +50,6 @@ const apiCall = async (endpoint: string, options: RequestInit = {}): Promise<any
   }
 };
 
-export interface Dispute {
-  id: string;
-  projectId: string;
-  clientId: string;
-  freelancerId: string;
-  reason: string;
-  description?: string;
-  amount: number;
-  status: 'Pending' | 'Resolved' | 'Denied';
-  createdAt: string;
-  updatedAt: string;
-  project?: {
-    id: string;
-    title: string;
-    description?: string;
-  };
-  client?: {
-    id: string;
-    userName: string;
-    email: string;
-  };
-  freelancer?: {
-    id: string;
-    userName: string;
-    email: string;
-  };
-}
-
 export const disputeService = {
   /**
    * Get user's disputes
@@ -84,11 +57,11 @@ export const disputeService = {
   getMyDisputes: async (status?: string): Promise<Dispute[]> => {
     const params = new URLSearchParams();
     if (status) params.append('status', status);
-    
+
     const response = await apiCall(`/api/v1/disputes?${params.toString()}`, {
       method: 'GET',
     });
-    return response.data.disputes || [];
+    return response?.data?.disputes || [];
   },
 
   /**
@@ -98,7 +71,7 @@ export const disputeService = {
     const response = await apiCall(`/api/v1/disputes/${id}`, {
       method: 'GET',
     });
-    return response.data.dispute;
+    return response?.data?.dispute;
   },
 
   /**
@@ -114,17 +87,81 @@ export const disputeService = {
       method: 'POST',
       body: JSON.stringify(disputeData),
     });
-    return response.data.dispute;
+    return response?.data?.dispute;
   },
 
   /**
    * Update dispute status
    */
-  updateDisputeStatus: async (id: string, status: 'Pending' | 'Resolved' | 'Denied'): Promise<Dispute> => {
+  updateDisputeStatus: async (id: string, status: string): Promise<Dispute> => {
     const response = await apiCall(`/api/v1/disputes/${id}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
     });
-    return response.data.dispute;
+    return response?.data?.dispute;
+  },
+
+  /**
+   * Get messages for a dispute
+   */
+  getMessages: async (disputeId: string): Promise<any[]> => {
+    const response = await apiCall(`/api/v1/disputes/${disputeId}/messages`, {
+      method: 'GET',
+    });
+    return response?.data?.messages || [];
+  },
+
+  /**
+   * Send a message in a dispute
+   */
+  sendMessage: async (disputeId: string, content: string, attachments: string[] = []): Promise<any> => {
+    const response = await apiCall(`/api/v1/disputes/${disputeId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content, attachments }),
+    });
+    return response?.data?.message;
+  },
+
+  /**
+   * Get evidence for a dispute
+   */
+  getEvidence: async (disputeId: string): Promise<any[]> => {
+    const response = await apiCall(`/api/v1/disputes/${disputeId}/evidence`, {
+      method: 'GET',
+    });
+    return response?.data?.evidence || [];
+  },
+
+  /**
+   * Upload evidence for a dispute
+   */
+  uploadEvidence: async (disputeId: string, fileData: any): Promise<any> => {
+    // Note: Actual implementation depends on file handling (Form Data vs Base64)
+    const response = await apiCall(`/api/v1/disputes/${disputeId}/evidence`, {
+      method: 'POST',
+      body: JSON.stringify(fileData),
+    });
+    return response?.data?.evidence;
+  },
+
+  /**
+   * Get timeline for a dispute
+   */
+  getTimeline: async (disputeId: string): Promise<any[]> => {
+    const response = await apiCall(`/api/v1/disputes/${disputeId}/timeline`, {
+      method: 'GET',
+    });
+    return response?.data?.timeline || [];
+  },
+
+  /**
+   * Escalate dispute to support
+   */
+  escalateToSupport: async (disputeId: string, reason: string): Promise<Dispute> => {
+    const response = await apiCall(`/api/v1/disputes/${disputeId}/escalate`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason }),
+    });
+    return response?.data?.dispute;
   },
 };

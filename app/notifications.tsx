@@ -28,6 +28,8 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
+    return () => clearInterval(interval);
   }, []);
 
   const fetchNotifications = async () => {
@@ -84,7 +86,7 @@ export default function NotificationsScreen() {
     if (!notification.isRead) {
       try {
         await notificationService.markAsRead(notification.id);
-        setNotifications(notifications.map(n => 
+        setNotifications(notifications.map(n =>
           n.id === notification.id ? { ...n, isRead: true } : n
         ));
       } catch (error) {
@@ -94,7 +96,7 @@ export default function NotificationsScreen() {
   };
 
   const renderItem = ({ item }: { item: Notification }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[styles.notificationCard, !item.isRead && styles.unreadCard]}
       activeOpacity={0.7}
       onPress={() => handleNotificationPress(item)}
@@ -171,7 +173,7 @@ const styles = StyleSheet.create({
     borderColor: "#F1F5F9",
   },
   headerTitle: { fontSize: 20, fontWeight: "900", color: "#1E293B" },
-  
+
   listContainer: { paddingVertical: 10 },
   notificationCard: {
     flexDirection: "row",

@@ -154,9 +154,6 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* Dynamic Background Element */}
-      <View style={styles.topGradient} />
-
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {/* Header/Hero Section */}
@@ -212,7 +209,20 @@ export default function HomeScreen() {
             contentContainerStyle={styles.categoryScrollPremium}
           >
             {categories.map(cat => (
-              <TouchableOpacity key={cat.id} style={styles.serviceCard}>
+              <TouchableOpacity
+                key={cat.id}
+                style={styles.serviceCard}
+                onPress={() => router.push({
+                  pathname: `/service-category/${cat.id}`,
+                  params: {
+                    name: cat.name,
+                    image: cat.image ?? '',
+                    icon: cat.icon ?? 'Box',
+                    color: cat.color ?? '#6366F1',
+                  },
+                } as any)}
+                activeOpacity={0.9}
+              >
                 <Image source={{ uri: cat.image }} style={styles.serviceImage} />
                 <View style={[styles.serviceOverlay, { backgroundColor: (cat.color || '#6366F1') + 'CC' }]}>
                   {getCategoryIcon(cat.icon, cat.color)}
@@ -276,14 +286,6 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  topGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 350,
-    backgroundColor: '#1E1B4B',
-  },
   scrollContent: { paddingBottom: 40 },
 
   heroSection: {

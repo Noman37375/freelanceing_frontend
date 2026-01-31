@@ -361,6 +361,50 @@ export const authService = {
       body: JSON.stringify(profileData),
     });
   },
+
+  /**
+   * Upload profile image (multipart)
+   * POST /api/v1/auth/upload-profile-image
+   * Requires authentication. Saves to DB and returns updated user; image visible in UI after refresh.
+   */
+  uploadProfileImage: async (params: { uri: string; type?: string; name?: string }): Promise<{ user: User; profileImage: string }> => {
+    const token = await storageGet('accessToken');
+    if (!token) throw new Error('Not authenticated');
+
+    const name = params.name || 'avatar.jpg';
+    const type = params.type || 'image/jpeg';
+
+    const formData = new FormData();
+    try {
+      // Send file as blob so backend receives bytes (React Native { uri } often doesn't send file)
+      const fileResponse = await fetch(params.uri, { method: 'GET' });
+      if (!fileResponse.ok) throw new Error('Could not read image file');
+      const blob = await fileResponse.blob();
+      formData.append('image', blob, name);
+    } catch {
+      // Fallback: append URI object (works in some Expo/RN setups)
+      formData.append('image', { uri: params.uri, type, name } as any);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/upload-profile-image`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // Do NOT set Content-Type - let fetch set multipart/form-data with boundary
+      },
+      body: formData,
+      credentials: 'include',
+    });
+
+    let data: any;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error(response.status === 413 ? 'Image too large (max 5MB)' : 'Invalid server response');
+    }
+    if (!response.ok) throw new Error(data.message || data.error || 'Upload failed');
+    return { user: data.data?.user, profileImage: data.data?.profileImage };
+  },
 };
 
 export default authService;

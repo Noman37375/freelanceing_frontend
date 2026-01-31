@@ -48,6 +48,7 @@ import {
 import { useRouter } from "expo-router";
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from "@/contexts/AuthContext";
+import authService from "@/services/authService";
 import SkillTag from "@/components/SkillTag";
 import SectionCard from "@/components/SectionCard";
 import { useWallet } from "@/contexts/WalletContext";
@@ -113,20 +114,21 @@ export default function ProfileScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.5,
-        base64: true,
+        quality: 0.7,
       });
 
-      if (!result.canceled && result.assets[0].base64) {
+      if (!result.canceled && result.assets[0].uri) {
         setIsSaving(true);
-        const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        await updateProfile({ profileImage: base64Img } as any);
+        const { uri } = result.assets[0];
+        const type = result.assets[0].mimeType || 'image/jpeg';
+        const name = uri.split('/').pop() || 'avatar.jpg';
+        await authService.uploadProfileImage({ uri, type, name });
         await refreshUser();
         Alert.alert("Success", "Profile photo updated!");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
-      Alert.alert("Error", "Failed to upload image. Please try again.");
+      Alert.alert("Error", error?.message || "Failed to upload image. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -183,7 +185,7 @@ export default function ProfileScreen() {
             <View style={styles.profileIdentity}>
               <View style={styles.premiumAvatarContainer}>
                 <View style={styles.avatarBorder}>
-                  <Image source={{ uri: defaultAvatar }} style={styles.premiumAvatar} />
+                  <Image source={{ uri: defaultAvatar }} style={styles.premiumAvatar} key={user?.profileImage || 'avatar'} />
                 </View>
                 <TouchableOpacity style={styles.premiumCameraBtn} onPress={handlePickImage} disabled={isSaving}>
                   <Camera size={14} color="#FFF" />

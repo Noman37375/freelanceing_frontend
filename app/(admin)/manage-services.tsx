@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Platform, StatusBar, Image, ScrollView } from 'react-native';
-import { Trash2, Edit2, X, ChevronLeft, Plus, Image as ImageIcon, Box } from 'lucide-react-native';
+import { Trash2, Edit2, X, ChevronLeft, Plus, Image as ImageIcon, Box, LayoutGrid } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -15,7 +15,6 @@ export default function ManageServices() {
     const [name, setName] = useState('');
     const [icon, setIcon] = useState('');
     const [imageUrl, setImageUrl] = useState('');
-    const [color, setColor] = useState('#6366F1');
 
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -25,9 +24,9 @@ export default function ManageServices() {
             setIsLoading(true);
             const data = await adminService.getServiceCategories();
             setServices(data || []);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            Alert.alert('Error', 'Failed to load services');
+            Alert.alert('Error', error?.message ?? 'Failed to load services');
         } finally {
             setIsLoading(false);
         }
@@ -45,7 +44,7 @@ export default function ManageServices() {
 
         try {
             setIsActionLoading(true);
-            const serviceData = { name, icon, image: imageUrl, color };
+            const serviceData = { name, icon, image: imageUrl };
 
             if (editingService) {
                 await adminService.updateServiceCategory(editingService.id, serviceData);
@@ -58,8 +57,9 @@ export default function ManageServices() {
             setModalVisible(false);
             loadServices();
             resetForm();
-        } catch (error) {
-            Alert.alert('Error', 'Failed to save service category');
+        } catch (error: any) {
+            const msg = error?.message ?? 'Failed to save service category';
+            Alert.alert('Error', msg);
         } finally {
             setIsActionLoading(false);
         }
@@ -71,8 +71,8 @@ export default function ManageServices() {
                 setDeletingId(id);
                 await adminService.deleteServiceCategory(id);
                 setServices(prev => prev.filter(s => s.id !== id));
-            } catch (error) {
-                Alert.alert('Error', 'Failed to delete service');
+            } catch (error: any) {
+                Alert.alert('Error', error?.message ?? 'Failed to delete service');
             } finally {
                 setDeletingId(null);
             }
@@ -91,9 +91,8 @@ export default function ManageServices() {
     const handleEdit = (service: any) => {
         setEditingService(service);
         setName(service.name);
-        setIcon(service.icon);
+        setIcon(service.icon || '');
         setImageUrl(service.image);
-        setColor(service.color || '#6366F1');
         setModalVisible(true);
     };
 
@@ -101,81 +100,93 @@ export default function ManageServices() {
         setName('');
         setIcon('');
         setImageUrl('');
-        setColor('#6366F1');
         setEditingService(null);
     };
 
     const renderItem = ({ item }: { item: any }) => (
-        <View style={styles.card}>
+        <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.card}
+            onPress={() => handleEdit(item)}
+        >
             <Image source={{ uri: item.image }} style={styles.cardImage} />
             <View style={styles.cardOverlay}>
                 <View style={styles.cardHeader}>
-                    <View style={[styles.iconBadge, { backgroundColor: item.color || '#6366F1' }]}>
-                        <Box size={16} color="#FFF" />
+                    <View style={styles.layoutIconWrap}>
+                        <LayoutGrid size={18} color="#FFF" strokeWidth={2} />
                     </View>
                     <View style={styles.cardActions}>
                         <TouchableOpacity
-                            onPress={() => handleEdit(item)}
+                            onPress={(e) => { e?.stopPropagation?.(); handleEdit(item); }}
                             style={styles.actionBtn}
+                            activeOpacity={0.8}
                         >
-                            <Edit2 size={14} color="#FFF" />
+                            <Edit2 size={16} color="#FFF" strokeWidth={2} />
                         </TouchableOpacity>
                         <TouchableOpacity
-                            onPress={() => handleDelete(item.id, item.name)}
+                            onPress={(e) => { e?.stopPropagation?.(); handleDelete(item.id, item.name); }}
                             style={[styles.actionBtn, styles.deleteBtn]}
+                            activeOpacity={0.8}
                         >
-                            <Trash2 size={14} color="#FFF" />
+                            <Trash2 size={16} color="#FFF" strokeWidth={2} />
                         </TouchableOpacity>
                     </View>
                 </View>
             </View>
             <View style={styles.cardFooter}>
-                <Text style={styles.serviceName}>{item.name}</Text>
-                <Text style={styles.serviceIcon}>{item.icon}</Text>
+                <Text style={styles.serviceName} numberOfLines={2}>{item.name}</Text>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" />
-            <View style={styles.topGradient} />
+            <StatusBar barStyle="dark-content" />
 
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <ChevronLeft size={24} color="#FFF" />
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton} activeOpacity={0.7}>
+                    <ChevronLeft size={22} color="#475569" strokeWidth={2} />
                 </TouchableOpacity>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.headerTitle}>Services</Text>
-                    <Text style={styles.headerSubtitle}>Manage homepage categories</Text>
-                </View>
+                <Text style={styles.headerTitle}>Service categories</Text>
                 <TouchableOpacity
                     style={styles.addButton}
                     onPress={() => {
                         resetForm();
                         setModalVisible(true);
                     }}
+                    activeOpacity={0.8}
                 >
-                    <Plus size={20} color="#4F46E5" />
+                    <Plus size={20} color="#FFF" strokeWidth={2.5} />
+                    <Text style={styles.addButtonText}>Add</Text>
                 </TouchableOpacity>
             </View>
 
             {isLoading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#FFF" />
+                    <ActivityIndicator size="large" color="#6366F1" />
+                    <Text style={styles.loadingText}>Loading categories…</Text>
                 </View>
             ) : (
                 <FlatList
                     data={services}
                     renderItem={renderItem}
                     keyExtractor={item => item.id}
-                    contentContainerStyle={styles.listContent}
+                    contentContainerStyle={[styles.listContent, services.length === 0 && styles.listContentEmpty]}
                     numColumns={2}
                     columnWrapperStyle={styles.columnWrapper}
                     showsVerticalScrollIndicator={false}
+                    ListHeaderComponent={services.length > 0 ? <View style={styles.listHeader}><Text style={styles.listHeaderText}>{services.length} categor{services.length === 1 ? 'y' : 'ies'}</Text></View> : null}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>No services found.</Text>
+                            <View style={styles.emptyIconWrap}>
+                                <Box size={48} color="#94A3B8" strokeWidth={1.5} />
+                            </View>
+                            <Text style={styles.emptyTitle}>No categories yet</Text>
+                            <Text style={styles.emptyText}>Add a service category to show on the homepage.</Text>
+                            <TouchableOpacity style={styles.emptyButton} onPress={() => { resetForm(); setModalVisible(true); }}>
+                                <Plus size={20} color="#FFF" />
+                                <Text style={styles.emptyButtonText}>Add category</Text>
+                            </TouchableOpacity>
                         </View>
                     }
                 />
@@ -188,15 +199,19 @@ export default function ManageServices() {
                 onRequestClose={() => setModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
+                    <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setModalVisible(false)} />
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>{editingService ? 'Edit Category' : 'Add Service Category'}</Text>
-                            <TouchableOpacity onPress={() => setModalVisible(false)}>
-                                <X size={24} color="#64748B" />
+                            <View>
+                                <Text style={styles.modalTitle}>{editingService ? 'Edit Category' : 'Add Service Category'}</Text>
+                                <Text style={styles.modalSubtitle}>{editingService ? 'Update details below' : 'New category will appear on the homepage'}</Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalCloseBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                                <X size={22} color="#64748B" strokeWidth={2} />
                             </TouchableOpacity>
                         </View>
 
-                        <ScrollView style={styles.modalForm}>
+                        <ScrollView style={styles.modalForm} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                             <View style={styles.inputGroup}>
                                 <Text style={styles.label}>Category Name</Text>
                                 <TextInput
@@ -204,6 +219,7 @@ export default function ManageServices() {
                                     value={name}
                                     onChangeText={setName}
                                     placeholder="e.g. Web Development"
+                                    placeholderTextColor="#94A3B8"
                                 />
                             </View>
 
@@ -214,6 +230,7 @@ export default function ManageServices() {
                                     value={icon}
                                     onChangeText={setIcon}
                                     placeholder="e.g. Code, PenTool, Smartphone"
+                                    placeholderTextColor="#94A3B8"
                                 />
                             </View>
 
@@ -223,33 +240,30 @@ export default function ManageServices() {
                                     style={styles.input}
                                     value={imageUrl}
                                     onChangeText={setImageUrl}
-                                    placeholder="Unsplash URL"
+                                    placeholder="https://images.unsplash.com/..."
+                                    placeholderTextColor="#94A3B8"
                                 />
                             </View>
 
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Theme Color (Hex)</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    value={color}
-                                    onChangeText={setColor}
-                                    placeholder="#6366F1"
-                                />
+                            <View style={styles.modalActions}>
+                                <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+                                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.saveButton, isActionLoading && styles.disabledBtn]}
+                                    onPress={handleSave}
+                                    disabled={isActionLoading}
+                                    activeOpacity={0.85}
+                                >
+                                    {isActionLoading ? (
+                                        <ActivityIndicator color="#FFF" size="small" />
+                                    ) : (
+                                        <Text style={styles.saveBtnText}>
+                                            {editingService ? 'Update' : 'Create'}
+                                        </Text>
+                                    )}
+                                </TouchableOpacity>
                             </View>
-
-                            <TouchableOpacity
-                                style={[styles.saveButton, isActionLoading && styles.disabledBtn]}
-                                onPress={handleSave}
-                                disabled={isActionLoading}
-                            >
-                                {isActionLoading ? (
-                                    <ActivityIndicator color="#FFF" />
-                                ) : (
-                                    <Text style={styles.saveBtnText}>
-                                        {editingService ? 'Update Category' : 'Create Category'}
-                                    </Text>
-                                )}
-                            </TouchableOpacity>
                         </ScrollView>
                     </View>
                 </View>
@@ -260,83 +274,197 @@ export default function ManageServices() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8FAFC' },
-    topGradient: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 140,
-        backgroundColor: '#1E1B4B',
-        borderBottomLeftRadius: 32,
-        borderBottomRightRadius: 32,
-    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 10,
-        paddingBottom: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#FFF',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E2E8F0',
     },
     backButton: {
         width: 40,
         height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.15)',
+        borderRadius: 10,
+        backgroundColor: '#F1F5F9',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
     },
-    headerTitle: { fontSize: 24, fontWeight: '800', color: '#FFF' },
-    headerSubtitle: { fontSize: 13, color: '#C7D2FE' },
+    headerTitle: {
+        flex: 1,
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1E293B',
+    },
     addButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: '#4F46E5',
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 10,
+    },
+    addButtonText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#FFF',
+    },
+    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
+    loadingText: { fontSize: 15, color: '#64748B', fontWeight: '500' },
+    listContent: { padding: 20, paddingTop: 8, paddingBottom: 24 },
+    listContentEmpty: { flexGrow: 1 },
+    listHeader: { marginBottom: 12, paddingHorizontal: 2 },
+    listHeaderText: { fontSize: 13, color: '#64748B', fontWeight: '600' },
+    columnWrapper: { justifyContent: 'space-between', marginBottom: 14 },
+    card: {
+        width: '48%',
+        height: 172,
+        borderRadius: 20,
+        overflow: 'hidden',
         backgroundColor: '#FFF',
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+        ...Platform.select({
+            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10 },
+            android: { elevation: 4 },
+        }),
+    },
+    cardImage: { width: '100%', height: '100%', position: 'absolute', backgroundColor: '#E2E8F0' },
+    cardOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(15, 23, 42, 0.55)',
+        padding: 14,
+        justifyContent: 'flex-start',
+    },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    iconBadge: {
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        backgroundColor: 'rgba(99, 102, 241, 0.9)',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    listContent: { padding: 15 },
-    columnWrapper: { justifyContent: 'space-between' },
-    card: {
-        width: '48%',
-        height: 160,
-        borderRadius: 20,
-        marginBottom: 15,
-        overflow: 'hidden',
+    layoutIconWrap: {
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255, 255, 255, 0.22)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    cardFooter: {
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        backgroundColor: 'rgba(15, 23, 42, 0.85)',
+        gap: 4,
+    },
+    serviceName: { color: '#FFF', fontSize: 15, fontWeight: '800', letterSpacing: 0.2 },
+    serviceIcon: { color: 'rgba(255,255,255,0.72)', fontSize: 12, fontWeight: '600' },
+    cardActions: { flexDirection: 'row', gap: 8 },
+    actionBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        backgroundColor: 'rgba(255,255,255,0.22)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    deleteBtn: { backgroundColor: 'rgba(239, 68, 68, 0.88)' },
+    emptyContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 48,
+        paddingHorizontal: 32,
         backgroundColor: '#FFF',
-        ...Platform.select({
-            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
-            android: { elevation: 5 },
-        }),
+        borderRadius: 20,
+        marginTop: 20,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
     },
-    cardImage: { width: '100%', height: '100%', position: 'absolute' },
-    cardOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(30, 27, 75, 0.4)',
-        padding: 12,
+    emptyIconWrap: {
+        width: 80,
+        height: 80,
+        borderRadius: 24,
+        backgroundColor: '#EEF2FF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    emptyTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 8 },
+    emptyText: { fontSize: 15, color: '#64748B', textAlign: 'center', marginBottom: 24, lineHeight: 22 },
+    emptyButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        backgroundColor: '#4F46E5',
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 14,
+    },
+    emptyButtonText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+    modalBackdrop: { ...StyleSheet.absoluteFillObject },
+    modalContent: {
+        backgroundColor: '#FFF',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingHorizontal: 24,
+        paddingTop: 20,
+        paddingBottom: 28,
+        maxHeight: '88%',
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+    },
+    modalHeader: {
+        flexDirection: 'row',
         justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 24,
+        paddingBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F5F9',
     },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-    iconBadge: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-    cardFooter: { gap: 2 },
-    serviceName: { color: '#FFF', fontSize: 14, fontWeight: '800' },
-    serviceIcon: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '600' },
-    emptyContainer: { alignItems: 'center', marginTop: 50 },
-    emptyText: { color: '#64748B', fontWeight: '500' },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, height: '80%' },
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 },
     modalTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B' },
+    modalSubtitle: { fontSize: 14, color: '#64748B', marginTop: 4 },
+    modalCloseBtn: { padding: 4 },
     modalForm: { flex: 1 },
-    cardActions: { flexDirection: 'row', gap: 6 },
-    actionBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.25)', justifyContent: 'center', alignItems: 'center' },
-    deleteBtn: { backgroundColor: 'rgba(239, 68, 68, 0.8)' },
+    modalActions: { flexDirection: 'row', gap: 12, marginTop: 24 },
     inputGroup: { marginBottom: 20 },
     label: { fontSize: 14, fontWeight: '700', color: '#475569', marginBottom: 8 },
-    input: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 12, fontSize: 15 },
-    saveButton: { backgroundColor: '#4F46E5', padding: 16, borderRadius: 16, alignItems: 'center', marginTop: 10 },
+    input: {
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 12,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        fontSize: 16,
+        color: '#1E293B',
+    },
+    saveButton: {
+        flex: 1,
+        backgroundColor: '#4F46E5',
+        paddingVertical: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 52,
+    },
     saveBtnText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
+    cancelButton: {
+        paddingVertical: 16,
+        paddingHorizontal: 20,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 52,
+    },
+    cancelButtonText: { color: '#475569', fontWeight: '700', fontSize: 16 },
     disabledBtn: { opacity: 0.6 },
 });

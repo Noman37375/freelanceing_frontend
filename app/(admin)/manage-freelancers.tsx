@@ -171,22 +171,18 @@ export default function ManageFreelancers() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" />
-            <View style={styles.topGradient} />
+            <StatusBar barStyle="dark-content" />
 
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <ChevronLeft size={24} color="#FFF" />
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton} activeOpacity={0.7}>
+                    <ChevronLeft size={22} color="#475569" strokeWidth={2} />
                 </TouchableOpacity>
-                <View>
-                    <Text style={styles.headerTitle}>Freelancers</Text>
-                    <Text style={styles.headerSubtitle}>Manage talent profiles</Text>
-                </View>
+                <Text style={styles.headerTitle}>Freelancers</Text>
             </View>
 
             {isLoading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#FFF" />
+                    <ActivityIndicator size="large" color="#4F46E5" />
                 </View>
             ) : (
                 <FlatList
@@ -266,41 +262,29 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#F8FAFC',
     },
-    topGradient: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 180,
-        backgroundColor: '#1E1B4B',
-        borderBottomLeftRadius: 32,
-        borderBottomRightRadius: 32,
-    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 10,
-        paddingBottom: 25,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#FFF',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E2E8F0',
     },
     backButton: {
         width: 40,
         height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.15)',
+        borderRadius: 10,
+        backgroundColor: '#F1F5F9',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 16,
+        marginRight: 12,
     },
     headerTitle: {
-        fontSize: 24,
-        fontWeight: '800',
-        color: '#FFFFFF',
-    },
-    headerSubtitle: {
-        fontSize: 14,
-        color: '#C7D2FE',
-        fontWeight: '500',
+        flex: 1,
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1E293B',
     },
     loadingContainer: {
         flex: 1,

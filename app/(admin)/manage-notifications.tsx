@@ -137,28 +137,22 @@ export default function ManageNotifications() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" />
-            <View style={styles.topGradient} />
+            <StatusBar barStyle="dark-content" />
 
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <ArrowLeft size={24} color="#FFF" />
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton} activeOpacity={0.7}>
+                    <ArrowLeft size={22} color="#475569" strokeWidth={2} />
                 </TouchableOpacity>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.headerTitle}>Notifications</Text>
-                    <Text style={styles.headerSubtitle}>Broadcast messages to users</Text>
-                </View>
-                <TouchableOpacity
-                    style={styles.plusButton}
-                    onPress={() => setModalVisible(true)}
-                >
-                    <Send size={20} color="#4F46E5" />
+                <Text style={styles.headerTitle}>Notifications</Text>
+                <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)} activeOpacity={0.8}>
+                    <Send size={18} color="#FFF" strokeWidth={2.5} />
+                    <Text style={styles.addButtonText}>Send</Text>
                 </TouchableOpacity>
             </View>
 
             {isLoading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#FFF" />
+                    <ActivityIndicator size="large" color="#4F46E5" />
                 </View>
             ) : (
                 <FlatList
@@ -254,45 +248,38 @@ export default function ManageNotifications() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8FAFC' },
-    topGradient: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 180,
-        backgroundColor: '#1E1B4B',
-        borderBottomLeftRadius: 32,
-        borderBottomRightRadius: 32,
-    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 10,
-        paddingBottom: 25,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#FFF',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E2E8F0',
     },
     backButton: {
         width: 40,
         height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.15)',
+        borderRadius: 10,
+        backgroundColor: '#F1F5F9',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
     },
-    headerTitle: { fontSize: 24, fontWeight: '800', color: '#FFF' },
-    headerSubtitle: { fontSize: 13, color: '#C7D2FE' },
-    plusButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: '#FFF',
-        justifyContent: 'center',
+    headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#1E293B' },
+    addButton: {
+        flexDirection: 'row',
         alignItems: 'center',
+        gap: 8,
+        backgroundColor: '#4F46E5',
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 10,
     },
+    addButtonText: { fontSize: 15, fontWeight: '600', color: '#FFF' },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     listContainer: { padding: 20 },
-    listLabel: { fontSize: 14, fontWeight: '800', color: '#FFF', marginBottom: 15, textTransform: 'uppercase', letterSpacing: 1 },
+    listLabel: { fontSize: 13, fontWeight: '700', color: '#64748B', marginBottom: 15, textTransform: 'uppercase', letterSpacing: 1 },
     notifCard: {
         backgroundColor: '#FFF',
         borderRadius: 20,

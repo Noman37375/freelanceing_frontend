@@ -122,15 +122,14 @@ export const adminService = {
         return response?.data?.dispute;
     },
 
-    // Service Categories
+    // Service Categories – GET is public (homepage + admin list); create/update/delete use admin routes
     getServiceCategories: async (): Promise<any[]> => {
         const response = await apiCall('/api/v1/services');
-        console.log(response?.data);
-        return response?.data;
+        return response?.data ?? [];
     },
 
     createServiceCategory: async (data: any): Promise<any> => {
-        const response = await apiCall('/api/v1/services', {
+        const response = await apiCall('/api/v1/admin/services', {
             method: 'POST',
             body: JSON.stringify(data)
         });
@@ -138,7 +137,7 @@ export const adminService = {
     },
 
     updateServiceCategory: async (id: string, data: any): Promise<any> => {
-        const response = await apiCall(`/api/v1/services/${id}`, {
+        const response = await apiCall(`/api/v1/admin/services/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(data)
         });
@@ -146,7 +145,7 @@ export const adminService = {
     },
 
     deleteServiceCategory: async (id: string): Promise<void> => {
-        await apiCall(`/api/v1/services/${id}`, {
+        await apiCall(`/api/v1/admin/services/${id}`, {
             method: 'DELETE'
         });
     },

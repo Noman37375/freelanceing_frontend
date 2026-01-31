@@ -13,6 +13,7 @@ import {
   Platform,
   Image,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -55,6 +56,7 @@ export default function HomeScreen() {
   const [reviews, setReviews] = useState<any[]>([]);
 
   const [categories, setCategories] = useState<any[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   // Icon mapping helper
   const getCategoryIcon = (iconName: string, color: string) => {
@@ -127,6 +129,7 @@ export default function HomeScreen() {
 
   const fetchData = async () => {
     try {
+      setCategoriesLoading(true);
       // Fetch services
       const servicesData = await adminService.getServiceCategories();
       setCategories(servicesData || []);
@@ -144,6 +147,8 @@ export default function HomeScreen() {
       setEarnings([{ id: '1', amount: walletData.balance }]);
     } catch (error: any) {
       console.error('Failed to fetch data:', error);
+    } finally {
+      setCategoriesLoading(false);
     }
   };
 
@@ -201,35 +206,48 @@ export default function HomeScreen() {
         <View style={styles.sectionWrapper}>
           <View style={styles.sectionHeaderPremium}>
             <Text style={styles.sectionTitlePremium}>Browse Categories</Text>
-            <TouchableOpacity><Text style={styles.exploreText}>See All</Text></TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push('/all-categories' as any)}
+              disabled={categoriesLoading}
+            >
+              <Text style={[styles.exploreText, categoriesLoading && styles.exploreTextDisabled]}>See All</Text>
+            </TouchableOpacity>
           </View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoryScrollPremium}
           >
-            {categories.map(cat => (
-              <TouchableOpacity
-                key={cat.id}
-                style={styles.serviceCard}
-                onPress={() => router.push({
-                  pathname: `/service-category/${cat.id}`,
-                  params: {
-                    name: cat.name,
-                    image: cat.image ?? '',
-                    icon: cat.icon ?? 'Box',
-                    color: cat.color ?? '#6366F1',
-                  },
-                } as any)}
-                activeOpacity={0.9}
-              >
-                <Image source={{ uri: cat.image }} style={styles.serviceImage} />
-                <View style={[styles.serviceOverlay, { backgroundColor: (cat.color || '#6366F1') + 'CC' }]}>
-                  {getCategoryIcon(cat.icon, cat.color)}
-                  <Text style={styles.serviceName}>{cat.name}</Text>
+            {categoriesLoading ? (
+              [...Array(3)].map((_, i) => (
+                <View key={`skeleton-${i}`} style={styles.serviceCardSkeleton}>
+                  <View style={styles.skeletonShimmer} />
                 </View>
-              </TouchableOpacity>
-            ))}
+              ))
+            ) : (
+              categories.map(cat => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={styles.serviceCard}
+                  onPress={() => router.push({
+                    pathname: `/service-category/${cat.id}`,
+                    params: {
+                      name: cat.name,
+                      image: cat.image ?? '',
+                      icon: cat.icon ?? 'Box',
+                      color: cat.color ?? '#6366F1',
+                    },
+                  } as any)}
+                  activeOpacity={0.85}
+                >
+                  <Image source={{ uri: cat.image }} style={styles.serviceImage} />
+                  <View style={[styles.serviceOverlay, { backgroundColor: (cat.color || '#6366F1') + 'CC' }]}>
+                    {getCategoryIcon(cat.icon, cat.color)}
+                    <Text style={styles.serviceName}>{cat.name}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))
+            )}
           </ScrollView>
         </View>
 
@@ -386,6 +404,7 @@ const styles = StyleSheet.create({
   },
   sectionTitlePremium: { fontSize: 22, fontWeight: '800', color: '#1E293B' },
   exploreText: { color: '#4F46E5', fontSize: 14, fontWeight: '700' },
+  exploreTextDisabled: { opacity: 0.6 },
 
   categoryScrollPremium: { paddingLeft: 24, paddingRight: 10 },
   serviceCard: {
@@ -395,9 +414,26 @@ const styles = StyleSheet.create({
     marginRight: 16,
     overflow: 'hidden',
     ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 12 },
-      android: { elevation: 6 },
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 14 },
+      android: { elevation: 8 },
     }),
+  },
+  serviceCardSkeleton: {
+    width: 160,
+    height: 120,
+    borderRadius: 24,
+    marginRight: 16,
+    backgroundColor: '#E2E8F0',
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 10 },
+      android: { elevation: 5 },
+    }),
+  },
+  skeletonShimmer: {
+    flex: 1,
+    backgroundColor: '#CBD5E1',
+    opacity: 0.7,
   },
   serviceImage: { width: '100%', height: '100%' },
   serviceOverlay: {

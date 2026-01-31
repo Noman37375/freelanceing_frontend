@@ -1,4 +1,3 @@
-//would trigger when something is wrong in code
 import { Link, Stack } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 

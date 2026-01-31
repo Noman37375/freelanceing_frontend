@@ -8,6 +8,7 @@ import {
     TextInput,
     ActivityIndicator,
     RefreshControl,
+    StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +16,7 @@ import {
     Search,
     Filter,
     ChevronRight,
+    ChevronLeft,
     AlertTriangle,
     TrendingUp,
     Clock,
@@ -153,12 +155,12 @@ export default function ManageDisputes() {
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Header */}
+            <StatusBar barStyle="dark-content" />
             <View style={styles.header}>
-                <View>
-                    <Text style={styles.headerTitle}>Dispute Management</Text>
-                    <Text style={styles.headerSubtitle}>Monitor and resolve disputes</Text>
-                </View>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton} activeOpacity={0.7}>
+                    <ChevronLeft size={22} color="#475569" strokeWidth={2} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Disputes</Text>
             </View>
 
             <ScrollView
@@ -334,21 +336,28 @@ const styles = StyleSheet.create({
         backgroundColor: '#F8FAFC',
     },
     header: {
-        paddingHorizontal: 20,
-        paddingVertical: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
         backgroundColor: '#FFFFFF',
         borderBottomWidth: 1,
-        borderBottomColor: '#F1F5F9',
+        borderBottomColor: '#E2E8F0',
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 10,
+        backgroundColor: '#F1F5F9',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
     },
     headerTitle: {
-        fontSize: 24,
-        fontWeight: '800',
+        flex: 1,
+        fontSize: 18,
+        fontWeight: '700',
         color: '#1E293B',
-    },
-    headerSubtitle: {
-        fontSize: 14,
-        color: '#64748B',
-        marginTop: 4,
     },
     content: {
         flex: 1,

@@ -9,12 +9,12 @@ const getApiUrl = () => {
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL;
   }
-  
+
   // Priority 2: Check if we're on web (localhost) - Development
   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
     return "http://localhost:3000";
   }
-  
+
   // Priority 3: Production - Check if deployed (not localhost)
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
     // In production, use backend Vercel URL as fallback
@@ -22,9 +22,9 @@ const getApiUrl = () => {
     console.warn('[Config] Production mode detected but EXPO_PUBLIC_API_URL not set. Using fallback backend URL.');
     return "https://backend-brown-theta-94.vercel.app"; // Production backend URL
   }
-  
-  // Priority 4: Default to localhost (works for most development scenarios)
-  return "http://localhost:3000";
+
+  // Priority 4: Default to LAN IP (works for mobile devices/emulators)
+  return "http://10.0.11.195:3000";
 };
 
 export const API_BASE_URL = getApiUrl();

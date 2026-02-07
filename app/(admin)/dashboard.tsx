@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -9,8 +9,7 @@ import {
     Platform,
     StatusBar,
     TextInput,
-    useWindowDimensions,
-    Animated,
+    useWindowDimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -46,27 +45,9 @@ export default function AdminDashboard() {
     const isMobile = width <= 768;
 
     const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [serviceCount, setServiceCount] = useState(0);
-    const [notificationCount, setNotificationCount] = useState(0);
-    const [disputeCount, setDisputeCount] = useState(0);
-    const [projects, setProjects] = useState<any[]>([]);
     const [refreshing, setRefreshing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [sidebarVisible, setSidebarVisible] = useState(isDesktop);
-    const skeletonOpacity = useRef(new Animated.Value(0.4)).current;
-
-    // Skeleton pulse animation
-    useEffect(() => {
-        if (!isLoading) return;
-        const pulse = Animated.loop(
-            Animated.sequence([
-                Animated.timing(skeletonOpacity, { toValue: 0.7, duration: 600, useNativeDriver: true }),
-                Animated.timing(skeletonOpacity, { toValue: 0.4, duration: 600, useNativeDriver: true }),
-            ])
-        );
-        pulse.start();
-        return () => pulse.stop();
-    }, [isLoading, skeletonOpacity]);
 
     // Update sidebar visibility when screen size changes
     useEffect(() => {
@@ -76,18 +57,8 @@ export default function AdminDashboard() {
     const loadStats = useCallback(async (showLoading = true) => {
         try {
             if (showLoading) setIsLoading(true);
-            const [statsData, services, notifications, disputes, projectsData] = await Promise.all([
-                adminService.getDashboardStats(),
-                adminService.getServiceCategories(),
-                adminService.getSystemNotifications(),
-                adminService.getAllDisputes(),
-                adminService.getAllProjects(),
-            ]);
-            setStats(statsData);
-            setServiceCount(services?.length ?? 0);
-            setNotificationCount(notifications?.length ?? 0);
-            setDisputeCount(disputes?.length ?? 0);
-            setProjects(projectsData ?? []);
+            const data = await adminService.getDashboardStats();
+            setStats(data);
         } catch (error) {
             console.error('Failed to load stats:', error);
         } finally {
@@ -110,28 +81,26 @@ export default function AdminDashboard() {
         router.replace('/login' as any);
     };
 
-    const StatusItems: any[] = [];
+    const StatusItems: any[] = [
+        { id: '1', title: 'Chinese Translator', subTitle: 'Tech Troopsy (Jurong East, Singapore)', type: 'Remote', date: 'Applied on Jan 22', status: 'Applied' },
+        { id: '2', title: 'Frontend Developer', subTitle: 'PT Nirala Digital (South Jakarta)', type: 'Freelance', date: 'Applied on Jan 09', status: 'Not selected' },
+        { id: '3', title: 'Website Designer', subTitle: 'Verganis Studio (Sydney, Australia)', type: '3 months contract', date: 'Applied on Dec 29', status: 'Interview' },
+    ];
 
-    const activeStatuses = ['ACTIVE', 'IN_PROGRESS', 'open', 'in_progress'];
-    const ActiveProjects = projects
-        .filter((p: any) => p.status && activeStatuses.includes(String(p.status)))
-        .slice(0, 10)
-        .map((p: any) => ({
-            id: p.id,
-            clientName: p.client?.user_name || p.client?.userName || '—',
-            projectName: p.title || '—',
-            price: typeof p.budget === 'number' ? `$${p.budget}` : `$${p.budget || 0}`,
-            deliveredIn: p.deadline || p.duration || '—',
-            progress: 0,
-        }));
+    const ActiveProjects = [
+        { id: '1', clientName: 'Steven Terry', projectName: 'Landing page', price: '$800', deliveredIn: '1 days 2 hours', progress: 90 },
+        { id: '2', clientName: 'Audrey Jones', projectName: 'Development', price: '$300', deliveredIn: '4 days 8 hours', progress: 50 },
+        { id: '3', clientName: 'Brian Fisher', projectName: 'Translator', price: '$180', deliveredIn: '14 days 2 hours', progress: 95 },
+        { id: '4', clientName: 'Molly Mills', projectName: 'Data Analyst', price: '$920', deliveredIn: '8 days 20 hours', progress: 20 },
+    ];
 
     const ManagementCards = [
-        { title: 'Freelancers', icon: Users, color: '#3B82F6', route: '/(admin)/manage-freelancers', count: stats?.totalFreelancers ?? 0 },
-        { title: 'Clients', icon: UserCheck, color: '#F59E0B', route: '/(admin)/manage-clients', count: stats?.totalClients ?? 0 },
-        { title: 'Services', icon: Layers, color: '#10B981', route: '/(admin)/manage-services', count: serviceCount },
-        { title: 'Notifications', icon: Bell, color: '#6366F1', route: '/(admin)/manage-notifications', count: notificationCount },
-        { title: 'Projects', icon: Briefcase, color: '#EC4899', route: '/(admin)/manage-projects', count: stats?.activeProjects ?? 0 },
-        { title: 'Disputes', icon: Activity, color: '#8B5CF6', route: '/(admin)/manage-disputes', count: disputeCount },
+        { title: 'Freelancers', icon: Users, color: '#3B82F6', route: '/(admin)/manage-freelancers', count: stats?.totalFreelancers || 0 },
+        { title: 'Clients', icon: UserCheck, color: '#F59E0B', route: '/(admin)/manage-clients', count: stats?.totalClients || 0 },
+        { title: 'Services', icon: Layers, color: '#10B981', route: '/(admin)/manage-services', count: 0 },
+        { title: 'Notifications', icon: Bell, color: '#6366F1', route: '/(admin)/manage-notifications', count: 0 },
+        { title: 'Projects', icon: Briefcase, color: '#EC4899', route: '/(admin)/manage-projects', count: stats?.activeProjects || 0 },
+        { title: 'Disputes', icon: Activity, color: '#8B5CF6', route: '/(admin)/manage-disputes', count: 0 },
     ];
 
     // Dynamic styles based on screen size
@@ -232,136 +201,106 @@ export default function AdminDashboard() {
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                     showsVerticalScrollIndicator={false}
                 >
-                    {isLoading ? (
-                        <View style={dynamicStyles.mainLayout}>
-                            <View style={isMobile ? {} : styles.leftColumn}>
-                                {/* Skeleton: Greeting */}
-                                <View style={[styles.greeting, { flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: 12 }]}>
-                                    <Animated.View style={[styles.skeletonLine, styles.skeletonGreeting, { opacity: skeletonOpacity }]} />
-                                    {!isMobile && <Animated.View style={[styles.skeletonLine, styles.skeletonReportBtn, { opacity: skeletonOpacity }]} />}
-                                </View>
-
-                                {/* Skeleton: Charts row */}
-                                <View style={[styles.chartsGrid, dynamicStyles.chartsGrid]}>
-                                    <Animated.View style={[styles.skeletonCard, styles.skeletonAnalytics, { opacity: skeletonOpacity }]} />
-                                    <Animated.View style={[styles.skeletonCard, styles.skeletonEarning, { opacity: skeletonOpacity }]} />
-                                </View>
-
-                                {/* Skeleton: Section header */}
-                                <View style={styles.sectionHeader}>
-                                    <Animated.View style={[styles.skeletonLine, styles.skeletonSectionTitle, { opacity: skeletonOpacity }]} />
-                                </View>
-
-                                {/* Skeleton: Management cards (6) */}
-                                <View style={styles.managementGrid}>
-                                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                                        <Animated.View key={i} style={[styles.managementCard, dynamicStyles.managementCard, styles.skeletonManagementCard, { opacity: skeletonOpacity }]}>
-                                            <View style={styles.skeletonIconBox} />
-                                            <View style={styles.skeletonCardText}>
-                                                <View style={styles.skeletonCount} />
-                                                <View style={styles.skeletonLabel} />
-                                            </View>
-                                        </Animated.View>
-                                    ))}
-                                </View>
-
-                                {/* Skeleton: Active projects section */}
-                                <View style={styles.projectsSection}>
-                                    <View style={styles.sectionHeader}>
-                                        <Animated.View style={[styles.skeletonLine, styles.skeletonSectionTitle, { opacity: skeletonOpacity }]} />
-                                    </View>
-                                    <Animated.View style={[styles.projectsCard, styles.skeletonTable, { opacity: skeletonOpacity }]}>
-                                        {[1, 2, 3, 4].map((i) => (
-                                            <View key={i} style={styles.skeletonTableRow}>
-                                                <View style={styles.skeletonTableCell} />
-                                                <View style={styles.skeletonTableCell} />
-                                                <View style={styles.skeletonTableCellShort} />
-                                            </View>
-                                        ))}
-                                    </Animated.View>
+                    <View style={dynamicStyles.mainLayout}>
+                        {/* Left Column (Main Stats) */}
+                        <View style={isMobile ? {} : styles.leftColumn}>
+                            <View style={styles.greeting}>
+                                <View style={dynamicStyles.greetingHeader}>
+                                    <Text style={[styles.greetingText, dynamicStyles.greetingText]}>
+                                        Welcome back, {user?.userName || 'Admin'}! 👋
+                                    </Text>
+                                    {!isMobile && (
+                                        <TouchableOpacity style={styles.reportButton}>
+                                            <FileText size={16} color="#6366F1" />
+                                            <Text style={styles.reportButtonText}>Download report</Text>
+                                        </TouchableOpacity>
+                                    )}
                                 </View>
                             </View>
-                        </View>
-                    ) : (
-                        <View style={dynamicStyles.mainLayout}>
-                            {/* Left Column (Main Stats) */}
-                            <View style={isMobile ? {} : styles.leftColumn}>
-                                <View style={styles.greeting}>
-                                    <View style={dynamicStyles.greetingHeader}>
-                                        <Text style={[styles.greetingText, dynamicStyles.greetingText]}>
-                                            Welcome back, {user?.userName || 'Admin'}! 👋
-                                        </Text>
-                                        {!isMobile && (
-                                            <TouchableOpacity style={styles.reportButton}>
-                                                <FileText size={16} color="#6366F1" />
-                                                <Text style={styles.reportButtonText}>Download report</Text>
-                                            </TouchableOpacity>
-                                        )}
-                                    </View>
-                                </View>
 
-                                <View style={[styles.chartsGrid, dynamicStyles.chartsGrid]}>
-                                    <View style={{ flex: isMobile ? undefined : 1, width: isMobile ? '100%' : undefined }}>
-                                        <AdminAnalyticsCard
-                                            percentage={90}
-                                            title="Analytics"
-                                            subTitle="Performance"
-                                            value={stats?.totalClients?.toString() ?? '0'}
-                                            subValue={String((stats?.totalFreelancers ?? 0) + (stats?.totalClients ?? 0))}
-                                        />
-                                    </View>
-                                    <View style={{ flex: isMobile ? undefined : 1.6, width: isMobile ? '100%' : undefined }}>
-                                        <AdminEarningReport
-                                            revenue={`$${(stats?.totalRevenue || 0).toLocaleString()}`}
-                                            trend="+2.3%"
-                                        />
-                                    </View>
+                            <View style={[styles.chartsGrid, dynamicStyles.chartsGrid]}>
+                                <View style={{ flex: isMobile ? undefined : 1, width: isMobile ? '100%' : undefined }}>
+                                    <AdminAnalyticsCard
+                                        percentage={90}
+                                        title="Analytics"
+                                        subTitle="Performance"
+                                        value={stats?.totalClients?.toString() || '0'}
+                                        subValue="1,298"
+                                    />
                                 </View>
+                                <View style={{ flex: isMobile ? undefined : 1.6, width: isMobile ? '100%' : undefined }}>
+                                    <AdminEarningReport
+                                        revenue={`$${(stats?.totalRevenue || 0).toLocaleString()}`}
+                                        trend="+2.3%"
+                                    />
+                                </View>
+                            </View>
 
+                            <View style={styles.sectionHeader}>
+                                <Text style={[styles.sectionTitle, { fontSize: isMobile ? 18 : 22 }]}>
+                                    Management View
+                                </Text>
+                                {/* <TouchableOpacity
+                                    style={styles.viewMoreButton}
+                                    onPress={() => router.push('/(admin)/manage-projects' as any)}
+                                >
+                                    <Text style={styles.viewMoreText}>View all</Text>
+                                    <ChevronRight size={14} color="#6366F1" />
+                                </TouchableOpacity> */}
+                            </View>
+
+                            <View style={styles.managementGrid}>
+                                {ManagementCards.map((card) => (
+                                    <TouchableOpacity
+                                        key={card.title}
+                                        style={[styles.managementCard, dynamicStyles.managementCard]}
+                                        onPress={() => router.push(card.route as any)}
+                                    >
+                                        <View style={[styles.cardIconBox, { backgroundColor: `${card.color}15` }]}>
+                                            <card.icon size={22} color={card.color} />
+                                        </View>
+                                        <View style={styles.cardInfo}>
+                                            <Text style={styles.cardCount}>{card.count}</Text>
+                                            <Text style={styles.cardTitle}>{card.title}</Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            {/* <View style={styles.projectsSection}>
                                 <View style={styles.sectionHeader}>
                                     <Text style={[styles.sectionTitle, { fontSize: isMobile ? 18 : 22 }]}>
-                                        Management View
+                                        Active projects <Text style={styles.countText}>(12)</Text>
+                                    </Text>
+                                </View>
+                                <AdminActivityTable projects={ActiveProjects} />
+                            </View> */}
+                            <View style={styles.projectsSection}>
+                                <View style={styles.sectionHeader}>
+                                    <Text style={[styles.sectionTitle, { fontSize: isMobile ? 18 : 22 }]}>
+                                        Active projects <Text style={styles.countText}>(12)</Text>
                                     </Text>
                                 </View>
 
-                                <View style={styles.managementGrid}>
-                                    {ManagementCards.map((card) => (
-                                        <TouchableOpacity
-                                            key={card.title}
-                                            style={[styles.managementCard, dynamicStyles.managementCard]}
-                                            onPress={() => router.push(card.route as any)}
-                                        >
-                                            <View style={[styles.cardIconBox, { backgroundColor: `${card.color}15` }]}>
-                                                <card.icon size={22} color={card.color} />
-                                            </View>
-                                            <View style={styles.cardInfo}>
-                                                <Text style={styles.cardCount}>{card.count}</Text>
-                                                <Text style={styles.cardTitle}>{card.title}</Text>
-                                            </View>
-                                        </TouchableOpacity>
-                                    ))}
+                                <View style={styles?.projectsCard}>
+                                    <AdminActivityTable projects={ActiveProjects} />
                                 </View>
-
-                                <View style={styles.projectsSection}>
-                                    <View style={styles.sectionHeader}>
-                                        <Text style={[styles.sectionTitle, { fontSize: isMobile ? 18 : 22 }]}>
-                                            Active projects <Text style={styles.countText}>({ActiveProjects.length})</Text>
-                                        </Text>
-                                    </View>
-
-                                    <View style={styles.projectsCard}>
-                                        <AdminActivityTable projects={ActiveProjects} />
-                                    </View>
-                                </View>
-
                             </View>
 
-                            {/* Right Column */}
-                            <View style={isMobile ? {} : styles.rightColumn}>
-                                {StatusItems.length > 0 && <AdminApplicationStatus items={StatusItems} />}
-                            </View>
                         </View>
-                    )}
+
+                        {/* Right Column (Profile & Activity) */}
+                        <View style={isMobile ? {} : styles.rightColumn}>
+                            {/* <AdminProfileCard
+                                name={user?.userName || 'Admin'}
+                                role="System Administrator"
+                                location="Platform Control Center"
+                                avatarUrl={undefined}
+                            /> */}
+                            {/* <View style={{ height: 24 }} /> */}
+                            <AdminApplicationStatus items={StatusItems} />
+                        </View>
+                    </View>
                 </ScrollView>
             </SafeAreaView>
         </View>
@@ -597,84 +536,5 @@ const styles = StyleSheet.create({
     },
     projectsSection: {
         marginBottom: 32,
-    },
-    // Skeleton styles
-    skeletonLine: {
-        backgroundColor: '#E2E8F0',
-        borderRadius: 8,
-    },
-    skeletonGreeting: {
-        height: 32,
-        width: '70%',
-        maxWidth: 320,
-    },
-    skeletonReportBtn: {
-        height: 40,
-        width: 160,
-    },
-    skeletonCard: {
-        backgroundColor: '#E2E8F0',
-        borderRadius: 16,
-    },
-    skeletonAnalytics: {
-        flex: 1,
-        minHeight: 140,
-    },
-    skeletonEarning: {
-        flex: 1.6,
-        minHeight: 140,
-    },
-    skeletonSectionTitle: {
-        height: 24,
-        width: 180,
-    },
-    skeletonManagementCard: {
-        backgroundColor: '#E2E8F0',
-    },
-    skeletonIconBox: {
-        width: 48,
-        height: 48,
-        borderRadius: 14,
-        backgroundColor: '#CBD5E1',
-    },
-    skeletonCardText: {
-        flex: 1,
-        gap: 8,
-    },
-    skeletonCount: {
-        height: 22,
-        width: 48,
-        borderRadius: 6,
-        backgroundColor: '#CBD5E1',
-    },
-    skeletonLabel: {
-        height: 14,
-        width: 72,
-        borderRadius: 6,
-        backgroundColor: '#CBD5E1',
-    },
-    skeletonTable: {
-        backgroundColor: '#F1F5F9',
-    },
-    skeletonTableRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E2E8F0',
-        gap: 12,
-    },
-    skeletonTableCell: {
-        flex: 1,
-        height: 16,
-        borderRadius: 6,
-        backgroundColor: '#E2E8F0',
-    },
-    skeletonTableCellShort: {
-        width: 80,
-        height: 16,
-        borderRadius: 6,
-        backgroundColor: '#E2E8F0',
     },
 });

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Switch, Platform, StatusBar } from 'react-native';
-import { Star, Trash2, Edit2, X, ChevronLeft } from 'lucide-react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Switch, Platform, StatusBar, Pressable } from 'react-native';
+import { Star, Trash2, Edit2, X, ChevronLeft, MoreVertical, UserX, UserCheck } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
 import { FreelancerProfile } from '@/models/User';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,6 +33,8 @@ export default function ManageFreelancers() {
     const [editIsVerified, setEditIsVerified] = useState(false);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [optionsModalVisible, setOptionsModalVisible] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<FreelancerProfile | null>(null);
 
     const loadFreelancers = useCallback(async () => {
         try {
@@ -50,9 +52,52 @@ export default function ManageFreelancers() {
         loadFreelancers();
     }, [loadFreelancers]);
 
-    const handleDelete = async (id: string, userName: string) => {
+    const openOptions = (user: FreelancerProfile) => {
+        setSelectedUser(user);
+        setOptionsModalVisible(true);
+    };
+
+    const closeOptions = () => {
+        setOptionsModalVisible(false);
+        setSelectedUser(null);
+    };
+
+    const handleSuspend = async () => {
+        if (!selectedUser) return;
+        closeOptions();
+        try {
+            setDeletingId(selectedUser.id);
+            const updated = await adminService.suspendUser(selectedUser.id);
+            setFreelancers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: 'suspended' as const } : u));
+            Alert.alert('Success', `${selectedUser.userName} has been suspended.`);
+        } catch (error) {
+            Alert.alert('Error', 'Failed to suspend freelancer');
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const handleReactivate = async () => {
+        if (!selectedUser) return;
+        closeOptions();
+        try {
+            setDeletingId(selectedUser.id);
+            await adminService.reactivateUser(selectedUser.id);
+            setFreelancers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: 'active' as const } : u));
+            Alert.alert('Success', `${selectedUser.userName} has been reactivated.`);
+        } catch (error) {
+            Alert.alert('Error', 'Failed to reactivate freelancer');
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!selectedUser) return;
+        const { id, userName } = selectedUser;
+        closeOptions();
         if (Platform.OS === 'web') {
-            const confirmed = window.confirm(`Are you sure you want to delete ${userName}?`);
+            const confirmed = window.confirm(`Are you sure you want to delete ${userName}? This cannot be undone.`);
             if (confirmed) {
                 try {
                     setDeletingId(id);
@@ -67,7 +112,7 @@ export default function ManageFreelancers() {
         } else {
             Alert.alert(
                 'Delete Freelancer',
-                `Are you sure you want to delete ${userName}?`,
+                `Are you sure you want to delete ${userName}? This cannot be undone.`,
                 [
                     { text: 'Cancel', style: 'cancel' },
                     {
@@ -137,14 +182,14 @@ export default function ManageFreelancers() {
                         <Edit2 size={18} color={deletingId ? "#CBD5E1" : "#4F46E5"} />
                     </TouchableOpacity>
                     <TouchableOpacity
-                        onPress={() => handleDelete(item.id, item.userName)}
+                        onPress={() => openOptions(item)}
                         style={styles.iconButton}
                         disabled={!!deletingId}
                     >
                         {deletingId === item.id ? (
-                            <ActivityIndicator size="small" color="#EF4444" />
+                            <ActivityIndicator size="small" color="#64748B" />
                         ) : (
-                            <Trash2 size={18} color={deletingId ? "#CBD5E1" : "#EF4444"} />
+                            <MoreVertical size={18} color={deletingId ? "#CBD5E1" : "#64748B"} />
                         )}
                     </TouchableOpacity>
                 </View>
@@ -160,9 +205,9 @@ export default function ManageFreelancers() {
                 <Text style={styles.statDivider}>•</Text>
                 <Text style={styles.statText}>{item.projectsCompleted || 0} Projects</Text>
                 <View style={{ flex: 1 }} />
-                <View style={[styles.statusBadge, item.isVerified ? styles.activeBadge : styles.suspendedBadge]}>
-                    <Text style={[styles.statusText, item.isVerified ? styles.activeText : styles.suspendedText]}>
-                        {item.isVerified ? 'Verified' : 'Unverified'}
+                <View style={[styles.statusBadge, item.status === 'suspended' ? styles.suspendedBadge : styles.activeBadge]}>
+                    <Text style={[styles.statusText, item.status === 'suspended' ? styles.suspendedText : styles.activeText]}>
+                        {item.status === 'suspended' ? 'Suspended' : 'Active'}
                     </Text>
                 </View>
             </View>
@@ -252,6 +297,43 @@ export default function ManageFreelancers() {
                         </TouchableOpacity>
                     </View>
                 </View>
+            </Modal>
+
+            {/* Options Modal: Suspend | Reactivate | Delete */}
+            <Modal
+                visible={optionsModalVisible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={closeOptions}
+            >
+                <Pressable style={styles.modalOverlay} onPress={closeOptions}>
+                    <View style={styles.optionsModalContent} onStartShouldSetResponder={() => true}>
+                        <View style={styles.optionsModalHeader}>
+                            <Text style={styles.optionsModalTitle}>{selectedUser?.userName}</Text>
+                            <TouchableOpacity onPress={closeOptions} style={styles.closeButton}>
+                                <X size={20} color="#64748B" />
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={styles.optionsModalSub}>Choose an action</Text>
+
+                        {selectedUser?.status === 'suspended' ? (
+                            <TouchableOpacity style={styles.optionRow} onPress={handleReactivate}>
+                                <UserCheck size={20} color="#10B981" />
+                                <Text style={[styles.optionRowText, { color: '#10B981' }]}>Reactivate</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <TouchableOpacity style={styles.optionRow} onPress={handleSuspend}>
+                                <UserX size={20} color="#F59E0B" />
+                                <Text style={[styles.optionRowText, { color: '#F59E0B' }]}>Suspend</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        <TouchableOpacity style={[styles.optionRow, styles.optionRowDanger, selectedUser?.status !== 'suspended' && styles.optionRowDisabled]} onPress={handleDelete} disabled={selectedUser?.status !== 'suspended'}>
+                        <Trash2 size={20} color={selectedUser?.status === 'suspended' ? '#EF4444' : '#94A3B8'} />
+                        <Text style={[styles.optionRowText, { color: selectedUser?.status === 'suspended' ? '#EF4444' : '#94A3B8' }]}>Delete</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Pressable>
             </Modal>
         </SafeAreaView>
     );
@@ -501,6 +583,49 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     disabledButton: {
+        opacity: 0.6,
+    },
+    optionsModalContent: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 20,
+        margin: 24,
+        ...SHADOWS.lg,
+    },
+    optionsModalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    optionsModalTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#1E293B',
+    },
+    optionsModalSub: {
+        fontSize: 13,
+        color: '#64748B',
+        marginBottom: 16,
+    },
+    optionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingVertical: 14,
+        paddingHorizontal: 4,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F5F9',
+    },
+    optionRowText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    optionRowDanger: {
+        borderBottomWidth: 0,
+        marginTop: 4,
+    },
+    optionRowDisabled: {
         opacity: 0.6,
     },
 });

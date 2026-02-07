@@ -9,12 +9,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Dimensions,
-  Image,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import { Eye, EyeOff, Lock, Mail, ArrowRight, CheckCircle2 } from "lucide-react-native";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
+import { COLORS, TYPOGRAPHY, BORDER_RADIUS, SPACING, SHADOWS } from "@/constants/theme";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -84,13 +84,14 @@ export default function Login() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
+      <StatusBar style="dark" />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.logoText}>FreelancePro</Text>
+          <Text style={styles.logoText}>PAK FREELANCE</Text>
         </View>
 
         <View style={styles.mainContent}>
@@ -112,11 +113,11 @@ export default function Login() {
                 styles.inputWrapper,
                 focusedInput === 'email' && styles.inputWrapperFocused
               ]}>
-                <Mail size={20} color={focusedInput === 'email' ? '#1dbf73' : '#62646a'} />
+                <Mail size={20} color={focusedInput === 'email' ? COLORS.primary : COLORS.textTertiary} />
                 <TextInput
                   style={styles.input}
                   placeholder="name@email.com"
-                  placeholderTextColor="#95979d"
+                  placeholderTextColor={COLORS.textTertiary}
                   value={email}
                   onChangeText={(text) => {
                     setEmail(text);
@@ -142,11 +143,11 @@ export default function Login() {
                 styles.inputWrapper,
                 focusedInput === 'password' && styles.inputWrapperFocused
               ]}>
-                <Lock size={20} color={focusedInput === 'password' ? '#1dbf73' : '#62646a'} />
+                <Lock size={20} color={focusedInput === 'password' ? COLORS.primary : COLORS.textTertiary} />
                 <TextInput
                   style={styles.input}
                   placeholder="Password"
-                  placeholderTextColor="#95979d"
+                  placeholderTextColor={COLORS.textTertiary}
                   value={password}
                   onChangeText={(text) => {
                     setPassword(text);
@@ -162,9 +163,9 @@ export default function Login() {
                   style={styles.eyeIcon}
                 >
                   {showPassword ? (
-                    <EyeOff size={20} color="#62646a" />
+                    <EyeOff size={20} color={COLORS.textTertiary} />
                   ) : (
-                    <Eye size={20} color="#62646a" />
+                    <Eye size={20} color={COLORS.textTertiary} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -177,9 +178,9 @@ export default function Login() {
               activeOpacity={0.8}
             >
               {isLoading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={COLORS.white} />
               ) : (
-                <Text style={styles.loginButtonText}>Continue</Text>
+                <Text style={styles.loginButtonText}>Sign in</Text>
               )}
             </TouchableOpacity>
 
@@ -198,11 +199,6 @@ export default function Login() {
           </View>
         </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            © 2026 FreelancePro International Ltd.
-          </Text>
-        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -211,22 +207,22 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.white,
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'space-between',
-    padding: 24,
+    padding: SPACING.l,
   },
   header: {
     paddingTop: 40,
     marginBottom: 40,
   },
   logoText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111',
-    letterSpacing: -0.5,
+    fontSize: TYPOGRAPHY.fontSize['2xl'],
+    fontWeight: TYPOGRAPHY.fontWeight.extrabold,
+    color: COLORS.background,
+    letterSpacing: TYPOGRAPHY.letterSpacing.tight,
   },
   mainContent: {
     flex: 1,
@@ -235,80 +231,75 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   titleContainer: {
-    marginBottom: 32,
+    marginBottom: SPACING.xl,
   },
   title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#222325',
-    marginBottom: 8,
-    letterSpacing: -0.5,
+    fontSize: TYPOGRAPHY.fontSize['3xl'],
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: COLORS.background,
+    marginBottom: SPACING.s,
+    letterSpacing: TYPOGRAPHY.letterSpacing.tight,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#62646a',
+    fontSize: TYPOGRAPHY.fontSize.md,
+    color: COLORS.textTertiary,
   },
-
   errorContainer: {
-    backgroundColor: '#fff0f0',
+    backgroundColor: `${COLORS.error}15`,
     borderWidth: 1,
-    borderColor: '#d9534f',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 24,
+    borderColor: COLORS.error,
+    padding: SPACING.m,
+    borderRadius: BORDER_RADIUS.s,
+    marginBottom: SPACING.l,
   },
   errorText: {
-    color: '#d9534f',
-    fontSize: 14,
+    color: COLORS.error,
+    fontSize: TYPOGRAPHY.fontSize.base,
     textAlign: 'center',
   },
   formContainer: {
     width: '100%',
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: SPACING.xl,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#222325',
-    marginBottom: 8,
+    fontSize: TYPOGRAPHY.fontSize.base,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
+    color: COLORS.background,
+    marginBottom: SPACING.s,
   },
   passwordLabelContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: SPACING.s,
   },
   forgotPassword: {
-    fontSize: 14,
-    color: '#1dbf73',
-    fontWeight: '600',
+    fontSize: TYPOGRAPHY.fontSize.base,
+    color: COLORS.primary,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e4e5e7',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    height: 50,
-    backgroundColor: '#fff',
+    borderColor: '#e2e8f0',
+    borderRadius: BORDER_RADIUS.l,
+    paddingHorizontal: SPACING.m,
+    height: 52,
+    backgroundColor: COLORS.white,
     gap: 12,
   },
   inputWrapperFocused: {
-    borderColor: '#1dbf73',
+    borderColor: COLORS.primary,
     borderWidth: 1,
-    shadowColor: '#1dbf73',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    ...SHADOWS.glow,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: '#222325',
+    fontSize: TYPOGRAPHY.fontSize.md,
+    color: COLORS.background,
     height: '100%',
     ...Platform.select({
       web: {
@@ -317,61 +308,57 @@ const styles = StyleSheet.create({
     }),
   },
   eyeIcon: {
-    padding: 4,
+    padding: SPACING.xs,
   },
   loginButton: {
-    backgroundColor: '#1dbf73',
+    backgroundColor: COLORS.primary,
     height: 52,
-    borderRadius: 8,
+    borderRadius: BORDER_RADIUS.l,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-    shadowColor: '#1dbf73',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    marginTop: SPACING.s,
+    ...SHADOWS.glow,
   },
   loginButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.fontSize.md,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 24,
+    marginVertical: SPACING.l,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#e4e5e7',
+    backgroundColor: '#e2e8f0',
   },
   dividerText: {
-    marginHorizontal: 16,
-    color: '#95979d',
-    fontSize: 14,
+    marginHorizontal: SPACING.m,
+    color: COLORS.textTertiary,
+    fontSize: TYPOGRAPHY.fontSize.base,
   },
   secondaryButton: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
     height: 52,
-    borderRadius: 8,
+    borderRadius: BORDER_RADIUS.l,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#e4e5e7',
+    borderColor: '#e2e8f0',
   },
   secondaryButtonText: {
-    color: '#222325',
-    fontSize: 16,
-    fontWeight: '600',
+    color: COLORS.background,
+    fontSize: TYPOGRAPHY.fontSize.md,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
   },
   footer: {
     marginTop: 40,
     alignItems: 'center',
   },
   footerText: {
-    color: '#95979d',
-    fontSize: 12,
+    color: COLORS.textTertiary,
+    fontSize: TYPOGRAPHY.fontSize.sm,
   },
 });

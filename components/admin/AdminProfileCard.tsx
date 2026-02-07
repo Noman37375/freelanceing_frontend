@@ -1,28 +1,41 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { Edit2 } from 'lucide-react-native';
+import { Edit2, Camera } from 'lucide-react-native';
 
 interface AdminProfileCardProps {
     name: string;
     role: string;
-    location: string;
+    // location: string;
     avatarUrl?: string;
+    onEditPress?: () => void;
+    onAvatarPress?: () => void;
 }
 
-export default function AdminProfileCard({ name, role, location, avatarUrl }: AdminProfileCardProps) {
+export default function AdminProfileCard({ name, role, avatarUrl, onEditPress, onAvatarPress }: AdminProfileCardProps) {
+    const avatarSource = avatarUrl
+        ? { uri: avatarUrl }
+        : { uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366F1&color=fff&size=200` };
+
     return (
         <View style={styles.card}>
             <View style={styles.content}>
-                <View style={styles.avatarContainer}>
-                    {/* <Image
-                        source={avatarUrl ? { uri: avatarUrl } : require('@/assets/images/default-avatar.png')}
-                        style={styles.avatar}
-                    /> */}
-                </View>
+                <TouchableOpacity
+                    style={styles.avatarContainer}
+                    onPress={onAvatarPress}
+                    activeOpacity={onAvatarPress ? 0.8 : 1}
+                    disabled={!onAvatarPress}
+                >
+                    <Image source={avatarSource} style={styles.avatar} />
+                    {onAvatarPress && (
+                        <View style={styles.cameraBadge}>
+                            <Camera size={18} color="#FFF" />
+                        </View>
+                    )}
+                </TouchableOpacity>
                 <Text style={styles.name}>{name}</Text>
-                <Text style={styles.location}>{location}</Text>
+                {/* <Text style={styles.location}>{location}</Text> */}
 
-                <TouchableOpacity style={styles.editButton}>
+                <TouchableOpacity style={styles.editButton} onPress={onEditPress}>
                     <Edit2 size={16} color="#FFFFFF" />
                     <Text style={styles.editButtonText}>Edit profile</Text>
                 </TouchableOpacity>
@@ -48,11 +61,23 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.3)',
         padding: 4,
         marginBottom: 16,
+        position: 'relative',
     },
     avatar: {
         width: '100%',
         height: '100%',
         borderRadius: 40,
+    },
+    cameraBadge: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     name: {
         fontSize: 22,

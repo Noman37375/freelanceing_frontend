@@ -106,7 +106,7 @@ export default function VerifyEmail() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.iconContainer}>
-            <Mail size={48} color="#3B82F6" />
+            <Mail size={48} color="#0F172A" />
           </View>
           <Text style={styles.title}>Verify Your Email</Text>
           <Text style={styles.subtitle}>
@@ -186,7 +186,7 @@ export default function VerifyEmail() {
               disabled={resendLoading || !email || !userId}
             >
               {resendLoading ? (
-                <ActivityIndicator size="small" color="#3B82F6" />
+                <ActivityIndicator size="small" color="#0F172A" />
               ) : (
                 <Text style={styles.resendLink}>Resend OTP</Text>
               )}
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   },
   emailText: {
     fontSize: 16,
-    color: "#3B82F6",
+    color: "#0F172A",
     fontWeight: "600",
     textAlign: "center",
   },
@@ -294,12 +294,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   button: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#0F172A",
     padding: 18,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#3B82F6",
+    shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   resendLink: {
-    color: "#3B82F6",
+    color: "#0F172A",
     fontSize: 14,
     fontWeight: "600",
   },

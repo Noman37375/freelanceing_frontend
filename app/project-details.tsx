@@ -58,7 +58,7 @@ export default function ProjectDetails() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4F46E5" />
+        <ActivityIndicator size="large" color="#0F172A" />
       </View>
     );
   }
@@ -101,14 +101,14 @@ export default function ProjectDetails() {
             <ArrowLeft size={24} color="#1E293B" />
           </TouchableOpacity>
           <Text style={styles.headerTitle} numberOfLines={1}>Job Details</Text>
-          <View style={styles.headerActions}>
+          {/* <View style={styles.headerActions}>
             <TouchableOpacity style={styles.actionButton}>
               <Share2 size={20} color="#64748B" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton}>
               <Bookmark size={20} color="#64748B" />
             </TouchableOpacity>
-          </View>
+          </View> */}
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -148,13 +148,13 @@ export default function ProjectDetails() {
           <View style={styles.gridContainer}>
             {project.location && (
               <View style={styles.gridItem}>
-                <MapPin size={20} color="#4F46E5" />
+                <MapPin size={20} color="#0F172A" />
                 <Text style={styles.gridLabel}>Location</Text>
                 <Text style={styles.gridValue}>{project.location}</Text>
               </View>
             )}
             <View style={styles.gridItem}>
-              <Calendar size={20} color="#4F46E5" />
+              <Calendar size={20} color="#0F172A" />
               <Text style={styles.gridLabel}>Duration</Text>
               <Text style={styles.gridValue}>{project.duration || 'Not specified'}</Text>
             </View>
@@ -181,7 +181,7 @@ export default function ProjectDetails() {
           )}
 
           {/* Client Info */}
-          {project.client && (
+          {/* {project.client && (
             <View style={styles.clientSection}>
               <Text style={styles.sectionHeading}>About the Client</Text>
               <View style={styles.clientCard}>
@@ -194,7 +194,7 @@ export default function ProjectDetails() {
                 </View>
               </View>
             </View>
-          )}
+          )} */}
 
           {/* Padding for bottom buttons */}
           <View style={{ height: 100 }} />
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   metaText: { color: '#64748B', fontSize: 14, fontWeight: '500' },
 
   budgetCard: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#0F172A',
     borderRadius: 24,
     padding: 24,
     flexDirection: 'row',
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     ...Platform.select({
       ios: {
-        shadowColor: '#4F46E5',
+        shadowColor: '#0F172A',
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 16,
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     }),
   },
   budgetContent: {},
-  budgetLabel: { color: '#C7D2FE', fontSize: 14, fontWeight: '600', marginBottom: 4 },
+  budgetLabel: { color: '#94A3B8', fontSize: 14, fontWeight: '600', marginBottom: 4 },
   budgetAmount: { color: '#FFFFFF', fontSize: 28, fontWeight: '800' },
   budgetIconWrapper: {
     width: 48,
@@ -350,13 +350,13 @@ const styles = StyleSheet.create({
     }),
   },
   bidButton: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#0F172A',
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: '#4F46E5',
+        shadowColor: '#0F172A',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 10,
@@ -374,6 +374,6 @@ const styles = StyleSheet.create({
   errorContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 40 },
   errorText: { fontSize: 20, fontWeight: "700", color: "#1E293B", marginTop: 20, marginBottom: 8 },
   errorSubtext: { fontSize: 15, color: "#64748B", textAlign: "center", marginBottom: 32, lineHeight: 22 },
-  primaryButton: { backgroundColor: "#4F46E5", paddingHorizontal: 24, paddingVertical: 14, borderRadius: 14 },
+  primaryButton: { backgroundColor: "#0F172A", paddingHorizontal: 24, paddingVertical: 14, borderRadius: 14 },
   primaryButtonText: { color: "#FFFFFF", fontWeight: "700", fontSize: 16 },
 });

@@ -12,6 +12,7 @@ import {
     useWindowDimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import {
     Search,
     Bell,
@@ -26,6 +27,7 @@ import {
 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminService, DashboardStats } from '@/services/adminService';
+import { Project } from '@/models/Project';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import newly created components
@@ -45,6 +47,7 @@ export default function AdminDashboard() {
     const isMobile = width <= 768;
 
     const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [activeProjects, setActiveProjects] = useState<Project[]>([]);
     const [refreshing, setRefreshing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [sidebarVisible, setSidebarVisible] = useState(isDesktop);
@@ -57,8 +60,18 @@ export default function AdminDashboard() {
     const loadStats = useCallback(async (showLoading = true) => {
         try {
             if (showLoading) setIsLoading(true);
-            const data = await adminService.getDashboardStats();
-            setStats(data);
+            const [statsData, projectsData] = await Promise.all([
+                adminService.getDashboardStats(),
+                adminService.getAllProjects(),
+            ]);
+            setStats(statsData);
+            const active = (projectsData || []).filter(
+                (p: Project) =>
+                    p.status === 'ACTIVE' ||
+                    p.status === 'IN_PROGRESS' ||
+                    (typeof p.status === 'string' && ['open', 'in_progress'].includes(p.status.toLowerCase()))
+            );
+            setActiveProjects(active);
         } catch (error) {
             console.error('Failed to load stats:', error);
         } finally {
@@ -70,11 +83,31 @@ export default function AdminDashboard() {
         loadStats();
     }, [loadStats]);
 
+    // Refetch stats when screen is focused (e.g. returning from manage-services)
+    useFocusEffect(
+        useCallback(() => {
+            loadStats(false);
+        }, [loadStats])
+    );
+
     const onRefresh = async () => {
         setRefreshing(true);
         await loadStats(false);
         setRefreshing(false);
     };
+
+    const activeProjectsForTable = activeProjects.map((p) => {
+        const client = p.client as { user_name?: string; userName?: string } | undefined;
+        const clientName = client?.userName ?? client?.user_name ?? 'Unknown';
+        return {
+            id: p.id,
+            clientName,
+            projectName: p.title,
+            price: `$${typeof p.budget === 'number' ? p.budget.toLocaleString() : p.budget ?? '0'}`,
+            deliveredIn: p.duration ?? p.deadline ?? '—',
+            progress: p.status === 'COMPLETED' ? 100 : p.freelancerId ? 50 : 0,
+        };
+    });
 
     const handleLogout = async () => {
         await logout();
@@ -87,20 +120,13 @@ export default function AdminDashboard() {
         { id: '3', title: 'Website Designer', subTitle: 'Verganis Studio (Sydney, Australia)', type: '3 months contract', date: 'Applied on Dec 29', status: 'Interview' },
     ];
 
-    const ActiveProjects = [
-        { id: '1', clientName: 'Steven Terry', projectName: 'Landing page', price: '$800', deliveredIn: '1 days 2 hours', progress: 90 },
-        { id: '2', clientName: 'Audrey Jones', projectName: 'Development', price: '$300', deliveredIn: '4 days 8 hours', progress: 50 },
-        { id: '3', clientName: 'Brian Fisher', projectName: 'Translator', price: '$180', deliveredIn: '14 days 2 hours', progress: 95 },
-        { id: '4', clientName: 'Molly Mills', projectName: 'Data Analyst', price: '$920', deliveredIn: '8 days 20 hours', progress: 20 },
-    ];
-
     const ManagementCards = [
         { title: 'Freelancers', icon: Users, color: '#3B82F6', route: '/(admin)/manage-freelancers', count: stats?.totalFreelancers || 0 },
         { title: 'Clients', icon: UserCheck, color: '#F59E0B', route: '/(admin)/manage-clients', count: stats?.totalClients || 0 },
-        { title: 'Services', icon: Layers, color: '#10B981', route: '/(admin)/manage-services', count: 0 },
+        { title: 'Services', icon: Layers, color: '#10B981', route: '/(admin)/manage-services', count: stats?.totalServices ?? 0 },
         { title: 'Notifications', icon: Bell, color: '#6366F1', route: '/(admin)/manage-notifications', count: 0 },
         { title: 'Projects', icon: Briefcase, color: '#EC4899', route: '/(admin)/manage-projects', count: stats?.activeProjects || 0 },
-        { title: 'Disputes', icon: Activity, color: '#8B5CF6', route: '/(admin)/manage-disputes', count: 0 },
+        { title: 'Disputes', icon: Activity, color: '#8B5CF6', route: '/(admin)/manage-disputes', count: stats?.totalDisputes ?? 0 },
     ];
 
     // Dynamic styles based on screen size
@@ -267,23 +293,22 @@ export default function AdminDashboard() {
                                 ))}
                             </View>
 
-                            {/* <View style={styles.projectsSection}>
-                                <View style={styles.sectionHeader}>
-                                    <Text style={[styles.sectionTitle, { fontSize: isMobile ? 18 : 22 }]}>
-                                        Active projects <Text style={styles.countText}>(12)</Text>
-                                    </Text>
-                                </View>
-                                <AdminActivityTable projects={ActiveProjects} />
-                            </View> */}
                             <View style={styles.projectsSection}>
                                 <View style={styles.sectionHeader}>
                                     <Text style={[styles.sectionTitle, { fontSize: isMobile ? 18 : 22 }]}>
-                                        Active projects <Text style={styles.countText}>(12)</Text>
+                                        Active projects <Text style={styles.countText}>({activeProjects.length})</Text>
                                     </Text>
+                                    <TouchableOpacity
+                                        style={styles.viewMoreButton}
+                                        onPress={() => router.push('/(admin)/manage-projects' as any)}
+                                    >
+                                        <Text style={styles.viewMoreText}>View all</Text>
+                                        <ChevronRight size={14} color="#6366F1" />
+                                    </TouchableOpacity>
                                 </View>
 
-                                <View style={styles?.projectsCard}>
-                                    <AdminActivityTable projects={ActiveProjects} />
+                                <View style={styles.projectsCard}>
+                                    <AdminActivityTable projects={activeProjectsForTable} />
                                 </View>
                             </View>
 

@@ -1,4 +1,4 @@
-// HomeScreen.tsx (ULTRA-POLISHED VERSION)
+// Freelancer Dashboard – light theme (no dummy data)
 
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -9,112 +9,48 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  Dimensions,
   Platform,
   Image,
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  Zap,
-  Layout,
-  PenTool,
-  Code,
-  Smartphone,
-  Video,
-  Database,
-  Search,
-  MapPin,
-  Heart,
-  Bell,
-  TrendingUp,
-  Star,
-  Box,
-} from 'lucide-react-native';
+import { Search, Bell, Filter, MapPin } from 'lucide-react-native';
 
-import { storageGet } from "@/utils/storage";
+import { storageGet } from '@/utils/storage';
 import { useAuth } from '@/contexts/AuthContext';
-import { useWallet } from '@/contexts/WalletContext';
 import { projectService } from '@/services/projectService';
-import { reviewService } from '@/services/reviewService';
-import { walletService } from '@/services/walletService';
 import { adminService } from '@/services/adminService';
+import { Project } from '@/models/Project';
 
-import ProjectCard from '@/components/ProjectCard';
-import StatsCard from '@/components/StatsCard';
-
-const { width } = Dimensions.get('window');
+const timeAgo = (timestamp?: string) => {
+  if (!timestamp) return '';
+  const postedDate = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - postedDate.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffHours < 1) return 'Just now';
+  if (diffHours < 24) return `Posted ${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  if (diffDays < 7) return `Posted ${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  return `Posted ${Math.floor(diffDays / 7)} week${diffDays >= 14 ? 's' : ''} ago`;
+};
 
 export default function HomeScreen() {
   const { user } = useAuth();
-  const { balance } = useWallet();
   const router = useRouter();
 
-  const [recentProjects, setRecentProjects] = useState<any[]>([]);
-  const [earnings, setEarnings] = useState<any[]>([]);
-  const [reviews, setReviews] = useState<any[]>([]);
-
+  const [loading, setLoading] = useState(true);
+  const [recentProjects, setRecentProjects] = useState<Project[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-
-  // Icon mapping helper
-  const getCategoryIcon = (iconName: string, color: string) => {
-    const size = 22;
-    const props = { size, color: "#FFF" };
-
-    switch (iconName) {
-      case 'PenTool': return <PenTool {...props} />;
-      case 'Code': return <Code {...props} />;
-      case 'Smartphone': return <Smartphone {...props} />;
-      case 'Video': return <Video {...props} />;
-      case 'Database': return <Database {...props} />;
-      case 'Layout': return <Layout {...props} />;
-      case 'Search': return <Search {...props} />;
-      case 'MapPin': return <MapPin {...props} />;
-      case 'Zap': return <Zap {...props} />;
-      default: return <Box {...props} />;
-    }
-  };
-
-  const [freelancerGigs] = useState([
-    {
-      id: '1',
-      name: 'Sarah Jenkins',
-      title: 'Expert UI/UX Designer',
-      rating: '4.9',
-      reviews: '124',
-      price: '45',
-      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
-      isPro: true
-    },
-    {
-      id: '2',
-      name: 'Alex Rivera',
-      title: 'Full Stack Developer',
-      rating: '5.0',
-      reviews: '89',
-      price: '60',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-      isPro: false
-    },
-    {
-      id: '3',
-      name: 'Maria Garcia',
-      title: 'Content Strategist',
-      rating: '4.8',
-      reviews: '210',
-      price: '35',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
-      isPro: true
-    },
-  ]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const checkRole = async () => {
-      const storedUser = await storageGet("user");
+      const storedUser = await storageGet('user');
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
-        if (parsedUser.role?.toLowerCase() !== "freelancer") {
-          router.replace("../(client-tabs)");
+        if (parsedUser.role?.toLowerCase() !== 'freelancer') {
+          router.replace('../(client-tabs)');
         }
       }
     };
@@ -127,148 +63,261 @@ export default function HomeScreen() {
 
   const fetchData = async () => {
     try {
-      // Fetch services
-      const servicesData = await adminService.getServiceCategories();
+      setLoading(true);
+      const [servicesData, projectsData] = await Promise.all([
+        adminService.getServiceCategories(),
+        projectService.getProjects({ status: 'ACTIVE' }),
+      ]);
       setCategories(servicesData || []);
-
-      // Fetch recent projects
-      const projectsData = await projectService.getProjects({ status: 'ACTIVE' });
-      setRecentProjects(projectsData.slice(0, 2));
-
-      // Fetch reviews for average rating
-      const reviewsData = await reviewService.getMyReviews();
-      setReviews(reviewsData.map(r => ({ id: r.id, rating: r.rating })));
-
-      // Fetch wallet for earnings
-      const walletData = await walletService.getWallet();
-      setEarnings([{ id: '1', amount: walletData.balance }]);
+      setRecentProjects(projectsData || []);
     } catch (error: any) {
       console.error('Failed to fetch data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const totalEarnings = earnings.reduce((acc, e) => acc + Number(e.amount), 0);
-  const avgRating = reviews.length > 0 ? (reviews.reduce((acc, r) => acc + Number(r.rating), 0) / reviews.length).toFixed(1) : '0';
+  const goToFindProjects = () => router.push('/find-projects');
+  // Search stays on same page: filter projects locally (no redirect)
+  const handleSearchSubmit = () => { /* no redirect */ };
+
+  const q = (searchQuery || '').trim().toLowerCase();
+  const filteredProjects = q
+    ? recentProjects.filter(
+        (p) =>
+          (p.title || '').toLowerCase().includes(q) ||
+          (p.description || '').toLowerCase().includes(q)
+      )
+    : recentProjects;
+
+  const usernameHandle = user?.userName
+    ? `@${user.userName.replace(/\s+/g, '').toLowerCase()}`
+    : (user?.email ? `@${user.email.split('@')[0]}` : '');
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <View style={[styles.skeletonLine, { width: 100, height: 20 }]} />
+            </View>
+            <View style={[styles.skeletonCircle, { width: 44, height: 44, borderRadius: 22 }]} />
+          </View>
+          <View style={[styles.skeletonLine, { width: 140, height: 24, marginBottom: 14 }]} />
+          <View style={[styles.searchBar, styles.skeleton, { opacity: 0.7 }]} />
+          <View style={styles.allServiceSection}>
+            <View style={styles.allServiceHeader}>
+              <View style={[styles.skeletonLine, { width: 100, height: 20 }]} />
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.serviceScrollContent}>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <View key={i} style={styles.serviceGridItem}>
+                  <View style={[styles.serviceIconCircle, styles.skeleton]} />
+                  <View style={[styles.skeletonLine, { width: 40, height: 10, marginTop: 6, alignSelf: 'center' }]} />
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.skeletonLine, { width: 140, height: 22 }]} />
+            </View>
+            {[1, 2, 3].map((i) => (
+              <View key={i} style={[styles.jobCard, styles.skeletonCard]}>
+                <View style={[styles.skeletonLine, { width: 70, height: 14, marginBottom: 10 }]} />
+                <View style={[styles.skeletonLine, { width: '90%', height: 18, marginBottom: 8 }]} />
+                <View style={[styles.skeletonLine, { width: 100, height: 12, marginBottom: 12 }]} />
+                <View style={styles.jobMetricsRow}>
+                  <View style={[styles.jobMetricBox, styles.skeleton]} />
+                  <View style={[styles.jobMetricBox, styles.skeleton]} />
+                  <View style={[styles.jobMetricBox, styles.skeleton]} />
+                </View>
+                <View style={[styles.skeletonLine, { width: '100%', height: 14, marginBottom: 6 }]} />
+                <View style={[styles.skeletonLine, { width: '70%', height: 14, marginBottom: 12 }]} />
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                  <View style={[styles.skeletonLine, { width: 60, height: 24, borderRadius: 8 }]} />
+                  <View style={[styles.skeletonLine, { width: 80, height: 24, borderRadius: 8 }]} />
+                  <View style={[styles.skeletonLine, { width: 70, height: 24, borderRadius: 8 }]} />
+                </View>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
 
-      {/* Dynamic Background Element */}
-      <View style={styles.topGradient} />
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-
-        {/* Header/Hero Section */}
-        <View style={styles.heroSection}>
-          <View style={styles.heroOverlay}>
-            <View style={styles.headerTop}>
-              <View>
-                <Text style={styles.greetingText}>Good afternoon,</Text>
-                <Text style={styles.userNameText}>
-                  {user?.userName || user?.email?.split('@')[0] || 'Freelancer'}
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={styles.notificationBtn}
-                onPress={() => router.push('../notifications')}
-              >
-                <Bell size={22} color="#FFF" />
-                <View style={styles.notifDot} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.heroContent}>
-              <Text style={styles.heroTitle}>Find the perfect{"\n"}freelance services</Text>
-
-              <View style={styles.searchWrapper}>
-                <View style={styles.searchBarPremium}>
-                  <Search size={20} color="#64748B" />
-                  <TextInput
-                    style={styles.searchInputPremium}
-                    placeholder="Search for any service..."
-                    placeholderTextColor="#94A3B8"
-                  />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header: Hey + name (left), avatar + bell (right) – like reference */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.heyLabel}>Hey, </Text>
+            <Text style={styles.headerName} numberOfLines={1}>
+              {user?.userName || user?.email?.split('@')[0] || 'Freelancer'}
+            </Text>
+          </View>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.notificationBtn}
+              onPress={() => router.push('../notifications')}
+            >
+              <Bell size={22} color="#1E293B" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.8}>
+              {user?.profileImage ? (
+                <Image source={{ uri: user.profileImage }} style={styles.avatar} />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Text style={styles.avatarLetter}>
+                    {(user?.userName || user?.email || 'F').charAt(0).toUpperCase()}
+                  </Text>
                 </View>
-                <TouchableOpacity style={styles.filterBtn}>
-                  <Layout size={20} color="#FFF" />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Section heading + single search bar (Search icon left, Filter icon right inside bar) */}
+        <Text style={styles.findProjectsHeading}>Find a projects</Text>
+        <View style={styles.searchRow}>
+          <View style={styles.searchBar}>
+            <Search size={20} color="#94A3B8" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search projects..."
+              placeholderTextColor="#94A3B8"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={handleSearchSubmit}
+              returnKeyType="search"
+              underlineColorAndroid="transparent"
+            />
+            {/* <TouchableOpacity onPress={goToFindProjects} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+              <Filter size={20} color="#94A3B8" />
+            </TouchableOpacity> */}
+          </View>
+        </View>
+
+        {/* All Service – horizontal scroll, compact */}
+        <View style={styles.allServiceSection}>
+          <View style={styles.allServiceHeader}>
+            <Text style={styles.allServiceTitle}>All Service</Text>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.serviceScrollContent}
+          >
+            {(categories || []).length === 0 ? (
+              <Text style={styles.allServiceEmpty}>No services yet</Text>
+            ) : (
+              (categories || []).map((cat: any) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={styles.serviceGridItem}
+                  onPress={() => router.push({ pathname: '/find-projects', params: { category: cat.name } })}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.serviceIconCircle}>
+                    {cat.image ? (
+                      <Image source={{ uri: cat.image }} style={styles.serviceIconImage} />
+                    ) : (
+                      <View style={[styles.serviceIconPlaceholder, { backgroundColor: cat.color || '#0F172A' }]}>
+                        <Text style={styles.serviceIconLetter}>
+                          {(cat.name || '?').charAt(0).toUpperCase()}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.serviceLabel} numberOfLines={1}>
+                    {cat.name || 'Service'}
+                  </Text>
                 </TouchableOpacity>
-              </View>
+              ))
+            )}
+          </ScrollView>
+        </View>
+
+        {/* Popular projects – client project UI (no Payment Verified) */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Popular projects</Text>
+            {/* <TouchableOpacity onPress={goToFindProjects}>
+              <Text style={styles.showMore}>View all</Text>
+            </TouchableOpacity> */}
+          </View>
+
+          {filteredProjects.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>
+                {searchQuery.trim() ? 'No projects match your search.' : 'No projects right now.'}
+              </Text>
+              {searchQuery.trim() ? null : (
+                <TouchableOpacity style={styles.emptyBtn} onPress={goToFindProjects}>
+                  <Text style={styles.emptyBtnText}>Find projects</Text>
+                </TouchableOpacity>
+              )}
             </View>
-          </View>
-        </View>
-
-
-
-        {/* Services Row */}
-        <View style={styles.sectionWrapper}>
-          <View style={styles.sectionHeaderPremium}>
-            <Text style={styles.sectionTitlePremium}>Browse Categories</Text>
-            <TouchableOpacity><Text style={styles.exploreText}>See All</Text></TouchableOpacity>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryScrollPremium}
-          >
-            {categories.map(cat => (
-              <TouchableOpacity key={cat.id} style={styles.serviceCard}>
-                <Image source={{ uri: cat.image }} style={styles.serviceImage} />
-                <View style={[styles.serviceOverlay, { backgroundColor: (cat.color || '#6366F1') + 'CC' }]}>
-                  {getCategoryIcon(cat.icon, cat.color)}
-                  <Text style={styles.serviceName}>{cat.name}</Text>
+          ) : (
+            filteredProjects.map((project) => (
+              <TouchableOpacity
+                key={project.id}
+                style={styles.jobCard}
+                activeOpacity={0.95}
+                onPress={() => router.push(`/project-details?id=${project.id}`)}
+              >
+                <View style={styles.jobCardLocation}>
+                  <MapPin size={14} color="#64748B" />
+                  <Text style={styles.jobCardLocationText}>{project.location || 'Remote'}</Text>
                 </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Freelancer Gigs Section */}
-        <View style={styles.sectionWrapper}>
-          <View style={styles.sectionHeaderPremium}>
-            <Text style={styles.sectionTitlePremium}>Popular Gigs</Text>
-            <TouchableOpacity><Text style={styles.exploreText}>See All</Text></TouchableOpacity>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.gigScrollPremium}
-          >
-            {freelancerGigs.map(gig => (
-              <TouchableOpacity key={gig.id} style={styles.premiumGigCard}>
-                <View style={styles.premiumGigImageWrapper}>
-                  <Image source={{ uri: gig.image }} style={styles.premiumGigImage} />
-                  {gig.isPro && (
-                    <View style={styles.premiumProBadge}>
-                      <Zap size={10} color="#FFF" fill="#FFF" />
-                      <Text style={styles.premiumProText}>PRO</Text>
-                    </View>
-                  )}
-                  <TouchableOpacity style={styles.premiumFavBtn}>
-                    <Heart size={16} color="#FFF" />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.premiumGigInfo}>
-                  <View style={styles.gigMeta}>
-                    <Text style={styles.gigAuthor}>{gig.name}</Text>
-                    <View style={styles.premiumRating}>
-                      <Star size={12} color="#F59E0B" fill="#F59E0B" />
-                      <Text style={styles.ratingValue}>{gig.rating}</Text>
-                    </View>
+                <Text style={styles.jobTitle} numberOfLines={2}>{project.title}</Text>
+                <Text style={styles.jobPosted}>{timeAgo(project.createdAt)}</Text>
+                <View style={styles.jobMetricsRow}>
+                  <View style={styles.jobMetricBox}>
+                    <Text style={styles.jobMetricValue}>${project.budget ?? '—'}</Text>
+                    <Text style={styles.jobMetricLabel}>Fixed-price</Text>
                   </View>
-                  <Text style={styles.premiumGigTitle} numberOfLines={2}>{gig.title}</Text>
-
-                  <View style={styles.premiumGigFooter}>
-                    <Text style={styles.priceLabel}>Starting at</Text>
-                    <Text style={styles.premiumPrice}>${gig.price}</Text>
+                  <View style={styles.jobMetricBox}>
+                    <Text style={styles.jobMetricValue}>{project.duration || '—'}</Text>
+                    <Text style={styles.jobMetricLabel}>Duration</Text>
+                  </View>
+                  <View style={styles.jobMetricBox}>
+                    <Text style={styles.jobMetricValue}>{project.bidsCount ?? 0} Proposal</Text>
+                    <Text style={styles.jobMetricLabel}>Proposals</Text>
                   </View>
                 </View>
+                {project.description ? (
+                  <Text style={styles.jobDetails} numberOfLines={2}>{project.description}</Text>
+                ) : null}
+                {(project.tags?.length ?? 0) > 0 ? (
+                  <>
+                    <Text style={styles.tagsLabel}>Tags</Text>
+                    <View style={styles.tagsRow}>
+                      {(project.tags || []).slice(0, 4).map((tag: string, i: number) => (
+                        <View key={i} style={styles.tagChip}>
+                          <Text style={styles.tagChipText} numberOfLines={1}>{tag}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </>
+                ) : null}
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+            ))
+          )}
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -276,195 +325,169 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  topGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 350,
-    backgroundColor: '#1E1B4B',
-  },
-  scrollContent: { paddingBottom: 40 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 24 },
 
-  heroSection: {
-    height: 320,
-    width: '100%',
-    backgroundColor: '#1E1B4B',
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
-    overflow: 'hidden',
-    paddingTop: 10,
-  },
-  heroOverlay: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'space-between',
-  },
-  headerTop: {
+  header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
+    justifyContent: 'space-between',
+    paddingVertical: 16,
   },
-  greetingText: { color: '#C7D2FE', fontSize: 13, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 1 },
-  userNameText: { color: '#FFFFFF', fontSize: 26, fontWeight: '800', marginTop: 4 },
-  notificationBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+  headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  heyLabel: { fontSize: 16, color: '#64748B', fontWeight: '500' },
+  headerName: { fontSize: 18, fontWeight: '700', color: '#1E293B' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  avatar: { width: 44, height: 44, borderRadius: 22 },
+  avatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#0F172A',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  notifDot: {
-    position: 'absolute',
-    top: 14,
-    right: 14,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#10B981',
-    borderWidth: 2,
-    borderColor: '#1E1B4B',
+  avatarLetter: { fontSize: 18, fontWeight: '700', color: '#FFF' },
+  notificationBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
+      android: { elevation: 3 },
+    }),
   },
-  heroContent: {
-    marginBottom: 10,
-  },
-  heroTitle: {
-    color: '#FFF',
-    fontSize: 28,
-    fontWeight: '800',
-    lineHeight: 36,
-    marginBottom: 20,
-  },
-  searchWrapper: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  searchBarPremium: {
-    flex: 1,
-    height: 56,
+
+  findProjectsHeading: { fontSize: 22, fontWeight: '700', color: '#1E293B', marginBottom: 14 },
+  searchRow: { marginBottom: 24 },
+  searchBar: {
+    height: 52,
     backgroundColor: '#FFF',
     borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     gap: 12,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20 },
-      android: { elevation: 10 },
-    }),
+    borderWidth: 0,
   },
-  searchInputPremium: {
+  searchInput: {
     flex: 1,
     fontSize: 15,
     color: '#1E293B',
-    fontWeight: '500',
-  },
-  filterBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: '#4F46E5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Platform.select({
-      ios: { shadowColor: '#4F46E5', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 15 },
-      android: { elevation: 8 },
-    }),
+    paddingVertical: 0,
+    borderWidth: 0,
   },
 
-  sectionWrapper: { marginTop: 32 },
-  sectionHeaderPremium: {
+  section: { marginBottom: 28 },
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  sectionTitlePremium: { fontSize: 22, fontWeight: '800', color: '#1E293B' },
-  exploreText: { color: '#4F46E5', fontSize: 14, fontWeight: '700' },
+  sectionTitle: { fontSize: 20, fontWeight: '700', color: '#1E293B' },
+  showMore: { fontSize: 14, color: '#64748B', fontWeight: '500' },
 
-  categoryScrollPremium: { paddingLeft: 24, paddingRight: 10 },
-  serviceCard: {
-    width: 160,
-    height: 120,
+  allServiceSection: {
+    marginBottom: 20,
+  },
+  allServiceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  allServiceTitle: { fontSize: 18, fontWeight: '700', color: '#1E293B' },
+  allServiceViewAll: { fontSize: 14, color: '#64748B', fontWeight: '500' },
+  serviceScrollContent: {
+    flexDirection: 'row',
+    paddingRight: 20,
+    gap: 12,
+  },
+  serviceGridItem: {
+    width: 64,
+    alignItems: 'center',
+  },
+  serviceIconCircle: {
+    width: 48,
+    height: 48,
     borderRadius: 24,
-    marginRight: 16,
     overflow: 'hidden',
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 12 },
-      android: { elevation: 6 },
-    }),
+    marginBottom: 6,
+    backgroundColor: '#F1F5F9',
   },
-  serviceImage: { width: '100%', height: '100%' },
-  serviceOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: 16,
-    justifyContent: 'flex-end',
-    gap: 8,
+  serviceIconImage: {
+    width: '100%',
+    height: '100%',
   },
-  serviceName: { color: '#FFF', fontSize: 15, fontWeight: '700' },
-
-  gigScrollPremium: { paddingLeft: 24, paddingRight: 10 },
-  premiumGigCard: {
-    width: 280,
-    backgroundColor: '#FFF',
-    borderRadius: 28,
-    marginRight: 20,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 20 },
-      android: { elevation: 4 },
-    }),
-  },
-  premiumGigImageWrapper: { height: 180, position: 'relative' },
-  premiumGigImage: { width: '100%', height: '100%' },
-  premiumProBadge: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    backgroundColor: '#1E1B4B',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  premiumProText: { color: '#FFF', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
-  premiumFavBtn: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+  serviceIconPlaceholder: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  premiumGigInfo: { padding: 20 },
-  gigMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  gigAuthor: { fontSize: 13, color: '#64748B', fontWeight: '600' },
-  premiumRating: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  ratingValue: { fontSize: 13, fontWeight: '700', color: '#1E293B' },
-  premiumGigTitle: { fontSize: 17, fontWeight: '700', color: '#1E1B4B', lineHeight: 24, height: 48 },
-  premiumGigFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#F8FAFC',
+  serviceIconLetter: { fontSize: 18, fontWeight: '700', color: '#475569' },
+  serviceLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#1E293B',
+    textAlign: 'center',
+    maxWidth: 64,
   },
-  priceLabel: { fontSize: 13, color: '#94A3B8', fontWeight: '500' },
-  premiumPrice: { fontSize: 20, fontWeight: '800', color: '#4F46E5' },
+  allServiceEmpty: { color: '#64748B', fontSize: 13, paddingVertical: 8, paddingRight: 20 },
+
+  emptyState: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  emptyText: { fontSize: 15, color: '#64748B', marginBottom: 12 },
+  emptyBtn: { backgroundColor: '#0F172A', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12 },
+  emptyBtnText: { color: '#FFF', fontWeight: '600', fontSize: 14 },
+
+  jobCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
+      android: { elevation: 3 },
+    }),
+  },
+  jobCardLocation: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
+  jobCardLocationText: { fontSize: 12, color: '#64748B', fontWeight: '500' },
+  jobTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 6 },
+  jobPosted: { fontSize: 12, color: '#64748B', marginBottom: 12 },
+  jobMetricsRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  jobMetricBox: {
+    flex: 1,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  jobMetricValue: { fontSize: 12, fontWeight: '700', color: '#1E293B' },
+  jobMetricLabel: { fontSize: 10, color: '#64748B', marginTop: 2 },
+  jobDetails: { fontSize: 13, color: '#64748B', marginBottom: 10, lineHeight: 18 },
+  tagsLabel: { fontSize: 13, fontWeight: '600', color: '#1E293B', marginBottom: 6 },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
+  tagChip: { backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  tagChipText: { fontSize: 11, color: '#475569', maxWidth: 80 },
+
+  skeleton: { backgroundColor: '#E2E8F0' },
+  skeletonCard: { backgroundColor: '#FFF', borderColor: '#E2E8F0' },
+  skeletonTextWrap: { marginLeft: 12, flex: 1 },
+  skeletonLine: { backgroundColor: '#E2E8F0', borderRadius: 6 },
+  skeletonCircle: { backgroundColor: '#E2E8F0' },
 });

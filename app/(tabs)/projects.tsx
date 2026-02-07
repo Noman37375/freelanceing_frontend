@@ -155,7 +155,7 @@ export default function ProjectsScreen() {
         {/* Project List */}
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#4F46E5" />
+            <ActivityIndicator size="large" color="#0F172A" />
             <Text style={styles.loadingText}>Fetching opportunities...</Text>
           </View>
         ) : (
@@ -163,7 +163,7 @@ export default function ProjectsScreen() {
             style={styles.listContainer}
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0F172A" />
             }
           >
             <View style={styles.resultsHeader}>
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#C7D2FE',
+    color: '#94A3B8',
     fontWeight: '500'
   },
   iconCircle: {
@@ -353,8 +353,8 @@ const styles = StyleSheet.create({
     borderColor: '#F1F5F9',
   },
   activeChip: {
-    backgroundColor: "#4F46E5",
-    borderColor: '#4F46E5',
+    backgroundColor: "#0F172A",
+    borderColor: '#0F172A',
   },
   chipText: {
     fontSize: 13,
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   },
   bidText: {
     fontSize: 12,
-    color: "#4F46E5",
+    color: "#0F172A",
     fontWeight: "700"
   },
   loadingContainer: {
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
     flex: 2,
     height: 52,
     borderRadius: 14,
-    backgroundColor: "#4F46E5",
+    backgroundColor: "#0F172A",
     alignItems: "center",
     justifyContent: 'center',
   },

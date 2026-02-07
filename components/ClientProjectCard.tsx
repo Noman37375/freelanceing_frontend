@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Clock, DollarSign, User } from 'lucide-react-native';
+import { Clock, DollarSign, User, MessageSquare } from 'lucide-react-native';
 
 interface ClientProjectCardProps {
   title: string;
@@ -7,6 +7,7 @@ interface ClientProjectCardProps {
   status: 'Active' | 'Completed' | 'In Progress' | 'Pending' | 'Cancelled';
   freelancer?: string;
   deadline: string;
+  totalBids?: number;
   onPress?: () => void;
 }
 
@@ -55,6 +56,13 @@ export default function ClientProjectCard({
           <Clock size={16} color="#6B7280" strokeWidth={2} />
           <Text style={styles.infoText}>{deadline}</Text>
         </View>
+
+        {totalBids !== undefined && (
+          <View style={styles.infoItem}>
+            <MessageSquare size={16} color="#6B7280" strokeWidth={2} />
+            <Text style={styles.infoText}>{totalBids} bid{totalBids !== 1 ? 's' : ''}</Text>
+          </View>
+        )}
       </View>
 
       {freelancer && (

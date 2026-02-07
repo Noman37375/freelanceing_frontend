@@ -164,7 +164,7 @@ export default function ProfileScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4F46E5" />
+        <ActivityIndicator size="large" color="#0F172A" />
       </View>
     );
   }
@@ -286,7 +286,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.menuItem} onPress={() => setEditModalVisible(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={styles.iconBox}>
-                  <User size={18} color="#4F46E5" />
+                  <User size={18} color="#0F172A" />
                 </View>
                 <Text style={styles.menuItemText}>Account</Text>
               </View>
@@ -296,7 +296,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.menuItem} onPress={() => setNotifModalVisible(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={styles.iconBox}>
-                  <Bell size={18} color="#4F46E5" />
+                  <Bell size={18} color="#0F172A" />
                   {unreadCount > 0 && <View style={styles.menuBadge} />}
                 </View>
                 <Text style={styles.menuItemText}>Notifications</Text>
@@ -307,7 +307,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={() => setWalletModalVisible(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={styles.iconBox}>
-                  <WalletIcon size={18} color="#4F46E5" />
+                  <WalletIcon size={18} color="#0F172A" />
                 </View>
                 <Text style={styles.menuItemText}>Wallet</Text>
               </View>
@@ -321,7 +321,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={() => setDisputeModalVisible(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={styles.iconBox}>
-                  <ShieldCheck size={18} color="#4F46E5" />
+                  <ShieldCheck size={18} color="#0F172A" />
                 </View>
                 <Text style={styles.menuItemText}>Resolution Center</Text>
               </View>
@@ -462,7 +462,7 @@ export default function ProfileScreen() {
                   router.push('../wallet' as any);
                 }}
               >
-                <HistoryIcon size={18} color="#4F46E5" />
+                <HistoryIcon size={18} color="#0F172A" />
                 <Text style={styles.drawerPrimaryBtnText}>View History</Text>
               </TouchableOpacity>
 
@@ -499,7 +499,7 @@ export default function ProfileScreen() {
             </View>
 
             {isNotifLoading && notifications.length === 0 ? (
-              <ActivityIndicator style={{ marginVertical: 30 }} color="#4F46E5" />
+              <ActivityIndicator style={{ marginVertical: 30 }} color="#0F172A" />
             ) : (
               <FlatList
                 data={notifications}
@@ -570,7 +570,7 @@ export default function ProfileScreen() {
                   router.push('../FDisputes' as any);
                 }}
               >
-                <HistoryIcon size={18} color="#4F46E5" />
+                <HistoryIcon size={18} color="#0F172A" />
                 <Text style={styles.drawerPrimaryBtnText}>My Disputes</Text>
               </TouchableOpacity>
 
@@ -655,7 +655,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 2,
     right: 2,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#0F172A',
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -690,7 +690,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   proPill: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#0F172A',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -839,7 +839,7 @@ const styles = StyleSheet.create({
   areaInput: { height: 100, textAlignVertical: "top" },
   skillEntry: { flexDirection: "row", gap: 10, marginBottom: 12 },
   plusBtn: {
-    backgroundColor: "#4F46E5",
+    backgroundColor: "#0F172A",
     width: 52,
     height: 52,
     borderRadius: 14,
@@ -848,14 +848,14 @@ const styles = StyleSheet.create({
   },
   sheetSkills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   saveBtn: {
-    backgroundColor: "#4F46E5",
+    backgroundColor: "#0F172A",
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
     marginTop: 20,
     ...Platform.select({
       ios: {
-        shadowColor: "#4F46E5",
+        shadowColor: "#0F172A",
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.3,
         shadowRadius: 10,
@@ -896,14 +896,14 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     borderRadius: 14,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#F1F5F9',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
   drawerPrimaryBtnText: {
-    color: '#4F46E5',
+    color: '#0F172A',
     fontWeight: '700',
     fontSize: 15,
   },
@@ -911,7 +911,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     borderRadius: 14,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#0F172A',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -964,7 +964,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   drawerFullBtn: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#F1F5F9',
     height: 52,
     borderRadius: 14,
     justifyContent: 'center',
@@ -972,7 +972,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   drawerFullBtnText: {
-    color: '#4F46E5',
+    color: '#0F172A',
     fontWeight: '700',
     fontSize: 15,
   },
@@ -991,7 +991,7 @@ const styles = StyleSheet.create({
     marginRight: 12
   },
   notifDotActive: {
-    backgroundColor: '#4F46E5'
+    backgroundColor: '#0F172A'
   },
   drawerNotifItemTitle: {
     fontSize: 14,

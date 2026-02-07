@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,7 +22,7 @@ import { COLORS, TYPOGRAPHY, BORDER_RADIUS, SPACING, SHADOWS } from '@/constants
 export default function CompleteProfile() {
   const router = useRouter();
   const params = useLocalSearchParams<{ email?: string; userId?: string }>();
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, isLoading: authLoading } = useAuth();
 
   const [bio, setBio] = useState(user?.bio || '');
   const [profileImage, setProfileImage] = useState<string | null>(user?.profileImage || null);
@@ -47,6 +47,12 @@ export default function CompleteProfile() {
   const [phone, setPhone] = useState(user?.phone || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    if (!authLoading && !user && !params.email) {
+      router.replace('/login' as any);
+    }
+  }, [authLoading, user, params.email, router]);
 
   const addSkill = () => {
     const trimmed = skillInput.trim();
@@ -97,6 +103,10 @@ export default function CompleteProfile() {
 
   const handleSubmit = async () => {
     setErrorMessage('');
+    if (!user) {
+      setErrorMessage('Session loading. Please wait a moment and try again.');
+      return;
+    }
     if (!bio.trim()) {
       setErrorMessage('Please add a short bio.');
       return;
@@ -149,8 +159,18 @@ export default function CompleteProfile() {
       ? profileImage
       : profileImage
         ? profileImage
-        : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.userName || 'F')}&background=4F46E5&color=fff&size=120`;
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.userName || params.email?.charAt(0) || 'F')}&background=4F46E5&color=fff&size=120`;
   const showImage = !!profileImage;
+
+  if (authLoading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <StatusBar style="dark" />
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading…</Text>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -338,6 +358,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.white,
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: SPACING.m,
+    fontSize: TYPOGRAPHY.fontSize.base,
+    color: COLORS.textTertiary,
   },
   scrollContent: {
     paddingHorizontal: SPACING.l,

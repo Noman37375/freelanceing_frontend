@@ -14,21 +14,28 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Search, Filter } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import ProjectCard from '@/components/ProjectCard';
 import { projectService } from '@/services/projectService';
 import { Project } from '@/models/Project';
 
 export default function FindProjectsScreen() {
   const router = useRouter();
+  const { search: paramSearch, category: paramCategory } = useLocalSearchParams<{ search?: string; category?: string }>();
   const [projects, setProjects] = useState<Project[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
-  const [searchText, setSearchText] = useState('');
-  const [filterType, setFilterType] = useState('All');
+  const [searchText, setSearchText] = useState(paramSearch ?? '');
+  const [filterType, setFilterType] = useState((paramCategory as string) ?? 'All');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch projects from API
+  // Sync from URL params when they change (e.g. navigate with new search)
+  useEffect(() => {
+    if (paramSearch !== undefined) setSearchText(paramSearch);
+    if (paramCategory !== undefined) setFilterType((paramCategory as string) || 'All');
+  }, [paramSearch, paramCategory]);
+
+  // Fetch projects from API (with search + category); results are server-filtered
   const fetchProjects = async () => {
     try {
       setLoading(true);
@@ -36,8 +43,8 @@ export default function FindProjectsScreen() {
       if (filterType !== 'All') {
         filters.category = filterType;
       }
-      if (searchText) {
-        filters.search = searchText;
+      if (searchText.trim()) {
+        filters.search = searchText.trim();
       }
       const fetchedProjects = await projectService.getProjects(filters);
       setProjects(fetchedProjects);
@@ -51,22 +58,10 @@ export default function FindProjectsScreen() {
     }
   };
 
+  // Refetch when search or category changes (including from URL params)
   useEffect(() => {
     fetchProjects();
-  }, []);
-
-  // 🔍 Search & filter logic
-  useEffect(() => {
-    let result = projects.filter((p) =>
-      p.title.toLowerCase().includes(searchText.toLowerCase())
-    );
-
-    if (filterType !== 'All') {
-      result = result.filter((p) => p.category === filterType);
-    }
-
-    setFilteredProjects(result);
-  }, [searchText, filterType, projects]);
+  }, [searchText, filterType]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -135,7 +130,7 @@ export default function FindProjectsScreen() {
         {/* 🧩 Project List */}
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#4F46E5" />
+            <ActivityIndicator size="large" color="#0F172A" />
             <Text style={styles.loadingText}>Searching available projects...</Text>
           </View>
         ) : filteredProjects.length === 0 ? (
@@ -160,8 +155,8 @@ export default function FindProjectsScreen() {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                colors={['#4F46E5']}
-                tintColor="#4F46E5"
+                colors={['#0F172A']}
+                tintColor="#0F172A"
               />
             }
           />
@@ -244,8 +239,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   filterButtonActive: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5'
+    backgroundColor: '#0F172A',
+    borderColor: '#0F172A'
   },
   filterButtonText: {
     color: '#64748B',

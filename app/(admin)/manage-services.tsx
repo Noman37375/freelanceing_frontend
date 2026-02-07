@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Platform, StatusBar, Image, ScrollView } from 'react-native';
-import { Trash2, Edit2, X, ChevronLeft, Plus, Image as ImageIcon, Box, LayoutGrid } from 'lucide-react-native';
+import { Trash2, Edit2, X, ChevronLeft, Plus, Box, LayoutGrid } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -37,14 +37,14 @@ export default function ManageServices() {
     }, [loadServices]);
 
     const handleSave = async () => {
-        if (!name || !icon || !imageUrl) {
-            Alert.alert('Error', 'Please fill all fields');
+        if (!name || !imageUrl) {
+            Alert.alert('Error', 'Please fill name and image URL');
             return;
         }
 
         try {
             setIsActionLoading(true);
-            const serviceData = { name, icon, image: imageUrl };
+            const serviceData = { name, image: imageUrl };
 
             if (editingService) {
                 await adminService.updateServiceCategory(editingService.id, serviceData);
@@ -91,14 +91,12 @@ export default function ManageServices() {
     const handleEdit = (service: any) => {
         setEditingService(service);
         setName(service.name);
-        setIcon(service.icon || '');
-        setImageUrl(service.image);
+        setImageUrl(service.image || '');
         setModalVisible(true);
     };
 
     const resetForm = () => {
         setName('');
-        setIcon('');
         setImageUrl('');
         setEditingService(null);
     };
@@ -224,18 +222,7 @@ export default function ManageServices() {
                             </View>
 
                             <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Icon Name (Lucide)</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    value={icon}
-                                    onChangeText={setIcon}
-                                    placeholder="e.g. Code, PenTool, Smartphone"
-                                    placeholderTextColor="#94A3B8"
-                                />
-                            </View>
-
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Background Image URL</Text>
+                                <Text style={styles.label}>Image URL</Text>
                                 <TextInput
                                     style={styles.input}
                                     value={imageUrl}
@@ -363,7 +350,6 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     serviceName: { color: '#FFF', fontSize: 15, fontWeight: '800', letterSpacing: 0.2 },
-    serviceIcon: { color: 'rgba(255,255,255,0.72)', fontSize: 12, fontWeight: '600' },
     cardActions: { flexDirection: 'row', gap: 8 },
     actionBtn: {
         width: 32,

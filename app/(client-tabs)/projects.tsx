@@ -131,6 +131,7 @@ export default function Projects() {
               status={getProjectDisplayStatus(item)}
               freelancer={item.freelancer?.userName}
               deadline={item.duration || 'Not specified'}
+              totalBids={item.bidsCount ?? 0}
               onPress={() =>
                 router.push({
                   pathname: '/client/ProjectDetail' as any,

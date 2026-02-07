@@ -1,12 +1,13 @@
 export const COLORS = {
-  primary: '#4F46E5', // Indigo 600
-  primaryDark: '#4338CA', // Indigo 700
+  primary: '#0F172A', // Black / Slate 900
+  primaryDark: '#020617', // Slate 950
   primaryLight: '#818CF8', // Indigo 400
 
   secondary: '#EC4899', // Pink 500
   secondaryDark: '#DB2777', // Pink 600
 
-  background: '#  ', // Slate 900
+  background: '#0F172A', // Slate 900
+  backgroundLight: '#F8FAFC', // Light screen bg
   surface: '#1E293B', // Slate 800
   surfaceHighlight: '#334155', // Slate 700
 
@@ -17,7 +18,7 @@ export const COLORS = {
   success: '#10B981', // Emerald 500
   warning: '#F59E0B', // Amber 500
   error: '#EF4444', // Red 500
-  info: '#3B82F6', // Blue 500
+  info: '#0F172A', // Black
 
   white: '#FFFFFF',
   black: '#000000',
@@ -36,7 +37,7 @@ export const GRADIENTS = {
   success: ['#10B981', '#059669'],
   warning: ['#F59E0B', '#D97706'],
   error: ['#EF4444', '#DC2626'],
-  info: ['#3B82F6', '#2563EB'],
+  info: ['#0F172A', '#1E293B'],
   purple: ['#8B5CF6', '#7C3AED'],
   ocean: ['#06B6D4', '#0891B2'],
   sunset: ['#F59E0B', '#EC4899'],

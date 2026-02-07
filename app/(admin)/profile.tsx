@@ -1,14 +1,77 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Edit2, Shield, Mail, Calendar, MapPin, Award } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminProfileCard from '@/components/admin/AdminProfileCard';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function AdminProfilePage() {
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, updateProfile, refreshUser } = useAuth();
+
+    const [editModalVisible, setEditModalVisible] = useState(false);
+    const [editedUserName, setEditedUserName] = useState(user?.userName || '');
+    const [isSaving, setIsSaving] = useState(false);
+
+    const defaultAvatar = user?.profileImage ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.userName || 'Admin User')}&background=4F46E5&color=fff&size=200`;
+
+    const handleOpenEdit = () => {
+        setEditedUserName(user?.userName || '');
+        setEditModalVisible(true);
+    };
+
+    const handlePickImage = async () => {
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission needed', 'Allow access to your photos to change profile picture.');
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.5,
+                base64: true,
+            });
+
+            if (!result.canceled && result.assets[0].base64) {
+                setIsSaving(true);
+                const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
+                await updateProfile({ profileImage: base64Img } as any);
+                await refreshUser();
+                Alert.alert('Success', 'Profile photo updated and saved.');
+            }
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Error', 'Failed to upload image. Please try again.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleSaveProfile = async () => {
+        if (!editedUserName || editedUserName.trim().length < 3) {
+            Alert.alert('Error', 'Name must be at least 3 characters long.');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            await updateProfile({ userName: editedUserName.trim() } as any);
+            await refreshUser();
+            setEditModalVisible(false);
+            Alert.alert('Success', 'Profile updated successfully!');
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to update profile');
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -24,12 +87,13 @@ export default function AdminProfilePage() {
                 <AdminProfileCard
                     name={user?.userName || 'Admin User'}
                     role="System Administrator"
-                    location="Platform HQ"
-                    avatarUrl={user?.profileImage}
+                    // location="Platform HQ"   
+                    avatarUrl={defaultAvatar}
+                    onEditPress={handleOpenEdit}
+                    onAvatarPress={handlePickImage}
                 />
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Basic Information</Text>
                     <View style={styles.infoCard}>
                         <View style={styles.infoRow}>
                             <View style={styles.iconBox}>
@@ -82,10 +146,51 @@ export default function AdminProfilePage() {
                     </View>
                 </View>
 
-                <TouchableOpacity style={styles.saveButton}>
-                    <Text style={styles.saveButtonText}>Edit Global Settings</Text>
-                </TouchableOpacity>
             </ScrollView>
+
+            <Modal
+                visible={editModalVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setEditModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Edit Admin Profile</Text>
+
+                        <View style={styles.modalField}>
+                            <Text style={styles.modalLabel}>Full Name</Text>
+                            <TextInput
+                                style={styles.modalInput}
+                                value={editedUserName}
+                                onChangeText={setEditedUserName}
+                                placeholder="Enter admin name"
+                                placeholderTextColor="#94A3B8"
+                            />
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.modalButtonPrimary, isSaving && { opacity: 0.7 }]}
+                            onPress={handleSaveProfile}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? (
+                                <ActivityIndicator color="#FFFFFF" />
+                            ) : (
+                                <Text style={styles.modalButtonPrimaryText}>Save Changes</Text>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.modalCancel}
+                            onPress={() => setEditModalVisible(false)}
+                            disabled={isSaving}
+                        >
+                            <Text style={styles.modalCancelText}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -200,5 +305,76 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontWeight: '800',
         fontSize: 15,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(15, 23, 42, 0.7)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 24,
+        paddingBottom: 32,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#1E293B',
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    modalField: {
+        marginBottom: 20,
+    },
+    modalLabel: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#475569',
+        marginBottom: 8,
+    },
+    modalInput: {
+        backgroundColor: '#F8FAFC',
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        fontSize: 14,
+        color: '#0F172A',
+    },
+    modalButtonPrimary: {
+        backgroundColor: '#4F46E5',
+        paddingVertical: 14,
+        borderRadius: 14,
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    modalButtonPrimaryText: {
+        color: '#FFFFFF',
+        fontSize: 15,
+        fontWeight: '800',
+    },
+    modalButtonSecondary: {
+        backgroundColor: '#EEF2FF',
+        paddingVertical: 12,
+        borderRadius: 14,
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    modalButtonSecondaryText: {
+        color: '#4F46E5',
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    modalCancel: {
+        marginTop: 12,
+        alignItems: 'center',
+    },
+    modalCancelText: {
+        color: '#64748B',
+        fontSize: 14,
+        fontWeight: '600',
     },
 });

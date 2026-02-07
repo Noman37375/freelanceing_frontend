@@ -1,39 +1,66 @@
 import { Slot, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, View } from 'react-native';
+import * as SplashScreenNative from 'expo-splash-screen';
+import { View } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { WalletProvider } from '@/contexts/WalletContext';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import SplashScreen from '@/components/SplashScreen';
+
+// Keep native splash visible until we're ready, then hide so custom splash shows
+SplashScreenNative.preventAutoHideAsync();
+
+const SPLASH_MIN_MS = 2000;
 
 function RootNavigation() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname(); // current path
+  const pathname = usePathname();
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
   useEffect(() => {
-    // Allow access to auth pages without login
-    const publicRoutes = ['/login', '/signup', '/forgot-password', '/verify-email', '/change-password'];
+    const t = setTimeout(() => setMinTimeElapsed(true), SPLASH_MIN_MS);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const publicRoutes = ['/welcome', '/login', '/signup', '/forgot-password', '/verify-email', '/change-password'];
     const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route));
-    
     if (!isLoading && !user && !isPublicRoute) {
-      router.replace('/login'); // redirect only if not already on login/signup
+      router.replace('/welcome');
     }
   }, [isLoading, user, pathname, router]);
 
-  // Show loading only if we're checking auth and not on a public route
-  const publicRoutes = ['/login', '/signup', '/forgot-password', '/verify-email', '/change-password'];
+  const publicRoutes = ['/welcome', '/login', '/signup', '/forgot-password', '/verify-email', '/change-password'];
   const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route));
-  
-  if (isLoading && !isPublicRoute && !user) {
+  const showSplash = !minTimeElapsed || (isLoading && !isPublicRoute && !user);
+  const prevShowSplash = useRef(true);
+
+  // When splash ends and user is not logged in, always show welcome first (so restored /login doesn't skip it)
+  useEffect(() => {
+    if (prevShowSplash.current && !showSplash && !user) {
+      router.replace('/welcome');
+    }
+    prevShowSplash.current = showSplash;
+  }, [showSplash, user, router]);
+
+  useEffect(() => {
+    if (showSplash) {
+      SplashScreenNative.hideAsync().catch(() => {});
+    }
+  }, [showSplash]);
+
+  if (showSplash) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+      <View style={{ flex: 1 }}>
+        <StatusBar style="light" />
+        <SplashScreen />
       </View>
     );
   }
 
-  return <Slot />; // user logged in or on public route
+  return <Slot />;
 }
 
 export default function RootLayout() {

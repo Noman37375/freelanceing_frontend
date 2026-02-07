@@ -1,10 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Switch, Platform, StatusBar } from 'react-native';
-import { Trash2, Edit2, X, ChevronLeft } from 'lucide-react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Switch, Platform, StatusBar, Pressable } from 'react-native';
+import { Trash2, Edit2, X, ChevronLeft, MoreVertical, UserX, UserCheck } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
 import { ClientProfile } from '@/models/User';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+
+const SHADOWS = {
+    lg: Platform.select({
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20 },
+        android: { elevation: 10 },
+        web: { boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.1)' },
+    }),
+};
 
 export default function ManageClients() {
     const router = useRouter();
@@ -16,6 +24,8 @@ export default function ManageClients() {
     const [editIsVerified, setEditIsVerified] = useState(false);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [optionsModalVisible, setOptionsModalVisible] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<ClientProfile | null>(null);
 
     const loadClients = useCallback(async () => {
         try {
@@ -33,9 +43,52 @@ export default function ManageClients() {
         loadClients();
     }, [loadClients]);
 
-    const handleDelete = async (id: string, userName: string) => {
+    const openOptions = (user: ClientProfile) => {
+        setSelectedUser(user);
+        setOptionsModalVisible(true);
+    };
+
+    const closeOptions = () => {
+        setOptionsModalVisible(false);
+        setSelectedUser(null);
+    };
+
+    const handleSuspend = async () => {
+        if (!selectedUser) return;
+        closeOptions();
+        try {
+            setDeletingId(selectedUser.id);
+            await adminService.suspendUser(selectedUser.id);
+            setClients(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: 'suspended' as const } : u));
+            Alert.alert('Success', `${selectedUser.userName} has been suspended.`);
+        } catch (error) {
+            Alert.alert('Error', 'Failed to suspend client');
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const handleReactivate = async () => {
+        if (!selectedUser) return;
+        closeOptions();
+        try {
+            setDeletingId(selectedUser.id);
+            await adminService.reactivateUser(selectedUser.id);
+            setClients(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: 'active' as const } : u));
+            Alert.alert('Success', `${selectedUser.userName} has been reactivated.`);
+        } catch (error) {
+            Alert.alert('Error', 'Failed to reactivate client');
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!selectedUser) return;
+        const { id, userName } = selectedUser;
+        closeOptions();
         if (Platform.OS === 'web') {
-            const confirmed = window.confirm(`Are you sure you want to delete ${userName}?`);
+            const confirmed = window.confirm(`Are you sure you want to delete ${userName}? This cannot be undone.`);
             if (confirmed) {
                 try {
                     setDeletingId(id);
@@ -50,7 +103,7 @@ export default function ManageClients() {
         } else {
             Alert.alert(
                 'Delete Client',
-                `Are you sure you want to delete ${userName}?`,
+                `Are you sure you want to delete ${userName}? This cannot be undone.`,
                 [
                     { text: 'Cancel', style: 'cancel' },
                     {
@@ -120,14 +173,14 @@ export default function ManageClients() {
                         <Edit2 size={18} color={deletingId ? "#CBD5E1" : "#4F46E5"} />
                     </TouchableOpacity>
                     <TouchableOpacity
-                        onPress={() => handleDelete(item.id, item.userName)}
+                        onPress={() => openOptions(item)}
                         style={styles.iconButton}
                         disabled={!!deletingId}
                     >
                         {deletingId === item.id ? (
-                            <ActivityIndicator size="small" color="#EF4444" />
+                            <ActivityIndicator size="small" color="#64748B" />
                         ) : (
-                            <Trash2 size={18} color={deletingId ? "#CBD5E1" : "#EF4444"} />
+                            <MoreVertical size={18} color={deletingId ? "#CBD5E1" : "#64748B"} />
                         )}
                     </TouchableOpacity>
                 </View>
@@ -140,9 +193,9 @@ export default function ManageClients() {
             </View>
 
             <View style={styles.cardFooter}>
-                <View style={[styles.statusBadge, item.isVerified ? styles.activeBadge : styles.suspendedBadge]}>
-                    <Text style={[styles.statusText, item.isVerified ? styles.activeText : styles.suspendedText]}>
-                        {item.isVerified ? 'Verified' : 'Unverified'}
+                <View style={[styles.statusBadge, item.status === 'suspended' ? styles.suspendedBadge : styles.activeBadge]}>
+                    <Text style={[styles.statusText, item.status === 'suspended' ? styles.suspendedText : styles.activeText]}>
+                        {item.status === 'suspended' ? 'Suspended' : 'Active'}
                     </Text>
                 </View>
             </View>
@@ -232,6 +285,47 @@ export default function ManageClients() {
                         </TouchableOpacity>
                     </View>
                 </View>
+            </Modal>
+
+            {/* Options Modal: Suspend | Reactivate | Delete */}
+            <Modal
+                visible={optionsModalVisible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={closeOptions}
+            >
+                <Pressable style={styles.modalOverlay} onPress={closeOptions}>
+                    <View style={styles.optionsModalContent} onStartShouldSetResponder={() => true}>
+                        <View style={styles.optionsModalHeader}>
+                            <Text style={styles.optionsModalTitle}>{selectedUser?.userName}</Text>
+                            <TouchableOpacity onPress={closeOptions} style={styles.closeButton}>
+                                <X size={20} color="#64748B" />
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={styles.optionsModalSub}>Choose an action</Text>
+
+                        {selectedUser?.status === 'suspended' ? (
+                            <TouchableOpacity style={styles.optionRow} onPress={handleReactivate}>
+                                <UserCheck size={20} color="#10B981" />
+                                <Text style={[styles.optionRowText, { color: '#10B981' }]}>Reactivate</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <TouchableOpacity style={styles.optionRow} onPress={handleSuspend}>
+                                <UserX size={20} color="#F59E0B" />
+                                <Text style={[styles.optionRowText, { color: '#F59E0B' }]}>Suspend</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        <TouchableOpacity
+                            style={[styles.optionRow, styles.optionRowDanger, selectedUser?.status !== 'suspended' && styles.optionRowDisabled]}
+                            onPress={handleDelete}
+                            disabled={selectedUser?.status !== 'suspended'}
+                        >
+                            <Trash2 size={20} color={selectedUser?.status === 'suspended' ? '#EF4444' : '#94A3B8'} />
+                            <Text style={[styles.optionRowText, { color: selectedUser?.status === 'suspended' ? '#EF4444' : '#94A3B8' }]}>Delete</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Pressable>
             </Modal>
         </SafeAreaView>
     );
@@ -487,6 +581,49 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     disabledButton: {
+        opacity: 0.6,
+    },
+    optionsModalContent: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 20,
+        margin: 24,
+        ...SHADOWS.lg,
+    },
+    optionsModalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    optionsModalTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#1E293B',
+    },
+    optionsModalSub: {
+        fontSize: 13,
+        color: '#64748B',
+        marginBottom: 16,
+    },
+    optionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingVertical: 14,
+        paddingHorizontal: 4,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F5F9',
+    },
+    optionRowText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    optionRowDanger: {
+        borderBottomWidth: 0,
+        marginTop: 4,
+    },
+    optionRowDisabled: {
         opacity: 0.6,
     },
 });

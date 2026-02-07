@@ -6,7 +6,7 @@ export default function Index() {
 
   if (isLoading) return null; // wait until auth state loads
 
-  if (!user) return <Redirect href={"/login" as any} />; // not logged in → login page
+  if (!user) return <Redirect href={"/welcome" as any} />; // not logged in → welcome then login
 
   // Redirect based on user role
   if (user.role === 'Admin') {

@@ -8,15 +8,13 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Dimensions,
-  StatusBar,
-  ScrollView
+  ScrollView,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import { Eye, EyeOff, User, Mail, Lock, Briefcase, UserCircle, Check, ArrowRight, CheckCircle2 } from "lucide-react-native";
+import { Eye, EyeOff, User, Mail, Lock, Briefcase, UserCircle, CheckCircle2 } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
-
-const { width } = Dimensions.get("window");
+import { COLORS, TYPOGRAPHY, BORDER_RADIUS, SPACING, SHADOWS } from "@/constants/theme";
 
 export default function Signup() {
   const [userName, setUserName] = useState("");
@@ -86,14 +84,17 @@ export default function Signup() {
       const response = await signup(userName, email, password, role);
       console.log('[Signup] Signup successful:', response);
 
-      // Automatically navigate to OTP verification screen
-      router.push({
-        pathname: "/verify-email",
-        params: {
-          email: email,
-          userId: response.user.id,
-        },
-      } as any);
+      if (role === 'Freelancer') {
+        router.replace({
+          pathname: "/complete-profile",
+          params: { email: email, userId: response.user.id },
+        } as any);
+      } else {
+        router.push({
+          pathname: "/verify-email",
+          params: { email: email, userId: response.user.id },
+        } as any);
+      }
     } catch (error: any) {
       console.error('[Signup] Error:', error);
       let errorMsg = error.message || "Signup failed. Please try again.";
@@ -117,19 +118,20 @@ export default function Signup() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
+      <StatusBar style="dark" />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.logoText}>FreelancePro</Text>
+          <Text style={styles.logoText}>PAK FREELANCE</Text>
         </View>
 
         <View style={styles.mainContent}>
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>Join FreelancePro</Text>
-            <Text style={styles.subtitle}>Create an account to start your journey</Text>
+            <Text style={styles.title}>Create account</Text>
+            <Text style={styles.subtitle}>Join to find projects or hire freelancers</Text>
           </View>
 
           {errorMessage ? (
@@ -146,11 +148,11 @@ export default function Signup() {
                 styles.inputWrapper,
                 focusedInput === 'userName' && styles.inputWrapperFocused
               ]}>
-                <User size={20} color={focusedInput === 'userName' ? '#1dbf73' : '#62646a'} />
+                <User size={20} color={focusedInput === 'userName' ? COLORS.primary : COLORS.textTertiary} />
                 <TextInput
                   style={styles.input}
                   placeholder="john_doe"
-                  placeholderTextColor="#95979d"
+                  placeholderTextColor={COLORS.textTertiary}
                   value={userName}
                   onChangeText={(text) => {
                     setUserName(text);
@@ -171,11 +173,11 @@ export default function Signup() {
                 styles.inputWrapper,
                 focusedInput === 'email' && styles.inputWrapperFocused
               ]}>
-                <Mail size={20} color={focusedInput === 'email' ? '#1dbf73' : '#62646a'} />
+                <Mail size={20} color={focusedInput === 'email' ? COLORS.primary : COLORS.textTertiary} />
                 <TextInput
                   style={styles.input}
                   placeholder="name@email.com"
-                  placeholderTextColor="#95979d"
+                  placeholderTextColor={COLORS.textTertiary}
                   value={email}
                   onChangeText={(text) => {
                     setEmail(text);
@@ -197,11 +199,11 @@ export default function Signup() {
                 styles.inputWrapper,
                 focusedInput === 'password' && styles.inputWrapperFocused
               ]}>
-                <Lock size={20} color={focusedInput === 'password' ? '#1dbf73' : '#62646a'} />
+                <Lock size={20} color={focusedInput === 'password' ? COLORS.primary : COLORS.textTertiary} />
                 <TextInput
                   style={styles.input}
                   placeholder="6+ characters"
-                  placeholderTextColor="#95979d"
+                  placeholderTextColor={COLORS.textTertiary}
                   value={password}
                   onChangeText={handlePasswordChange}
                   secureTextEntry={!showPassword}
@@ -213,7 +215,7 @@ export default function Signup() {
                   onPress={() => setShowPassword(!showPassword)}
                   style={styles.eyeIcon}
                 >
-                  {showPassword ? <EyeOff size={20} color="#62646a" /> : <Eye size={20} color="#62646a" />}
+                  {showPassword ? <EyeOff size={20} color={COLORS.textTertiary} /> : <Eye size={20} color={COLORS.textTertiary} />}
                 </TouchableOpacity>
               </View>
 
@@ -221,15 +223,15 @@ export default function Signup() {
               {password.length > 0 && (
                 <View style={styles.criteriaContainer}>
                   <View style={styles.criteriaItem}>
-                    <CheckCircle2 size={14} color={passwordCriteria.minLength ? '#1dbf73' : '#e4e5e7'} />
+                    <CheckCircle2 size={14} color={passwordCriteria.minLength ? COLORS.primary : '#e2e8f0'} />
                     <Text style={[styles.criteriaText, passwordCriteria.minLength && styles.criteriaTextActive]}>6+ chars</Text>
                   </View>
                   <View style={styles.criteriaItem}>
-                    <CheckCircle2 size={14} color={passwordCriteria.hasUppercase ? '#1dbf73' : '#e4e5e7'} />
+                    <CheckCircle2 size={14} color={passwordCriteria.hasUppercase ? COLORS.primary : '#e2e8f0'} />
                     <Text style={[styles.criteriaText, passwordCriteria.hasUppercase && styles.criteriaTextActive]}>Uppercase</Text>
                   </View>
                   <View style={styles.criteriaItem}>
-                    <CheckCircle2 size={14} color={passwordCriteria.hasNumber ? '#1dbf73' : '#e4e5e7'} />
+                    <CheckCircle2 size={14} color={passwordCriteria.hasNumber ? COLORS.primary : '#e2e8f0'} />
                     <Text style={[styles.criteriaText, passwordCriteria.hasNumber && styles.criteriaTextActive]}>Number</Text>
                   </View>
                 </View>
@@ -243,11 +245,11 @@ export default function Signup() {
                 styles.inputWrapper,
                 focusedInput === 'confirmPassword' && styles.inputWrapperFocused
               ]}>
-                <Lock size={20} color={focusedInput === 'confirmPassword' ? '#1dbf73' : '#62646a'} />
+                <Lock size={20} color={focusedInput === 'confirmPassword' ? COLORS.primary : COLORS.textTertiary} />
                 <TextInput
                   style={styles.input}
                   placeholder="Repeat password"
-                  placeholderTextColor="#95979d"
+                  placeholderTextColor={COLORS.textTertiary}
                   value={confirmPassword}
                   onChangeText={(text) => {
                     setConfirmPassword(text);
@@ -271,7 +273,7 @@ export default function Signup() {
                   activeOpacity={0.9}
                 >
                   <View style={styles.roleHeader}>
-                    <Briefcase size={20} color={role === 'Freelancer' ? '#1dbf73' : '#62646a'} />
+                    <Briefcase size={20} color={role === 'Freelancer' ? COLORS.primary : COLORS.textTertiary} />
                     {role === 'Freelancer' && <View style={styles.radioSelected} />}
                     {role !== 'Freelancer' && <View style={styles.radioUnselected} />}
                   </View>
@@ -285,7 +287,7 @@ export default function Signup() {
                   activeOpacity={0.9}
                 >
                   <View style={styles.roleHeader}>
-                    <UserCircle size={20} color={role === 'Client' ? '#1dbf73' : '#62646a'} />
+                    <UserCircle size={20} color={role === 'Client' ? COLORS.primary : COLORS.textTertiary} />
                     {role === 'Client' && <View style={styles.radioSelected} />}
                     {role !== 'Client' && <View style={styles.radioUnselected} />}
                   </View>
@@ -302,7 +304,7 @@ export default function Signup() {
               activeOpacity={0.8}
             >
               {isLoading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={COLORS.white} />
               ) : (
                 <Text style={styles.signupButtonText}>Create Account</Text>
               )}
@@ -324,21 +326,21 @@ export default function Signup() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.white,
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 24,
+    padding: SPACING.l,
   },
   header: {
     paddingTop: 40,
-    marginBottom: 32,
+    marginBottom: SPACING.xl,
   },
   logoText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111',
-    letterSpacing: -0.5,
+    fontSize: TYPOGRAPHY.fontSize['2xl'],
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: COLORS.background,
+    letterSpacing: TYPOGRAPHY.letterSpacing.tight,
   },
   mainContent: {
     flex: 1,
@@ -347,177 +349,168 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   titleContainer: {
-    marginBottom: 32,
+    marginBottom: SPACING.xl,
   },
   title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#222325',
-    marginBottom: 8,
-    letterSpacing: -0.5,
+    fontSize: TYPOGRAPHY.fontSize['3xl'],
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: COLORS.background,
+    marginBottom: SPACING.s,
+    letterSpacing: TYPOGRAPHY.letterSpacing.tight,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#62646a',
+    fontSize: TYPOGRAPHY.fontSize.md,
+    color: COLORS.textTertiary,
   },
-
   errorContainer: {
-    backgroundColor: '#fff0f0',
+    backgroundColor: `${COLORS.error}15`,
     borderWidth: 1,
-    borderColor: '#d9534f',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 24,
+    borderColor: COLORS.error,
+    padding: SPACING.m,
+    borderRadius: BORDER_RADIUS.s,
+    marginBottom: SPACING.l,
   },
   errorText: {
-    color: '#d9534f',
-    fontSize: 14,
+    color: COLORS.error,
+    fontSize: TYPOGRAPHY.fontSize.base,
     textAlign: 'center',
   },
   formContainer: {
     width: '100%',
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: SPACING.l,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#222325',
-    marginBottom: 8,
+    fontSize: TYPOGRAPHY.fontSize.base,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
+    color: COLORS.background,
+    marginBottom: SPACING.s,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e4e5e7',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    height: 50,
-    backgroundColor: '#fff',
+    borderColor: '#e2e8f0',
+    borderRadius: BORDER_RADIUS.l,
+    paddingHorizontal: SPACING.m,
+    height: 52,
+    backgroundColor: COLORS.white,
     gap: 12,
   },
   inputWrapperFocused: {
-    borderColor: '#1dbf73',
+    borderColor: COLORS.primary,
     borderWidth: 1,
-    shadowColor: '#1dbf73',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    ...SHADOWS.glow,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: '#222325',
+    fontSize: TYPOGRAPHY.fontSize.md,
+    color: COLORS.background,
     height: '100%',
     ...Platform.select({
       web: { outlineStyle: 'none' } as any,
     }),
   },
   eyeIcon: {
-    padding: 4,
+    padding: SPACING.xs,
   },
   criteriaContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 8,
-    paddingLeft: 4,
+    gap: SPACING.m,
+    marginTop: SPACING.s,
+    paddingLeft: SPACING.xs,
   },
   criteriaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: SPACING.xs,
   },
   criteriaText: {
-    fontSize: 12,
-    color: '#95979d',
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: COLORS.textTertiary,
   },
   criteriaTextActive: {
-    color: '#1dbf73',
-    fontWeight: '500',
+    color: COLORS.primary,
+    fontWeight: TYPOGRAPHY.fontWeight.medium,
   },
   roleContainer: {
     flexDirection: 'row',
-    gap: 12,
+    gap: SPACING.m,
   },
   roleCard: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#e4e5e7',
-    borderRadius: 12,
-    padding: 16,
-    backgroundColor: '#fff',
+    borderColor: '#e2e8f0',
+    borderRadius: BORDER_RADIUS.l,
+    padding: SPACING.m,
+    backgroundColor: COLORS.white,
   },
   roleCardActive: {
-    borderColor: '#1dbf73',
-    backgroundColor: '#f2fbf6',
+    borderColor: COLORS.primary,
+    backgroundColor: `${COLORS.primary}08`,
   },
   roleHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: SPACING.m,
   },
   radioUnselected: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#e4e5e7',
+    borderColor: '#e2e8f0',
   },
   radioSelected: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 6,
-    borderColor: '#1dbf73',
+    borderColor: COLORS.primary,
   },
   roleTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#222325',
-    marginBottom: 4,
+    fontSize: TYPOGRAPHY.fontSize.md,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: COLORS.background,
+    marginBottom: SPACING.xs,
   },
   roleTitleActive: {
-    color: '#1dbf73',
+    color: COLORS.primary,
   },
   roleDesc: {
-    fontSize: 12,
-    color: '#62646a',
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: COLORS.textTertiary,
   },
   signupButton: {
-    backgroundColor: '#1dbf73',
+    backgroundColor: COLORS.primary,
     height: 52,
-    borderRadius: 8,
+    borderRadius: BORDER_RADIUS.l,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
-    shadowColor: '#1dbf73',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    marginTop: SPACING.m,
+    ...SHADOWS.medium,
   },
   signupButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.fontSize.md,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 32,
-    marginBottom: 40,
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.xxl,
   },
   footerText: {
-    color: '#62646a',
-    fontSize: 14,
+    color: COLORS.textTertiary,
+    fontSize: TYPOGRAPHY.fontSize.base,
   },
   loginLink: {
-    color: '#1dbf73',
-    fontSize: 14,
-    fontWeight: '600',
+    color: COLORS.primary,
+    fontSize: TYPOGRAPHY.fontSize.base,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
   },
 });
 

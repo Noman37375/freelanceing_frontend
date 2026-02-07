@@ -6,7 +6,7 @@ export const COLORS = {
   secondary: '#EC4899', // Pink 500
   secondaryDark: '#DB2777', // Pink 600
 
-  background: '#0F172A', // Slate 900
+  background: '#  ', // Slate 900
   surface: '#1E293B', // Slate 800
   surfaceHighlight: '#334155', // Slate 700
 

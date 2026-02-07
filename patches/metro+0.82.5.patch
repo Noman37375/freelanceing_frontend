@@ -1,0 +1,15 @@
+diff --git a/node_modules/metro/src/Server.js b/node_modules/metro/src/Server.js
+index bc45d10..cbc1b51 100644
+--- a/node_modules/metro/src/Server.js
++++ b/node_modules/metro/src/Server.js
+@@ -986,7 +986,9 @@ class Server {
+         if (
+           (!allFramesCollapsed && collapse) ||
+           lineNumber == null ||
+-          (file != null && urls.has(file))
++          (file != null && urls.has(file)) ||
++          !file ||
++          file === "<anonymous>"
+         ) {
+           continue;
+         }

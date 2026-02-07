@@ -17,6 +17,7 @@ export default function ClientProjectCard({
   status,
   freelancer,
   deadline,
+  totalBids,
   onPress,
 }: ClientProjectCardProps) {
   const getStatusColor = () => {

@@ -122,10 +122,25 @@ export const adminService = {
         return response?.data?.dispute;
     },
 
-    // Service Categories – GET is public (homepage + admin list); create/update/delete use admin routes
+    // Service Categories – GET from backend /api/v1/services; normalize to array for "All Service"
     getServiceCategories: async (): Promise<any[]> => {
-        const response = await apiCall('/api/v1/services');
-        return response?.data ?? [];
+        try {
+            const response = await apiCall('/api/v1/services');
+            let list: any[] = [];
+            if (Array.isArray(response)) list = response;
+            else if (Array.isArray(response?.data)) list = response.data;
+            else if (response?.data?.categories) list = response.data.categories;
+            else if (response?.data?.services) list = response.data.services;
+            // Backend returns { id, created_at, name, icon, image } (snake_case); normalize for UI
+            return list.map((s: any) => ({
+                id: s.id ?? s.name,
+                name: s.name ?? 'Service',
+                image: s.image ?? s.icon,
+                color: s.color ?? '#0F172A',
+            }));
+        } catch (_) {
+            return [];
+        }
     },
 
     createServiceCategory: async (data: any): Promise<any> => {

@@ -48,7 +48,6 @@ import {
 import { useRouter } from "expo-router";
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from "@/contexts/AuthContext";
-import authService from "@/services/authService";
 import SkillTag from "@/components/SkillTag";
 import SectionCard from "@/components/SectionCard";
 import { useWallet } from "@/contexts/WalletContext";
@@ -114,21 +113,20 @@ export default function ProfileScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.7,
+        quality: 0.5,
+        base64: true,
       });
 
-      if (!result.canceled && result.assets[0].uri) {
+      if (!result.canceled && result.assets[0].base64) {
         setIsSaving(true);
-        const { uri } = result.assets[0];
-        const type = result.assets[0].mimeType || 'image/jpeg';
-        const name = uri.split('/').pop() || 'avatar.jpg';
-        await authService.uploadProfileImage({ uri, type, name });
+        const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        await updateProfile({ profileImage: base64Img } as any);
         await refreshUser();
         Alert.alert("Success", "Profile photo updated!");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.log(error);
-      Alert.alert("Error", error?.message || "Failed to upload image. Please try again.");
+      Alert.alert("Error", "Failed to upload image. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -164,7 +162,7 @@ export default function ProfileScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0F172A" />
+        <ActivityIndicator size="large" color="#4F46E5" />
       </View>
     );
   }
@@ -185,7 +183,7 @@ export default function ProfileScreen() {
             <View style={styles.profileIdentity}>
               <View style={styles.premiumAvatarContainer}>
                 <View style={styles.avatarBorder}>
-                  <Image source={{ uri: defaultAvatar }} style={styles.premiumAvatar} key={user?.profileImage || 'avatar'} />
+                  <Image source={{ uri: defaultAvatar }} style={styles.premiumAvatar} />
                 </View>
                 <TouchableOpacity style={styles.premiumCameraBtn} onPress={handlePickImage} disabled={isSaving}>
                   <Camera size={14} color="#FFF" />
@@ -286,7 +284,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.menuItem} onPress={() => setEditModalVisible(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={styles.iconBox}>
-                  <User size={18} color="#0F172A" />
+                  <User size={18} color="#4F46E5" />
                 </View>
                 <Text style={styles.menuItemText}>Account</Text>
               </View>
@@ -296,7 +294,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.menuItem} onPress={() => setNotifModalVisible(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={styles.iconBox}>
-                  <Bell size={18} color="#0F172A" />
+                  <Bell size={18} color="#4F46E5" />
                   {unreadCount > 0 && <View style={styles.menuBadge} />}
                 </View>
                 <Text style={styles.menuItemText}>Notifications</Text>
@@ -307,7 +305,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={() => setWalletModalVisible(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={styles.iconBox}>
-                  <WalletIcon size={18} color="#0F172A" />
+                  <WalletIcon size={18} color="#4F46E5" />
                 </View>
                 <Text style={styles.menuItemText}>Wallet</Text>
               </View>
@@ -321,7 +319,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={() => setDisputeModalVisible(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={styles.iconBox}>
-                  <ShieldCheck size={18} color="#0F172A" />
+                  <ShieldCheck size={18} color="#4F46E5" />
                 </View>
                 <Text style={styles.menuItemText}>Resolution Center</Text>
               </View>
@@ -462,7 +460,7 @@ export default function ProfileScreen() {
                   router.push('../wallet' as any);
                 }}
               >
-                <HistoryIcon size={18} color="#0F172A" />
+                <HistoryIcon size={18} color="#4F46E5" />
                 <Text style={styles.drawerPrimaryBtnText}>View History</Text>
               </TouchableOpacity>
 
@@ -499,7 +497,7 @@ export default function ProfileScreen() {
             </View>
 
             {isNotifLoading && notifications.length === 0 ? (
-              <ActivityIndicator style={{ marginVertical: 30 }} color="#0F172A" />
+              <ActivityIndicator style={{ marginVertical: 30 }} color="#4F46E5" />
             ) : (
               <FlatList
                 data={notifications}
@@ -570,7 +568,7 @@ export default function ProfileScreen() {
                   router.push('../FDisputes' as any);
                 }}
               >
-                <HistoryIcon size={18} color="#0F172A" />
+                <HistoryIcon size={18} color="#4F46E5" />
                 <Text style={styles.drawerPrimaryBtnText}>My Disputes</Text>
               </TouchableOpacity>
 
@@ -655,7 +653,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 2,
     right: 2,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#4F46E5',
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -690,7 +688,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   proPill: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#4F46E5',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -839,7 +837,7 @@ const styles = StyleSheet.create({
   areaInput: { height: 100, textAlignVertical: "top" },
   skillEntry: { flexDirection: "row", gap: 10, marginBottom: 12 },
   plusBtn: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#4F46E5",
     width: 52,
     height: 52,
     borderRadius: 14,
@@ -848,14 +846,14 @@ const styles = StyleSheet.create({
   },
   sheetSkills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   saveBtn: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#4F46E5",
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
     marginTop: 20,
     ...Platform.select({
       ios: {
-        shadowColor: "#0F172A",
+        shadowColor: "#4F46E5",
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.3,
         shadowRadius: 10,
@@ -896,14 +894,14 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     borderRadius: 14,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#EEF2FF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
   drawerPrimaryBtnText: {
-    color: '#0F172A',
+    color: '#4F46E5',
     fontWeight: '700',
     fontSize: 15,
   },
@@ -911,7 +909,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     borderRadius: 14,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#4F46E5',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -964,7 +962,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   drawerFullBtn: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#EEF2FF',
     height: 52,
     borderRadius: 14,
     justifyContent: 'center',
@@ -972,7 +970,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   drawerFullBtnText: {
-    color: '#0F172A',
+    color: '#4F46E5',
     fontWeight: '700',
     fontSize: 15,
   },
@@ -991,7 +989,7 @@ const styles = StyleSheet.create({
     marginRight: 12
   },
   notifDotActive: {
-    backgroundColor: '#0F172A'
+    backgroundColor: '#4F46E5'
   },
   drawerNotifItemTitle: {
     fontSize: 14,

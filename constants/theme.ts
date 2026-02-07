@@ -1,6 +1,6 @@
 export const COLORS = {
-  primary: '#0F172A', // Black / Slate 900
-  primaryDark: '#020617', // Slate 950
+  primary: '#4F46E5', // Indigo 600
+  primaryDark: '#4338CA', // Indigo 700
   primaryLight: '#818CF8', // Indigo 400
 
   secondary: '#EC4899', // Pink 500
@@ -18,7 +18,7 @@ export const COLORS = {
   success: '#10B981', // Emerald 500
   warning: '#F59E0B', // Amber 500
   error: '#EF4444', // Red 500
-  info: '#0F172A', // Black
+  info: '#3B82F6', // Blue 500
 
   white: '#FFFFFF',
   black: '#000000',
@@ -37,7 +37,7 @@ export const GRADIENTS = {
   success: ['#10B981', '#059669'],
   warning: ['#F59E0B', '#D97706'],
   error: ['#EF4444', '#DC2626'],
-  info: ['#0F172A', '#1E293B'],
+  info: ['#3B82F6', '#2563EB'],
   purple: ['#8B5CF6', '#7C3AED'],
   ocean: ['#06B6D4', '#0891B2'],
   sunset: ['#F59E0B', '#EC4899'],

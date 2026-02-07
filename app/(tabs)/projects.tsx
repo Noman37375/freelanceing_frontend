@@ -14,8 +14,8 @@ import {
   StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Search, Filter, MapPin, Clock, X, ChevronDown, SlidersHorizontal, ChevronLeft } from "lucide-react-native";
-import ProjectCard from "@/components/ProjectCard";
+import { Search, MapPin, X, SlidersHorizontal, ChevronLeft, MoreHorizontal } from "lucide-react-native";
+import ProjectListCard from "@/components/ProjectListCard";
 import { projectService } from "@/services/projectService";
 import { Project } from "@/models/Project";
 import { useRouter } from "expo-router";
@@ -91,35 +91,35 @@ export default function ProjectsScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.topGradient} />
-
+      <StatusBar barStyle="dark-content" backgroundColor="#F1F5F9" />
       <SafeAreaView style={{ flex: 1 }}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ChevronLeft size={24} color="#FFF" />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Browse Jobs</Text>
-            <Text style={styles.headerSubtitle}>Discover your next opportunity</Text>
+        {/* Top: light gray bg – back, title "Search", menu (three dots) */}
+        <View style={styles.topSection}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <ChevronLeft size={24} color="#1E293B" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Search</Text>
+            {/* <TouchableOpacity style={styles.menuButton} onPress={() => setShowFilter(true)}>
+              <MoreHorizontal size={22} color="#1E293B" />
+            </TouchableOpacity> */}
           </View>
-          <TouchableOpacity style={styles.iconCircle} onPress={() => setShowFilter(true)}>
-            <SlidersHorizontal size={20} color="#FFF" />
-          </TouchableOpacity>
-        </View>
 
-        {/* Search & Filter Row */}
-        <View style={styles.searchRow}>
-          <View style={styles.searchBar}>
-            <Search size={20} color="#94A3B8" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by title or skills..."
-              placeholderTextColor="#94A3B8"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
+          {/* Search bar (light gray) + blue FAB on right */}
+          <View style={styles.searchRow}>
+            <View style={styles.searchBar}>
+              <Search size={20} color="#94A3B8" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search jobs..."
+                placeholderTextColor="#94A3B8"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
+            <TouchableOpacity style={styles.fabFilter} onPress={() => setShowFilter(true)}>
+              <SlidersHorizontal size={20} color="#FFF" />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -178,26 +178,12 @@ export default function ProjectsScreen() {
               </View>
             ) : (
               filteredProjects.map((project) => (
-                <TouchableOpacity
+                <ProjectListCard
                   key={project.id}
-                  activeOpacity={0.95}
+                  project={project}
                   onPress={() => router.push(`/project-details?id=${project.id}` as any)}
-                  style={styles.cardWrapper}
-                >
-                  <ProjectCard project={project} />
-                  <View style={styles.cardInfoFooter}>
-                    <View style={styles.metaRow}>
-                      <MapPin size={12} color="#94A3B8" />
-                      <Text style={styles.metaText}>{project.location || 'Remote'}</Text>
-                    </View>
-                    <View style={[styles.metaRow, { marginLeft: 16 }]}>
-                      <Clock size={12} color="#94A3B8" />
-                      <Text style={styles.metaText}>{timeAgo(project.createdAt || '')}</Text>
-                    </View>
-                    <View style={{ flex: 1 }} />
-                    <Text style={styles.bidText}>{project.bidsCount || 0} proposals</Text>
-                  </View>
-                </TouchableOpacity>
+                  noHorizontalMargin
+                />
               ))
             )}
             <View style={{ height: 40 }} />
@@ -254,87 +240,87 @@ export default function ProjectsScreen() {
   );
 }
 
+const LIGHT_BG = '#F1F5F9';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC"
+    backgroundColor: LIGHT_BG,
   },
-  topGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 180,
-    backgroundColor: '#1E1B4B',
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+  topSection: {
+    backgroundColor: LIGHT_BG,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 20,
+    marginBottom: 16,
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 12,
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 12,
   },
   headerTitle: {
-    fontSize: 24,
+    flex: 1,
+    fontSize: 26,
     fontWeight: "800",
-    color: "#FFFFFF"
+    color: "#1E293B",
   },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#94A3B8',
-    fontWeight: '500'
-  },
-  iconCircle: {
+  menuButton: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#FFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   searchRow: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   searchBar: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#E2E8F0",
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 52,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-      },
-      android: {
-        elevation: 4,
-      },
-      web: {
-        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.05)',
-      },
-    }),
+    marginRight: 12,
   },
   searchInput: {
     flex: 1,
     marginLeft: 12,
     fontSize: 15,
     color: "#1E293B",
-    fontWeight: '500'
+    fontWeight: '500',
+  },
+  fabFilter: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#4F46E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#4F46E5',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: { elevation: 4 },
+    }),
   },
   categoriesWrapper: {
     marginBottom: 12,
@@ -366,7 +352,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 8,
   },
   resultsHeader: {
     paddingVertical: 12,

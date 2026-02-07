@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, Platform } from 'react-native';
-import { FileText, CheckCircle, XCircle, Clock, DollarSign, User, Calendar } from 'lucide-react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Modal, Platform } from 'react-native';
+import { FileText, CheckCircle, XCircle, Clock, DollarSign, User, Calendar, AlertCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { projectService, proposalService } from '@/services/projectService';
+import { proposalService } from '@/services/projectService';
 import { Proposal } from '@/models/Project';
 import { COLORS } from '@/utils/constants';
 import ScreenHeader from '@/components/ScreenHeader';
+
+type ResultModal = { type: 'success' | 'error'; action: 'accept' | 'reject'; message: string } | null;
+type ConfirmModal = { action: 'accept' | 'reject'; proposalId: string; projectTitle: string } | null;
 
 export default function Proposals() {
   const router = useRouter();
@@ -17,6 +20,8 @@ export default function Proposals() {
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'ACCEPTED' | 'REJECTED'>('ALL');
   const [updatingProposalId, setUpdatingProposalId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [resultModal, setResultModal] = useState<ResultModal>(null);
+  const [confirmModal, setConfirmModal] = useState<ConfirmModal>(null);
 
   const fetchProposals = async () => {
     if (!user?.id) {
@@ -55,43 +60,43 @@ export default function Proposals() {
   };
 
   const handleAccept = async (proposalId: string) => {
-    if (updatingProposalId) {
-      return; // Prevent double clicks
-    }
-
+    if (updatingProposalId) return;
+    setConfirmModal(null);
     try {
       setUpdatingProposalId(proposalId);
       await proposalService.updateProposalStatus(proposalId, 'ACCEPTED');
-      Alert.alert('Success', 'Proposal accepted successfully');
-      await fetchProposals(); // Refresh the list
-      // Switch to ACCEPTED tab to show the accepted proposal
+      await fetchProposals();
       setActiveFilter('ACCEPTED');
-    } catch (error: any) {
-      console.error('[Proposals] Error accepting proposal:', error);
-      Alert.alert('Error', error.message || 'Failed to accept proposal');
+      setResultModal({ type: 'success', action: 'accept', message: 'Proposal accepted successfully.' });
+    } catch (err: any) {
+      setResultModal({ type: 'error', action: 'accept', message: err?.message || 'Failed to accept proposal.' });
     } finally {
       setUpdatingProposalId(null);
     }
   };
 
   const handleReject = async (proposalId: string) => {
-    if (updatingProposalId) {
-      return; // Prevent double clicks
-    }
-
+    if (updatingProposalId) return;
+    setConfirmModal(null);
     try {
       setUpdatingProposalId(proposalId);
       await proposalService.updateProposalStatus(proposalId, 'REJECTED');
-      Alert.alert('Success', 'Proposal rejected');
-      await fetchProposals(); // Refresh the list
-      // Switch to REJECTED tab to show the rejected proposal
+      await fetchProposals();
       setActiveFilter('REJECTED');
-    } catch (error: any) {
-      console.error('[Proposals] Error rejecting proposal:', error);
-      Alert.alert('Error', error.message || 'Failed to reject proposal');
+      setResultModal({ type: 'success', action: 'reject', message: 'Proposal rejected.' });
+    } catch (err: any) {
+      setResultModal({ type: 'error', action: 'reject', message: err?.message || 'Failed to reject proposal.' });
     } finally {
       setUpdatingProposalId(null);
     }
+  };
+
+  const openConfirm = (action: 'accept' | 'reject', proposal: Proposal) => {
+    setConfirmModal({
+      action,
+      proposalId: proposal.id,
+      projectTitle: proposal.project?.title || 'this project',
+    });
   };
 
   const filteredProposals = activeFilter === 'ALL'
@@ -230,43 +235,9 @@ export default function Proposals() {
                         styles.rejectButton,
                         updatingProposalId === proposal.id && styles.disabledButton
                       ]}
-                      onPress={async (e) => {
+                      onPress={(e) => {
                         e.stopPropagation();
-                        if (updatingProposalId === proposal.id) {
-                          return;
-                        }
-
-                        // For web, use window.confirm instead of Alert.alert
-                        if (typeof window !== 'undefined') {
-                          const confirmed = window.confirm('Are you sure you want to reject this proposal?');
-                          if (confirmed) {
-                            await handleReject(proposal.id);
-                          }
-                        } else {
-                          // For native, use Alert.alert
-                          Alert.alert(
-                            'Reject Proposal',
-                            'Are you sure you want to reject this proposal?',
-                            [
-                              {
-                                text: 'Cancel',
-                                style: 'cancel'
-                              },
-                              {
-                                text: 'Reject',
-                                style: 'destructive',
-                                onPress: async () => {
-                                  try {
-                                    await handleReject(proposal.id);
-                                  } catch (err) {
-                                    console.error('[Proposals] Error in Reject callback:', err);
-                                  }
-                                }
-                              },
-                            ],
-                            { cancelable: true }
-                          );
-                        }
+                        if (updatingProposalId !== proposal.id) openConfirm('reject', proposal);
                       }}
                       disabled={updatingProposalId === proposal.id}
                     >
@@ -285,43 +256,9 @@ export default function Proposals() {
                         styles.acceptButton,
                         updatingProposalId === proposal.id && styles.disabledButton
                       ]}
-                      onPress={async (e) => {
+                      onPress={(e) => {
                         e.stopPropagation();
-                        if (updatingProposalId === proposal.id) {
-                          return;
-                        }
-
-                        // For web, use window.confirm instead of Alert.alert
-                        if (typeof window !== 'undefined') {
-                          const confirmed = window.confirm('Are you sure you want to accept this proposal? This will reject all other proposals for this project.');
-                          if (confirmed) {
-                            await handleAccept(proposal.id);
-                          }
-                        } else {
-                          // For native, use Alert.alert
-                          Alert.alert(
-                            'Accept Proposal',
-                            'Are you sure you want to accept this proposal? This will reject all other proposals for this project.',
-                            [
-                              {
-                                text: 'Cancel',
-                                style: 'cancel'
-                              },
-                              {
-                                text: 'Accept',
-                                style: 'default',
-                                onPress: async () => {
-                                  try {
-                                    await handleAccept(proposal.id);
-                                  } catch (err) {
-                                    console.error('[Proposals] Error in Accept callback:', err);
-                                  }
-                                }
-                              },
-                            ],
-                            { cancelable: true }
-                          );
-                        }
+                        if (updatingProposalId !== proposal.id) openConfirm('accept', proposal);
                       }}
                       disabled={updatingProposalId === proposal.id}
                     >
@@ -343,6 +280,7 @@ export default function Proposals() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
+        ListHeaderComponent={proposals.length > 0 ? <View style={styles.listHeader} /> : null}
         ListEmptyComponent={
           error ? (
             <View style={styles.errorContainer}>
@@ -365,6 +303,74 @@ export default function Proposals() {
           )
         }
       />
+
+      {/* Result popup (success or error) */}
+      <Modal visible={!!resultModal} transparent animationType="fade">
+        <TouchableOpacity
+          activeOpacity={1}
+          style={styles.modalOverlay}
+          onPress={() => setResultModal(null)}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()} style={styles.resultModalCard}>
+            {resultModal?.type === 'success' ? (
+              <CheckCircle size={52} color={COLORS.success} style={styles.resultModalIcon} />
+            ) : (
+              <AlertCircle size={52} color={COLORS.error} style={styles.resultModalIcon} />
+            )}
+            <Text style={styles.resultModalTitle}>
+              {resultModal?.type === 'success' ? 'Done' : 'Something went wrong'}
+            </Text>
+            <Text style={styles.resultModalMessage}>{resultModal?.message}</Text>
+            <TouchableOpacity
+              style={[styles.resultModalButton, resultModal?.type === 'error' && styles.resultModalButtonError]}
+              onPress={() => setResultModal(null)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.resultModalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Confirm before Accept/Reject */}
+      <Modal visible={!!confirmModal} transparent animationType="fade">
+        <TouchableOpacity
+          activeOpacity={1}
+          style={styles.modalOverlay}
+          onPress={() => setConfirmModal(null)}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()} style={styles.confirmModalCard}>
+            <Text style={styles.confirmModalTitle}>
+              {confirmModal?.action === 'accept' ? 'Accept proposal?' : 'Reject proposal?'}
+            </Text>
+            <Text style={styles.confirmModalMessage}>
+              {confirmModal?.action === 'accept'
+                ? `This will accept the proposal for "${confirmModal?.projectTitle}" and reject all other proposals for this project.`
+                : `Reject the proposal for "${confirmModal?.projectTitle}"?`}
+            </Text>
+            <View style={styles.confirmModalActions}>
+              <TouchableOpacity style={styles.confirmCancelButton} onPress={() => setConfirmModal(null)} activeOpacity={0.8}>
+                <Text style={styles.confirmCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.confirmConfirmButton,
+                  confirmModal?.action === 'reject' && styles.confirmRejectButton
+                ]}
+                onPress={() => {
+                  if (confirmModal?.action === 'accept') handleAccept(confirmModal.proposalId);
+                  else handleReject(confirmModal!.proposalId);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.confirmConfirmText}>
+                  {confirmModal?.action === 'accept' ? 'Accept' : 'Reject'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -388,16 +394,16 @@ const styles = StyleSheet.create({
   filterContainer: {
     flexDirection: 'row',
     backgroundColor: COLORS.white,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.gray200,
-    gap: 8,
+    gap: 10,
   },
   filterTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
     position: 'relative',
   },
   filterTabActive: {
@@ -405,24 +411,138 @@ const styles = StyleSheet.create({
   },
   filterText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     color: COLORS.gray500,
   },
   filterTextActive: {
     color: COLORS.gray800,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   filterIndicator: {
     position: 'absolute',
-    bottom: 0,
-    left: 16,
-    right: 16,
+    bottom: 2,
+    left: 18,
+    right: 18,
     height: 3,
     borderRadius: 2,
   },
   listContent: {
     padding: 20,
     paddingBottom: 100,
+  },
+  listHeader: {
+    height: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  resultModalCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 28,
+    alignItems: 'center',
+    minWidth: 280,
+    maxWidth: 340,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  resultModalIcon: {
+    marginBottom: 16,
+  },
+  resultModalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.gray900,
+    marginBottom: 8,
+  },
+  resultModalMessage: {
+    fontSize: 15,
+    color: COLORS.gray600,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  resultModalButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  resultModalButtonError: {
+    backgroundColor: COLORS.error,
+  },
+  resultModalButtonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  confirmModalCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 24,
+    minWidth: 300,
+    maxWidth: 360,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  confirmModalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.gray900,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  confirmModalMessage: {
+    fontSize: 14,
+    color: COLORS.gray600,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: 24,
+  },
+  confirmModalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  confirmCancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    backgroundColor: COLORS.gray100,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+  },
+  confirmCancelText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.gray700,
+  },
+  confirmConfirmButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    backgroundColor: COLORS.success,
+  },
+  confirmRejectButton: {
+    backgroundColor: COLORS.error,
+  },
+  confirmConfirmText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.white,
   },
   emptyContainer: {
     flex: 1,
@@ -432,7 +552,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.gray800,
     marginTop: 16,
   },
@@ -460,21 +580,23 @@ const styles = StyleSheet.create({
   retryButtonText: { color: COLORS.white, fontSize: 14, fontWeight: '800' },
   proposalCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
     ...Platform.select({
       ios: {
         shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 2,
+        elevation: 3,
       },
       web: {
-        boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.05)',
+        boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.06)',
       },
     }),
   },

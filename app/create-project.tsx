@@ -10,7 +10,9 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from "react-native";
+import { CheckCircle2 } from "lucide-react-native";
 import ScreenHeader from "@/components/ScreenHeader";
 import { useRouter } from "expo-router";
 import { projectService } from "@/services/projectService";
@@ -22,6 +24,7 @@ export default function CreateProjectScreen() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const descriptionRef = useRef<TextInput>(null);
   const budgetRef = useRef<TextInput>(null);
@@ -94,20 +97,8 @@ export default function CreateProjectScreen() {
         tags: tagsArray.length > 0 ? tagsArray : undefined,
       };
 
-      const newProject = await projectService.createProject(projectData);
-
-      Alert.alert("Success", "Project created successfully!", [
-        {
-          text: "OK",
-          onPress: () =>
-            router.replace(
-              {
-                pathname: "/project-details",
-                params: { id: newProject.id },
-              } as any
-            ),
-        },
-      ]);
+      await projectService.createProject(projectData);
+      setShowSuccessModal(true);
     } catch (error: any) {
       console.error("Failed to create project:", error);
       Alert.alert("Error", error.message || "Failed to create project");
@@ -278,6 +269,48 @@ export default function CreateProjectScreen() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Success popup */}
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowSuccessModal(false);
+          router.replace("/(client-tabs)" as any);
+        }}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          style={styles.modalOverlay}
+          onPress={() => {
+            setShowSuccessModal(false);
+            router.replace("/(client-tabs)" as any);
+          }}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+            style={styles.modalCard}
+          >
+            <CheckCircle2 size={56} color={COLORS.success} style={styles.modalIcon} />
+            <Text style={styles.modalTitle}>Success</Text>
+            <Text style={styles.modalMessage}>
+              Project has been created successfully.
+            </Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => {
+                setShowSuccessModal(false);
+                router.replace("/(client-tabs)" as any);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -387,6 +420,55 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   submitButtonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 28,
+    alignItems: "center",
+    minWidth: 280,
+    maxWidth: 340,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalIcon: {
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.gray900,
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: COLORS.gray600,
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modalButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    width: "100%",
+    alignItems: "center",
+  },
+  modalButtonText: {
     color: COLORS.white,
     fontSize: 16,
     fontWeight: "600",

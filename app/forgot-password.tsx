@@ -85,7 +85,7 @@ export default function ForgotPassword() {
         <View style={styles.mainContent}>
           <View style={styles.header}>
             <View style={styles.iconContainer}>
-              <Mail size={40} color="#0F172A" />
+              <Mail size={40} color="#282A32" />
             </View>
             <Text style={styles.title}>Forgot Password?</Text>
             <Text style={styles.subtitle}>
@@ -116,7 +116,7 @@ export default function ForgotPassword() {
                 styles.inputWrapper,
                 focusedInput && styles.inputWrapperFocused
               ]}>
-                <Mail size={20} color={focusedInput ? '#0F172A' : '#62646a'} />
+                <Mail size={20} color={focusedInput ? '#282A32' : '#62646a'} />
                 <TextInput
                   style={styles.input}
                   placeholder="name@email.com"
@@ -269,9 +269,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   inputWrapperFocused: {
-    borderColor: '#0F172A',
+    borderColor: '#282A32',
     borderWidth: 1,
-    shadowColor: '#0F172A',
+    shadowColor: '#282A32',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -287,12 +287,12 @@ const styles = StyleSheet.create({
     }),
   },
   button: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#282A32",
     height: 52,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#0F172A",
+    shadowColor: "#282A32",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   loginLink: {
-    color: '#0F172A',
+    color: '#282A32',
     fontSize: 14,
     fontWeight: '600',
   },

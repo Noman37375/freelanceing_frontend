@@ -43,7 +43,7 @@ export default function AllCategories() {
         name: cat.name,
         image: cat.image ?? '',
         icon: cat.icon ?? 'Box',
-        color: cat.color ?? '#6366F1',
+        color: cat.color ?? '#444751',
       },
     } as any);
   };
@@ -58,8 +58,8 @@ export default function AllCategories() {
         <Text style={styles.rowTitle}>{item.name}</Text>
         <Text style={styles.rowSubtitle}>Service category</Text>
       </View>
-      <View style={[styles.chevronWrap, { backgroundColor: (item.color || '#6366F1') + '20' }]}>
-        <ChevronRight size={20} color={item.color || '#6366F1'} />
+      <View style={[styles.chevronWrap, { backgroundColor: (item.color || '#444751') + '20' }]}>
+        <ChevronRight size={20} color={item.color || '#444751'} />
       </View>
     </TouchableOpacity>
   );
@@ -72,7 +72,7 @@ export default function AllCategories() {
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.8}>
-          <ArrowLeft size={24} color="#1E293B" />
+          <ArrowLeft size={24} color="#444751" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>All Categories</Text>
         <View style={styles.headerSpacer} />
@@ -80,7 +80,7 @@ export default function AllCategories() {
 
       {loading ? (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color="#4F46E5" />
+          <ActivityIndicator size="large" color="#282A32" />
           <Text style={styles.loadingText}>Loading categories…</Text>
         </View>
       ) : (
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#444751',
   },
   headerSpacer: { width: 44 },
   loadingWrap: {
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#444751',
   },
   rowSubtitle: {
     fontSize: 13,

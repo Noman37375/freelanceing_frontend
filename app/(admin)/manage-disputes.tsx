@@ -122,7 +122,7 @@ export default function ManageDisputes() {
             case 'high':
                 return '#F59E0B';
             case 'medium':
-                return '#3B82F6';
+                return '#282A32';
             default:
                 return '#64748B';
         }
@@ -174,7 +174,7 @@ export default function ManageDisputes() {
                         title="Total Disputes"
                         value={stats.total}
                         icon={AlertTriangle}
-                        color="#8B5CF6"
+                        color="#444751"
                     />
                     <StatCard
                         title="Open Cases"
@@ -193,7 +193,7 @@ export default function ManageDisputes() {
                         title="Avg. Resolution"
                         value={`${stats.avgResolutionTime}d`}
                         icon={TrendingUp}
-                        color="#3B82F6"
+                        color="#282A32"
                     />
                 </View>
 
@@ -246,7 +246,7 @@ export default function ManageDisputes() {
 
                     {loading ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color="#6366F1" />
+                            <ActivityIndicator size="large" color="#444751" />
                         </View>
                     ) : filteredDisputes.length === 0 ? (
                         <View style={styles.emptyState}>
@@ -319,7 +319,7 @@ export default function ManageDisputes() {
 
                                 <View style={styles.disputeFooter}>
                                     <Text style={styles.viewDetails}>View Details</Text>
-                                    <ChevronRight size={16} color="#6366F1" />
+                                    <ChevronRight size={16} color="#444751" />
                                 </View>
                             </TouchableOpacity>
                         ))
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 18,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#282A32',
     },
     content: {
         flex: 1,
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     statValue: {
         fontSize: 24,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#282A32',
         marginBottom: 4,
     },
     statLabel: {
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         fontSize: 15,
-        color: '#1E293B',
+        color: '#282A32',
     },
     filtersContainer: {
         paddingHorizontal: 20,
@@ -441,8 +441,8 @@ const styles = StyleSheet.create({
         borderColor: '#E2E8F0',
     },
     filterChipActive: {
-        backgroundColor: '#6366F1',
-        borderColor: '#6366F1',
+        backgroundColor: '#444751',
+        borderColor: '#444751',
     },
     filterChipText: {
         fontSize: 13,
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     listTitle: {
         fontSize: 16,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#282A32',
         marginBottom: 16,
     },
     loadingContainer: {
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
     disputeId: {
         fontSize: 13,
         fontWeight: '700',
-        color: '#6366F1',
+        color: '#444751',
     },
     priorityBadge: {
         paddingHorizontal: 8,
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
     disputeTitle: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#282A32',
         marginBottom: 12,
     },
     disputeDetails: {
@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
     disputeDetailValue: {
         fontSize: 13,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#282A32',
     },
     disputeParties: {
         paddingTop: 12,
@@ -559,6 +559,6 @@ const styles = StyleSheet.create({
     viewDetails: {
         fontSize: 13,
         fontWeight: '700',
-        color: '#6366F1',
+        color: '#444751',
     },
 });

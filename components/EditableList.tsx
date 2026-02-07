@@ -36,7 +36,7 @@ export default function EditableList({
                 onPress={() => onEdit(index)}
                 style={styles.actionButton}
               >
-                <Edit2 size={16} color="#3B82F6" />
+                <Edit2 size={16} color="#282A32" />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => onRemove(index)}
@@ -50,7 +50,7 @@ export default function EditableList({
       )}
       
       <TouchableOpacity onPress={onAdd} style={styles.addButton}>
-        <Plus size={20} color="#3B82F6" />
+        <Plus size={20} color="#282A32" />
         <Text style={styles.addButtonText}>Add New</Text>
       </TouchableOpacity>
     </View>
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   addButtonText: {
-    color: '#3B82F6',
+    color: '#282A32',
     fontSize: 14,
     fontWeight: '600',
   },

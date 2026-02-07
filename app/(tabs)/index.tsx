@@ -175,7 +175,7 @@ export default function HomeScreen() {
               style={styles.notificationBtn}
               onPress={() => router.push('../notifications')}
             >
-              <Bell size={22} color="#1E293B" />
+              <Bell size={22} color="#444751" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.8}>
               {user?.profileImage ? (
@@ -236,7 +236,7 @@ export default function HomeScreen() {
                     {cat.image ? (
                       <Image source={{ uri: cat.image }} style={styles.serviceIconImage} />
                     ) : (
-                      <View style={[styles.serviceIconPlaceholder, { backgroundColor: cat.color || '#0F172A' }]}>
+                      <View style={[styles.serviceIconPlaceholder, { backgroundColor: cat.color || '#282A32' }]}>
                         <Text style={styles.serviceIconLetter}>
                           {(cat.name || '?').charAt(0).toUpperCase()}
                         </Text>
@@ -336,14 +336,14 @@ const styles = StyleSheet.create({
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   heyLabel: { fontSize: 16, color: '#64748B', fontWeight: '500' },
-  headerName: { fontSize: 18, fontWeight: '700', color: '#1E293B' },
+  headerName: { fontSize: 18, fontWeight: '700', color: '#444751' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 44, height: 44, borderRadius: 22 },
   avatarPlaceholder: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#282A32',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     }),
   },
 
-  findProjectsHeading: { fontSize: 22, fontWeight: '700', color: '#1E293B', marginBottom: 14 },
+  findProjectsHeading: { fontSize: 22, fontWeight: '700', color: '#444751', marginBottom: 14 },
   searchRow: { marginBottom: 24 },
   searchBar: {
     height: 52,
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: '#1E293B',
+    color: '#444751',
     paddingVertical: 0,
     borderWidth: 0,
   },
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 14,
   },
-  sectionTitle: { fontSize: 20, fontWeight: '700', color: '#1E293B' },
+  sectionTitle: { fontSize: 20, fontWeight: '700', color: '#444751' },
   showMore: { fontSize: 14, color: '#64748B', fontWeight: '500' },
 
   allServiceSection: {
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  allServiceTitle: { fontSize: 18, fontWeight: '700', color: '#1E293B' },
+  allServiceTitle: { fontSize: 18, fontWeight: '700', color: '#444751' },
   allServiceViewAll: { fontSize: 14, color: '#64748B', fontWeight: '500' },
   serviceScrollContent: {
     flexDirection: 'row',
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   serviceLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#444751',
     textAlign: 'center',
     maxWidth: 64,
   },
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   emptyText: { fontSize: 15, color: '#64748B', marginBottom: 12 },
-  emptyBtn: { backgroundColor: '#0F172A', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12 },
+  emptyBtn: { backgroundColor: '#282A32', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12 },
   emptyBtnText: { color: '#FFF', fontWeight: '600', fontSize: 14 },
 
   jobCard: {
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   },
   jobCardLocation: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
   jobCardLocationText: { fontSize: 12, color: '#64748B', fontWeight: '500' },
-  jobTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 6 },
+  jobTitle: { fontSize: 16, fontWeight: '700', color: '#444751', marginBottom: 6 },
   jobPosted: { fontSize: 12, color: '#64748B', marginBottom: 12 },
   jobMetricsRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   jobMetricBox: {
@@ -478,10 +478,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  jobMetricValue: { fontSize: 12, fontWeight: '700', color: '#1E293B' },
+  jobMetricValue: { fontSize: 12, fontWeight: '700', color: '#444751' },
   jobMetricLabel: { fontSize: 10, color: '#64748B', marginTop: 2 },
   jobDetails: { fontSize: 13, color: '#64748B', marginBottom: 10, lineHeight: 18 },
-  tagsLabel: { fontSize: 13, fontWeight: '600', color: '#1E293B', marginBottom: 6 },
+  tagsLabel: { fontSize: 13, fontWeight: '600', color: '#444751', marginBottom: 6 },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
   tagChip: { backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   tagChipText: { fontSize: 11, color: '#475569', maxWidth: 80 },

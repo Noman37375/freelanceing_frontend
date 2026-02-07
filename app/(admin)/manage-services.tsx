@@ -161,7 +161,7 @@ export default function ManageServices() {
 
             {isLoading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#6366F1" />
+                    <ActivityIndicator size="large" color="#444751" />
                     <Text style={styles.loadingText}>Loading categories…</Text>
                 </View>
             ) : (
@@ -283,13 +283,13 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 18,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#444751',
     },
     addButton: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        backgroundColor: '#4F46E5',
+        backgroundColor: '#282A32',
         paddingVertical: 10,
         paddingHorizontal: 16,
         borderRadius: 10,
@@ -375,18 +375,18 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 24,
-        backgroundColor: '#EEF2FF',
+        backgroundColor: '#E5E4EA',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
     },
-    emptyTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 8 },
+    emptyTitle: { fontSize: 20, fontWeight: '800', color: '#444751', marginBottom: 8 },
     emptyText: { fontSize: 15, color: '#64748B', textAlign: 'center', marginBottom: 24, lineHeight: 22 },
     emptyButton: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
-        backgroundColor: '#4F46E5',
+        backgroundColor: '#282A32',
         paddingVertical: 14,
         paddingHorizontal: 24,
         borderRadius: 14,
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#F1F5F9',
     },
-    modalTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B' },
+    modalTitle: { fontSize: 20, fontWeight: '800', color: '#444751' },
     modalSubtitle: { fontSize: 14, color: '#64748B', marginTop: 4 },
     modalCloseBtn: { padding: 4 },
     modalForm: { flex: 1 },
@@ -429,11 +429,11 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         paddingHorizontal: 16,
         fontSize: 16,
-        color: '#1E293B',
+        color: '#444751',
     },
     saveButton: {
         flex: 1,
-        backgroundColor: '#4F46E5',
+        backgroundColor: '#282A32',
         paddingVertical: 16,
         borderRadius: 12,
         alignItems: 'center',

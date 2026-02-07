@@ -97,7 +97,7 @@ export default function Disputes() {
         <View style={styles.disputesContent}>
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#3B82F6" />
+              <ActivityIndicator size="large" color="#282A32" />
             </View>
           ) : filteredDisputes.length === 0 ? (
             <Text style={styles.noDisputeText}>No {selectedTab} disputes</Text>
@@ -147,11 +147,11 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, paddingTop: 60, backgroundColor: '#FFFFFF', borderBottomLeftRadius: 24, borderBottomRightRadius: 24, elevation: 3 },
   backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 22, fontWeight: '700', color: '#1F2937', textAlign: 'center', flex: 1 },
-  newDisputeButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#3B82F6', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  newDisputeButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#282A32', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   newDisputeText: { color: '#FFFFFF', fontWeight: '600', marginLeft: 6 },
   tabs: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 16 },
   tabButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: '#E5E7EB' },
-  tabButtonActive: { backgroundColor: '#3B82F6' },
+  tabButtonActive: { backgroundColor: '#282A32' },
   tabText: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
   tabTextActive: { color: '#FFFFFF' },
   disputesList: { flex: 1, paddingHorizontal: 20 },

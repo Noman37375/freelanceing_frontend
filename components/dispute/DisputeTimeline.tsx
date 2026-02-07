@@ -40,10 +40,10 @@ export default function DisputeTimeline({ events }: DisputeTimelineProps) {
     const getEventColor = (type: DisputeTimelineEvent['type']) => {
         switch (type) {
             case 'created':
-                return '#3B82F6';
+                return '#282A32';
             case 'response_submitted':
             case 'evidence_added':
-                return '#8B5CF6';
+                return '#444751';
             case 'mediator_assigned':
                 return '#F59E0B';
             case 'resolution_proposed':
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 16,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#282A32',
         marginBottom: 16,
     },
     timeline: {
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     eventDescription: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#1E293B',
+        color: '#282A32',
         marginBottom: 6,
         lineHeight: 20,
     },
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     eventPerformer: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#6366F1',
+        color: '#444751',
     },
     eventDot: {
         fontSize: 12,

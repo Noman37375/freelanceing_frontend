@@ -164,7 +164,7 @@ export default function ProfileScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0F172A" />
+        <ActivityIndicator size="large" color="#282A32" />
       </View>
     );
   }
@@ -220,7 +220,7 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.statDivider} />
               <View style={styles.trustStat}>
-                <Clock size={14} color="#6366F1" />
+                <Clock size={14} color="#444751" />
                 <Text style={styles.trustVal}>1h</Text>
                 <Text style={styles.trustLab}>Response</Text>
               </View>
@@ -232,7 +232,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.menuItem}>
               <View style={styles.menuItemLeft}>
                 <View style={[styles.iconBox, { backgroundColor: '#F8FAFC' }]}>
-                  <Briefcase size={18} color="#1E293B" />
+                  <Briefcase size={18} color="#444751" />
                 </View>
                 <Text style={styles.menuItemText}>My briefs</Text>
               </View>
@@ -242,7 +242,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.menuItem}>
               <View style={styles.menuItemLeft}>
                 <View style={[styles.iconBox, { backgroundColor: '#F8FAFC' }]}>
-                  <Diamond size={18} color="#1E293B" />
+                  <Diamond size={18} color="#444751" />
                 </View>
                 <Text style={styles.menuItemText}>Get inspired</Text>
               </View>
@@ -252,7 +252,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.menuItem}>
               <View style={styles.menuItemLeft}>
                 <View style={[styles.iconBox, { backgroundColor: '#F8FAFC' }]}>
-                  <Heart size={18} color="#1E293B" />
+                  <Heart size={18} color="#444751" />
                 </View>
                 <Text style={styles.menuItemText}>Saved lists</Text>
               </View>
@@ -262,7 +262,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.menuItem}>
               <View style={styles.menuItemLeft}>
                 <View style={[styles.iconBox, { backgroundColor: '#F8FAFC' }]}>
-                  <Inbox size={18} color="#1E293B" />
+                  <Inbox size={18} color="#444751" />
                 </View>
                 <Text style={styles.menuItemText}>My interests</Text>
               </View>
@@ -272,7 +272,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]}>
               <View style={styles.menuItemLeft}>
                 <View style={[styles.iconBox, { backgroundColor: '#F8FAFC' }]}>
-                  <Send size={18} color="#1E293B" />
+                  <Send size={18} color="#444751" />
                 </View>
                 <Text style={styles.menuItemText}>Invite friends</Text>
               </View>
@@ -286,7 +286,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.menuItem} onPress={() => setEditModalVisible(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={styles.iconBox}>
-                  <User size={18} color="#0F172A" />
+                  <User size={18} color="#282A32" />
                 </View>
                 <Text style={styles.menuItemText}>Account</Text>
               </View>
@@ -296,7 +296,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.menuItem} onPress={() => setNotifModalVisible(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={styles.iconBox}>
-                  <Bell size={18} color="#0F172A" />
+                  <Bell size={18} color="#282A32" />
                   {unreadCount > 0 && <View style={styles.menuBadge} />}
                 </View>
                 <Text style={styles.menuItemText}>Notifications</Text>
@@ -307,7 +307,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={() => setWalletModalVisible(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={styles.iconBox}>
-                  <WalletIcon size={18} color="#0F172A" />
+                  <WalletIcon size={18} color="#282A32" />
                 </View>
                 <Text style={styles.menuItemText}>Wallet</Text>
               </View>
@@ -321,7 +321,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={() => setDisputeModalVisible(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={styles.iconBox}>
-                  <ShieldCheck size={18} color="#0F172A" />
+                  <ShieldCheck size={18} color="#282A32" />
                 </View>
                 <Text style={styles.menuItemText}>Resolution Center</Text>
               </View>
@@ -462,7 +462,7 @@ export default function ProfileScreen() {
                   router.push('../wallet' as any);
                 }}
               >
-                <HistoryIcon size={18} color="#0F172A" />
+                <HistoryIcon size={18} color="#282A32" />
                 <Text style={styles.drawerPrimaryBtnText}>View History</Text>
               </TouchableOpacity>
 
@@ -499,7 +499,7 @@ export default function ProfileScreen() {
             </View>
 
             {isNotifLoading && notifications.length === 0 ? (
-              <ActivityIndicator style={{ marginVertical: 30 }} color="#0F172A" />
+              <ActivityIndicator style={{ marginVertical: 30 }} color="#282A32" />
             ) : (
               <FlatList
                 data={notifications}
@@ -570,7 +570,7 @@ export default function ProfileScreen() {
                   router.push('../FDisputes' as any);
                 }}
               >
-                <HistoryIcon size={18} color="#0F172A" />
+                <HistoryIcon size={18} color="#282A32" />
                 <Text style={styles.drawerPrimaryBtnText}>My Disputes</Text>
               </TouchableOpacity>
 
@@ -655,7 +655,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 2,
     right: 2,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#282A32',
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -690,7 +690,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   proPill: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#282A32',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -747,7 +747,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#1E293B",
+    color: "#444751",
     paddingHorizontal: 20,
     marginTop: 32,
     marginBottom: 12,
@@ -816,7 +816,7 @@ const styles = StyleSheet.create({
   menuItemText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#1E293B",
+    color: "#444751",
   },
   vText: { textAlign: 'center', color: '#94A3B8', fontSize: 12, marginTop: 20, marginBottom: 20 },
   loadingContainer: { flex: 1, justifyContent: "flex-start", alignItems: "center", backgroundColor: '#F8FAFC' },
@@ -824,7 +824,7 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(15, 23, 42, 0.7)", justifyContent: "flex-end" },
   sheet: { backgroundColor: "#FFF", borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%' },
   sheetHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 },
-  sheetTitle: { fontSize: 20, fontWeight: "800", color: "#1E293B" },
+  sheetTitle: { fontSize: 20, fontWeight: "800", color: "#444751" },
   inputBox: { marginBottom: 20 },
   boxLab: { fontWeight: "700", marginBottom: 8, color: "#475569", fontSize: 14 },
   textInput: {
@@ -834,12 +834,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
     fontSize: 15,
-    color: "#1E293B"
+    color: "#444751"
   },
   areaInput: { height: 100, textAlignVertical: "top" },
   skillEntry: { flexDirection: "row", gap: 10, marginBottom: 12 },
   plusBtn: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#282A32",
     width: 52,
     height: 52,
     borderRadius: 14,
@@ -848,14 +848,14 @@ const styles = StyleSheet.create({
   },
   sheetSkills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   saveBtn: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#282A32",
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
     marginTop: 20,
     ...Platform.select({
       ios: {
-        shadowColor: "#0F172A",
+        shadowColor: "#282A32",
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.3,
         shadowRadius: 10,
@@ -903,7 +903,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   drawerPrimaryBtnText: {
-    color: '#0F172A',
+    color: '#282A32',
     fontWeight: '700',
     fontSize: 15,
   },
@@ -911,7 +911,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     borderRadius: 14,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#282A32',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -939,7 +939,7 @@ const styles = StyleSheet.create({
   drawerSupportTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#444751',
   },
   drawerSupportSub: {
     fontSize: 13,
@@ -953,7 +953,7 @@ const styles = StyleSheet.create({
   drawerNotifTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#444751',
     marginTop: 16,
   },
   drawerNotifSub: {
@@ -972,7 +972,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   drawerFullBtnText: {
-    color: '#0F172A',
+    color: '#282A32',
     fontWeight: '700',
     fontSize: 15,
   },
@@ -991,12 +991,12 @@ const styles = StyleSheet.create({
     marginRight: 12
   },
   notifDotActive: {
-    backgroundColor: '#0F172A'
+    backgroundColor: '#282A32'
   },
   drawerNotifItemTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1E293B'
+    color: '#444751'
   },
   drawerNotifItemMsg: {
     fontSize: 12,

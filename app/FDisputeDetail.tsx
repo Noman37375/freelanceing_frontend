@@ -29,7 +29,7 @@ export default function FDisputeDetail() {
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#1E293B" />
+          <ArrowLeft size={24} color="#282A32" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Case Details</Text>
         <View style={{ width: 40 }} />
@@ -56,7 +56,7 @@ export default function FDisputeDetail() {
           <Text style={styles.sectionTitle}>General Information</Text>
           
           <View style={styles.infoRow}>
-            <View style={styles.iconBg}><Briefcase size={18} color="#6366F1" /></View>
+            <View style={styles.iconBg}><Briefcase size={18} color="#444751" /></View>
             <View>
               <Text style={styles.label}>PROJECT</Text>
               <Text style={styles.value}>{projectTitle}</Text>
@@ -64,7 +64,7 @@ export default function FDisputeDetail() {
           </View>
 
           <View style={styles.infoRow}>
-            <View style={styles.iconBg}><User size={18} color="#6366F1" /></View>
+            <View style={styles.iconBg}><User size={18} color="#444751" /></View>
             <View>
               <Text style={styles.label}>CLIENT</Text>
               <Text style={styles.value}>{clientName}</Text>
@@ -72,7 +72,7 @@ export default function FDisputeDetail() {
           </View>
 
           <View style={styles.infoRow}>
-            <View style={styles.iconBg}><DollarSign size={18} color="#6366F1" /></View>
+            <View style={styles.iconBg}><DollarSign size={18} color="#444751" /></View>
             <View>
               <Text style={styles.label}>DISPUTED AMOUNT</Text>
               <Text style={styles.value}>{amount}</Text>
@@ -80,7 +80,7 @@ export default function FDisputeDetail() {
           </View>
 
           <View style={styles.infoRow}>
-            <View style={styles.iconBg}><Calendar size={18} color="#6366F1" /></View>
+            <View style={styles.iconBg}><Calendar size={18} color="#444751" /></View>
             <View>
               <Text style={styles.label}>SUBMISSION DATE</Text>
               <Text style={styles.value}>{createdDate}</Text>
@@ -91,7 +91,7 @@ export default function FDisputeDetail() {
         {/* DESCRIPTION SECTION */}
         <View style={styles.sectionCard}>
           <View style={styles.reasonHeader}>
-            <FileText size={18} color="#6366F1" />
+            <FileText size={18} color="#444751" />
             <Text style={styles.sectionTitle}>Dispute Reason</Text>
           </View>
           <Text style={styles.reasonBody}>{reason}</Text>
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 12, 
     backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' 
   },
-  headerTitle: { fontSize: 20, fontWeight: '900', color: '#1E293B' },
+  headerTitle: { fontSize: 20, fontWeight: '900', color: '#282A32' },
   
   content: { flex: 1 },
   scrollPadding: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 20 },
@@ -157,25 +157,25 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 1,
     borderColor: '#F1F5F9',
-    shadowColor: '#0F172A',
+    shadowColor: '#282A32',
     shadowOpacity: 0.03,
     shadowRadius: 10,
     elevation: 1
   },
-  sectionTitle: { fontSize: 14, fontWeight: '800', color: '#1E293B', marginBottom: 20, textTransform: 'uppercase', letterSpacing: 1 },
+  sectionTitle: { fontSize: 14, fontWeight: '800', color: '#282A32', marginBottom: 20, textTransform: 'uppercase', letterSpacing: 1 },
   
   infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
   iconBg: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#E5E4EA',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15
   },
   label: { fontSize: 10, fontWeight: '800', color: '#94A3B8', marginBottom: 2 },
-  value: { fontSize: 16, fontWeight: '700', color: '#334155' },
+  value: { fontSize: 16, fontWeight: '700', color: '#444751' },
 
   reasonHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 15 },
   reasonBody: { fontSize: 15, color: '#475569', lineHeight: 24 },
@@ -189,5 +189,5 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     marginTop: 10
   },
-  supportButtonText: { color: '#6366F1', fontWeight: '800', fontSize: 15 }
+  supportButtonText: { color: '#444751', fontWeight: '800', fontSize: 15 }
 });

@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
         height: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#6366F1',
+        backgroundColor: '#444751',
     },
     avatarLetter: {
         color: '#FFFFFF',
@@ -231,12 +231,12 @@ const styles = StyleSheet.create({
     clientName: {
         fontSize: 15,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#282A32',
         marginBottom: 2,
     },
     viewOrder: {
         fontSize: 12,
-        color: '#6366F1',
+        color: '#444751',
         fontWeight: '700',
     },
     projectName: {
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     },
     priceBadge: {
         alignSelf: 'center',
-        backgroundColor: '#EEF2FF',
+        backgroundColor: '#E5E4EA',
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 10,
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     priceText: {
         fontSize: 14,
         fontWeight: '800',
-        color: '#6366F1',
+        color: '#444751',
     },
     delivered: {
         fontSize: 14,
@@ -281,13 +281,13 @@ const styles = StyleSheet.create({
     },
     progressBarFill: {
         height: '100%',
-        backgroundColor: '#6366F1',
+        backgroundColor: '#444751',
         borderRadius: 4,
     },
     progressText: {
         fontSize: 13,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#282A32',
         width: 42,
         textAlign: 'right',
     },
@@ -335,11 +335,11 @@ const styles = StyleSheet.create({
     },
     infoValue: {
         fontSize: 14,
-        color: '#1E293B',
+        color: '#282A32',
         fontWeight: '700',
     },
     mobileViewButton: {
-        backgroundColor: '#6366F1',
+        backgroundColor: '#444751',
         paddingVertical: 14,
         borderRadius: 14,
         alignItems: 'center',
@@ -352,6 +352,6 @@ const styles = StyleSheet.create({
     price: {
         fontSize: 16,
         fontWeight: '800',
-        color: '#6366F1',
+        color: '#444751',
     },
 });

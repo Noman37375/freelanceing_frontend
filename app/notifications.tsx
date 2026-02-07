@@ -74,7 +74,7 @@ export default function NotificationsScreen() {
       return <View style={[styles.iconBox, { backgroundColor: "#ECFDF5" }]}><CreditCard size={20} color="#10B981" /></View>;
     }
     if (type.toLowerCase().includes('project') || type.toLowerCase().includes('proposal')) {
-      return <View style={[styles.iconBox, { backgroundColor: "#EEF2FF" }]}><Briefcase size={20} color="#6366F1" /></View>;
+      return <View style={[styles.iconBox, { backgroundColor: "#E5E4EA" }]}><Briefcase size={20} color="#444751" /></View>;
     }
     if (type.toLowerCase().includes('security') || type.toLowerCase().includes('login')) {
       return <View style={[styles.iconBox, { backgroundColor: "#FEF2F2" }]}><ShieldCheck size={20} color="#EF4444" /></View>;
@@ -105,7 +105,7 @@ export default function NotificationsScreen() {
       <View style={styles.textDetails}>
         <View style={styles.titleRow}>
           <Text style={[styles.notifTitle, !item.isRead && styles.unreadTitle]}>{item.title}</Text>
-          {!item.isRead && <Circle size={8} color="#6366F1" fill="#6366F1" />}
+          {!item.isRead && <Circle size={8} color="#444751" fill="#444751" />}
         </View>
         <Text style={styles.notifMessage} numberOfLines={2}>{item.message}</Text>
         <Text style={styles.notifTime}>{formatTime(item.createdAt)}</Text>
@@ -118,17 +118,17 @@ export default function NotificationsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#1E293B" />
+          <ArrowLeft size={24} color="#282A32" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
         <TouchableOpacity onPress={markAllRead}>
-          <Check size={22} color="#6366F1" />
+          <Check size={22} color="#444751" />
         </TouchableOpacity>
       </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#6366F1" />
+          <ActivityIndicator size="large" color="#444751" />
         </View>
       ) : (
         <FlatList
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#F1F5F9",
   },
-  headerTitle: { fontSize: 20, fontWeight: "900", color: "#1E293B" },
+  headerTitle: { fontSize: 20, fontWeight: "900", color: "#282A32" },
 
   listContainer: { paddingVertical: 10 },
   notificationCard: {
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     color: "#475569",
   },
   unreadTitle: {
-    color: "#1E293B",
+    color: "#282A32",
   },
   notifMessage: {
     fontSize: 14,

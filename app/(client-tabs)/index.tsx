@@ -71,7 +71,7 @@ export default function ClientHome() {
   if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4F46E5" />
+        <ActivityIndicator size="large" color="#282A32" />
       </View>
     );
   }
@@ -110,8 +110,8 @@ export default function ClientHome() {
               activeOpacity={0.8}
               onPress={() => router.push('/(client-tabs)/projects' as any)}
             >
-              <View style={[styles.iconCircle, { backgroundColor: '#EEF2FF' }]}>
-                <Briefcase size={20} color="#4F46E5" />
+              <View style={[styles.iconCircle, { backgroundColor: '#E5E4EA' }]}>
+                <Briefcase size={20} color="#282A32" />
               </View>
               <Text style={styles.statValue}>{stats.total}</Text>
               <Text style={styles.statLabel}>Total Projects</Text>
@@ -136,7 +136,7 @@ export default function ClientHome() {
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionsGrid}>
             <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: '#4F46E5' }]}
+              style={[styles.actionCard, { backgroundColor: '#282A32' }]}
               onPress={() => router.push('/create-project' as any)}
             >
               <Plus size={24} color="#FFF" />
@@ -160,7 +160,7 @@ export default function ClientHome() {
             <TouchableOpacity onPress={() => router.push('/(client-tabs)/projects' as any)}>
               <View style={styles.viewAllBtn}>
                 <Text style={styles.viewAllText}>See all</Text>
-                <ArrowRight size={14} color="#4F46E5" />
+                <ArrowRight size={14} color="#282A32" />
               </View>
             </TouchableOpacity>
           </View>
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#282A32',
     marginBottom: 4,
   },
   statLabel: {
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#282A32',
     marginBottom: 16,
   },
   sectionHeader: {
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: 14,
-    color: '#4F46E5',
+    color: '#282A32',
     fontWeight: '700',
   },
   actionsGrid: {
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#282A32',
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   createBtn: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#282A32',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,

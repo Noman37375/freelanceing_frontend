@@ -46,7 +46,7 @@ export default function AdminProfileCard({ name, role, avatarUrl, onEditPress, o
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: '#6366F1', // Indigo background to match reference
+        backgroundColor: '#444751', // Indigo background to match reference
         borderRadius: 24,
         padding: 24,
     },

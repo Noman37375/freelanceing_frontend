@@ -58,7 +58,7 @@ export default function ProjectDetails() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0F172A" />
+        <ActivityIndicator size="large" color="#282A32" />
       </View>
     );
   }
@@ -68,7 +68,7 @@ export default function ProjectDetails() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color="#1E293B" />
+            <ArrowLeft size={24} color="#444751" />
           </TouchableOpacity>
         </View>
         <View style={styles.errorContainer}>
@@ -98,7 +98,7 @@ export default function ProjectDetails() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color="#1E293B" />
+            <ArrowLeft size={24} color="#444751" />
           </TouchableOpacity>
           <Text style={styles.headerTitle} numberOfLines={1}>Job Details</Text>
           {/* <View style={styles.headerActions}>
@@ -148,13 +148,13 @@ export default function ProjectDetails() {
           <View style={styles.gridContainer}>
             {project.location && (
               <View style={styles.gridItem}>
-                <MapPin size={20} color="#0F172A" />
+                <MapPin size={20} color="#282A32" />
                 <Text style={styles.gridLabel}>Location</Text>
                 <Text style={styles.gridValue}>{project.location}</Text>
               </View>
             )}
             <View style={styles.gridItem}>
-              <Calendar size={20} color="#0F172A" />
+              <Calendar size={20} color="#282A32" />
               <Text style={styles.gridLabel}>Duration</Text>
               <Text style={styles.gridValue}>{project.duration || 'Not specified'}</Text>
             </View>
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: '#F8FAFC',
   },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B', flex: 1, textAlign: 'center' },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: '#444751', flex: 1, textAlign: 'center' },
   headerActions: { flexDirection: 'row', gap: 12 },
   backButton: { padding: 8, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', backgroundColor: '#FFF' },
   actionButton: { padding: 8 },
@@ -245,13 +245,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   statusText: { color: '#15803D', fontWeight: '700', fontSize: 12, textTransform: 'uppercase' },
-  projectTitle: { fontSize: 24, fontWeight: '800', color: '#1E293B', lineHeight: 32, marginBottom: 12 },
+  projectTitle: { fontSize: 24, fontWeight: '800', color: '#444751', lineHeight: 32, marginBottom: 12 },
   metaRow: { flexDirection: 'row', gap: 16 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   metaText: { color: '#64748B', fontSize: 14, fontWeight: '500' },
 
   budgetCard: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#282A32',
     borderRadius: 24,
     padding: 24,
     flexDirection: 'row',
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     ...Platform.select({
       ios: {
-        shadowColor: '#0F172A',
+        shadowColor: '#282A32',
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 16,
@@ -295,11 +295,11 @@ const styles = StyleSheet.create({
     borderColor: '#F1F5F9'
   },
   gridLabel: { color: '#94A3B8', fontSize: 12, fontWeight: '600', marginTop: 12, marginBottom: 4 },
-  gridValue: { color: '#1E293B', fontSize: 15, fontWeight: '700' },
+  gridValue: { color: '#444751', fontSize: 15, fontWeight: '700' },
 
   divider: { height: 1, backgroundColor: '#E2E8F0', marginBottom: 24 },
 
-  sectionHeading: { fontSize: 18, fontWeight: '700', color: '#1E293B', marginBottom: 12 },
+  sectionHeading: { fontSize: 18, fontWeight: '700', color: '#444751', marginBottom: 12 },
   descriptionText: { fontSize: 16, color: '#475569', lineHeight: 26, marginBottom: 32 },
 
   skillsSection: { marginBottom: 32 },
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   clientInfo: {},
-  clientName: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
+  clientName: { fontSize: 16, fontWeight: '700', color: '#444751' },
   clientMeta: { fontSize: 13, color: '#64748B', marginTop: 2 },
 
   bottomBar: {
@@ -350,13 +350,13 @@ const styles = StyleSheet.create({
     }),
   },
   bidButton: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#282A32',
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: '#0F172A',
+        shadowColor: '#282A32',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 10,
@@ -372,8 +372,8 @@ const styles = StyleSheet.create({
   bidButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 
   errorContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 40 },
-  errorText: { fontSize: 20, fontWeight: "700", color: "#1E293B", marginTop: 20, marginBottom: 8 },
+  errorText: { fontSize: 20, fontWeight: "700", color: "#444751", marginTop: 20, marginBottom: 8 },
   errorSubtext: { fontSize: 15, color: "#64748B", textAlign: "center", marginBottom: 32, lineHeight: 22 },
-  primaryButton: { backgroundColor: "#0F172A", paddingHorizontal: 24, paddingVertical: 14, borderRadius: 14 },
+  primaryButton: { backgroundColor: "#282A32", paddingHorizontal: 24, paddingVertical: 14, borderRadius: 14 },
   primaryButtonText: { color: "#FFFFFF", fontWeight: "700", fontSize: 16 },
 });

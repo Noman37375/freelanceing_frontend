@@ -27,7 +27,7 @@ export default function WorkCard({ project, type }: { project: any, type: string
   let statusGradient = ['#F1F5F9', '#E2E8F0'];
 
   if (project.status === 'inProgress' || type === 'active') {
-    statusColor = "#0F172A";
+    statusColor = "#282A32";
     statusBg = "#EFF6FF";
     statusText = "In Progress";
     statusGradient = ['#DBEAFE', '#BFDBFE'];
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: TYPOGRAPHY.fontSize.md,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: "#1E293B",
+    color: "#444751",
     marginBottom: 4,
     marginRight: SPACING.s
   },
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   detailValue: {
-    color: "#334155",
+    color: "#444751",
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.semibold
   },

@@ -39,7 +39,7 @@ export default function ScreenHeader({
                 end={{ x: 1, y: 1 }}
                 style={styles.backButton}
               >
-                <ArrowLeft size={20} color="#1E293B" />
+                <ArrowLeft size={20} color="#282A32" />
               </LinearGradient>
             </TouchableOpacity>
           ) : (
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: TYPOGRAPHY.fontSize.lg,
     fontWeight: TYPOGRAPHY.fontWeight.extrabold,
-    color: '#1E293B',
+    color: '#282A32',
   },
   subtitle: {
     marginTop: 2,

@@ -144,7 +144,7 @@ export default function ResolutionCenter() {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#6366F1" />
+                    <ActivityIndicator size="large" color="#444751" />
                     <Text style={styles.loadingText}>Loading dispute information...</Text>
                 </View>
             </SafeAreaView>
@@ -175,7 +175,7 @@ export default function ResolutionCenter() {
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
-                        <ArrowLeft size={24} color="#1E293B" />
+                        <ArrowLeft size={24} color="#282A32" />
                     </TouchableOpacity>
                     <View style={styles.headerCenter}>
                         <Text style={styles.headerTitle}>Resolution Center</Text>
@@ -193,7 +193,7 @@ export default function ResolutionCenter() {
 
                         <View style={styles.infoRow}>
                             <View style={styles.infoIconContainer}>
-                                <Briefcase size={18} color="#6366F1" />
+                                <Briefcase size={18} color="#444751" />
                             </View>
                             <View style={styles.infoContent}>
                                 <Text style={styles.infoLabel}>PROJECT</Text>
@@ -203,7 +203,7 @@ export default function ResolutionCenter() {
 
                         <View style={styles.infoRow}>
                             <View style={styles.infoIconContainer}>
-                                <DollarSign size={18} color="#6366F1" />
+                                <DollarSign size={18} color="#444751" />
                             </View>
                             <View style={styles.infoContent}>
                                 <Text style={styles.infoLabel}>DISPUTED AMOUNT</Text>
@@ -215,7 +215,7 @@ export default function ResolutionCenter() {
 
                         <View style={styles.infoRow}>
                             <View style={styles.infoIconContainer}>
-                                <Calendar size={18} color="#6366F1" />
+                                <Calendar size={18} color="#444751" />
                             </View>
                             <View style={styles.infoContent}>
                                 <Text style={styles.infoLabel}>CREATED</Text>
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#282A32',
     },
     headerSubtitle: {
         fontSize: 12,
@@ -357,10 +357,10 @@ const styles = StyleSheet.create({
     errorText: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#282A32',
     },
     backButton: {
-        backgroundColor: '#6366F1',
+        backgroundColor: '#444751',
         paddingHorizontal: 24,
         paddingVertical: 12,
         borderRadius: 12,
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 16,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#282A32',
         marginBottom: 16,
     },
     infoRow: {
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
         width: 38,
         height: 38,
         borderRadius: 12,
-        backgroundColor: '#EEF2FF',
+        backgroundColor: '#E5E4EA',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
     infoValue: {
         fontSize: 15,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#282A32',
     },
     reasonContainer: {
         marginTop: 8,
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         fontSize: 15,
-        color: '#1E293B',
+        color: '#282A32',
         maxHeight: 100,
         borderWidth: 1,
         borderColor: '#E2E8F0',
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: '#6366F1',
+        backgroundColor: '#444751',
         justifyContent: 'center',
         alignItems: 'center',
     },

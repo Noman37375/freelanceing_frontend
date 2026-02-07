@@ -22,7 +22,7 @@ export default function ProjectCard({
     switch (status) {
       case 'Active':
       case 'In Progress':
-        return '#3B82F6';
+        return '#282A32';
       case 'Completed':
         return '#10B981';
       case 'Pending':

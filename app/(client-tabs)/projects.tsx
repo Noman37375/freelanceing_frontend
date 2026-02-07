@@ -106,7 +106,7 @@ export default function Projects() {
             <Text style={styles.statLabel}>All</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: '#4F46E5' }]}>{stats.active}</Text>
+            <Text style={[styles.statValue, { color: '#282A32' }]}>{stats.active}</Text>
             <Text style={styles.statLabel}>Active</Text>
           </View>
           <View style={styles.statItem}>
@@ -118,7 +118,7 @@ export default function Projects() {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4F46E5" />
+          <ActivityIndicator size="large" color="#282A32" />
         </View>
       ) : (
         <FlatList
@@ -140,7 +140,7 @@ export default function Projects() {
               }
             />
           )}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#282A32" />}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
@@ -212,10 +212,10 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#282A32',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#4F46E5',
+    shadowColor: '#282A32',
     shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 15,
-    color: '#1E293B',
+    color: '#444751',
     fontWeight: '500',
   },
   statsRow: {
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#444751',
     marginBottom: 2,
   },
   statLabel: {
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#444751',
     marginBottom: 8,
   },
   emptySubtitle: {
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   },
   retryBtn: {
     marginTop: 16,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#282A32',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 12,

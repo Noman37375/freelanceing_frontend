@@ -59,7 +59,7 @@ export default function ServiceCategoryDetail() {
   const name = params.name ?? 'Service Category';
   const image = params.image ?? '';
   const icon = params.icon ?? 'Box';
-  const color = params.color ?? '#6366F1';
+  const color = params.color ?? '#444751';
 
   const hasImage = !!image;
 
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
   ctaTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#444751',
   },
   ctaSub: {
     fontSize: 13,

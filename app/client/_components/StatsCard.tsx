@@ -13,7 +13,7 @@ export default function StatsCard({
   title,
   value,
   icon: Icon,
-  iconColor = '#3B82F6',
+  iconColor = '#282A32',
   backgroundColor = '#FFFFFF',
 }: StatsCardProps) {
   return (

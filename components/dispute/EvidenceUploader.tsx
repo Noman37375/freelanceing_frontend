@@ -123,12 +123,12 @@ export default function EvidenceUploader({
             {/* Upload Buttons */}
             <View style={styles.uploadButtons}>
                 <TouchableOpacity style={styles.uploadButton} onPress={pickImage} disabled={uploading}>
-                    <ImageIcon size={20} color="#6366F1" />
+                    <ImageIcon size={20} color="#444751" />
                     <Text style={styles.uploadButtonText}>Upload Image</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.uploadButton} onPress={pickDocument} disabled={uploading}>
-                    <File size={20} color="#6366F1" />
+                    <File size={20} color="#444751" />
                     <Text style={styles.uploadButtonText}>Upload PDF</Text>
                 </TouchableOpacity>
             </View>
@@ -178,7 +178,7 @@ export default function EvidenceUploader({
                         return (
                             <View key={evidence.id} style={styles.evidenceItem}>
                                 <View style={styles.evidenceIcon}>
-                                    <Icon size={18} color="#6366F1" />
+                                    <Icon size={18} color="#444751" />
                                 </View>
                                 <View style={styles.evidenceInfo}>
                                     <Text style={styles.evidenceName} numberOfLines={1}>
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 16,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#282A32',
         marginBottom: 16,
     },
     uploadButtons: {
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
-        backgroundColor: '#EEF2FF',
+        backgroundColor: '#E5E4EA',
         borderRadius: 12,
         paddingVertical: 14,
         borderWidth: 1,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     uploadButtonText: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#6366F1',
+        color: '#444751',
     },
     selectedFileContainer: {
         backgroundColor: '#F8FAFC',
@@ -285,14 +285,14 @@ const styles = StyleSheet.create({
     fileName: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#1E293B',
+        color: '#282A32',
     },
     confirmButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
-        backgroundColor: '#6366F1',
+        backgroundColor: '#444751',
         borderRadius: 12,
         paddingVertical: 12,
     },
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 10,
-        backgroundColor: '#EEF2FF',
+        backgroundColor: '#E5E4EA',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     evidenceName: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#1E293B',
+        color: '#282A32',
         marginBottom: 2,
     },
     evidenceDate: {

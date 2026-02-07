@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 18,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#282A32',
     },
     list: {
         gap: 24,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     itemTitle: {
         fontSize: 15,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#282A32',
         marginBottom: 4,
     },
     itemSubTitle: {

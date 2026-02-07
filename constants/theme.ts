@@ -1,47 +1,52 @@
+// App color palette: E5E4EA, F4F4F8, 282A32, 444751, C2C2C8
 export const COLORS = {
-  primary: '#0F172A', // Black / Slate 900
-  primaryDark: '#020617', // Slate 950
-  primaryLight: '#818CF8', // Indigo 400
+  // Palette
+  primary: '#282A32',
+  primaryDark: '#282A32',
+  primaryLight: '#444751',
 
-  secondary: '#EC4899', // Pink 500
-  secondaryDark: '#DB2777', // Pink 600
+  secondary: '#444751',
+  secondaryDark: '#282A32',
 
-  background: '#0F172A', // Slate 900
-  backgroundLight: '#F8FAFC', // Light screen bg
-  surface: '#1E293B', // Slate 800
-  surfaceHighlight: '#334155', // Slate 700
+  background: '#282A32',
+  backgroundLight: '#F4F4F8',
+  surface: '#444751',
+  surfaceHighlight: '#444751',
+  surfaceMuted: '#E5E4EA',
+  border: '#E5E4EA',
+  borderMuted: '#C2C2C8',
 
-  textPrimary: '#F8FAFC', // Slate 50
-  textSecondary: '#94A3B8', // Slate 400
-  textTertiary: '#64748B', // Slate 500
+  textPrimary: '#282A32',
+  textSecondary: '#444751',
+  textTertiary: '#C2C2C8',
 
-  success: '#10B981', // Emerald 500
-  warning: '#F59E0B', // Amber 500
-  error: '#EF4444', // Red 500
-  info: '#0F172A', // Black
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  info: '#282A32',
 
   white: '#FFFFFF',
   black: '#000000',
   transparent: 'transparent',
 
   // Glassmorphism helpers
-  glass: 'rgba(30, 41, 59, 0.7)',
+  glass: 'rgba(40, 42, 50, 0.7)',
   glassBorder: 'rgba(255, 255, 255, 0.1)',
   glassLight: 'rgba(255, 255, 255, 0.05)',
-  glassDark: 'rgba(15, 23, 42, 0.6)',
+  glassDark: 'rgba(40, 42, 50, 0.6)',
 };
 
 export const GRADIENTS = {
-  primary: ['#4F46E5', '#4338CA'],
-  secondary: ['#EC4899', '#DB2777'],
+  primary: ['#444751', '#282A32'],
+  secondary: ['#444751', '#282A32'],
   success: ['#10B981', '#059669'],
   warning: ['#F59E0B', '#D97706'],
   error: ['#EF4444', '#DC2626'],
-  info: ['#0F172A', '#1E293B'],
-  purple: ['#8B5CF6', '#7C3AED'],
-  ocean: ['#06B6D4', '#0891B2'],
-  sunset: ['#F59E0B', '#EC4899'],
-  midnight: ['#1E1B4B', '#312E81'],
+  info: ['#282A32', '#444751'],
+  purple: ['#444751', '#282A32'],
+  ocean: ['#444751', '#282A32'],
+  sunset: ['#F59E0B', '#444751'],
+  midnight: ['#282A32', '#444751'],
 };
 
 export const SPACING = {

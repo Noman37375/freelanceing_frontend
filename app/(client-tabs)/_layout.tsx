@@ -10,7 +10,7 @@ export default function ClientTabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#4F46E5', // Primary indigo
+        tabBarActiveTintColor: '#282A32', // Primary indigo
         tabBarInactiveTintColor: '#94A3B8',
         tabBarShowLabel: true,
         tabBarLabelStyle: {
@@ -117,6 +117,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   activeIconBg: {
-    backgroundColor: '#EEF2FF', // Very light indigo
+    backgroundColor: '#E5E4EA', // Very light indigo
   },
 });

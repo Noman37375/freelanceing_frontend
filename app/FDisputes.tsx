@@ -104,11 +104,11 @@ export default function FDisputes() {
             onPress={handleBack}
             activeOpacity={0.6}
           >
-            <ArrowLeft size={24} color="#1E293B" />
+            <ArrowLeft size={24} color="#282A32" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>My Disputes</Text>
           <View style={styles.headerIcon}>
-            <ShieldAlert size={22} color="#6366F1" />
+            <ShieldAlert size={22} color="#444751" />
           </View>
         </View>
 
@@ -138,7 +138,7 @@ export default function FDisputes() {
         >
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#6366F1" />
+              <ActivityIndicator size="large" color="#444751" />
             </View>
           ) : filteredDisputes.length === 0 ? (
             <View style={styles.emptyState}>
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center',
     borderWidth: 1, borderColor: '#F1F5F9'
   },
-  headerTitle: { fontSize: 22, fontWeight: '900', color: '#1E293B' },
+  headerTitle: { fontSize: 22, fontWeight: '900', color: '#282A32' },
   headerIcon: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
 
   tabWrapper: { marginBottom: 10 },
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8, paddingHorizontal: 18, borderRadius: 20,
     backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0'
   },
-  tabActive: { backgroundColor: '#6366F1', borderColor: '#6366F1' },
+  tabActive: { backgroundColor: '#444751', borderColor: '#444751' },
   tabText: { fontSize: 14, fontWeight: '700', color: '#64748B' },
   tabTextActive: { color: '#FFFFFF' },
 
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18, marginBottom: 16,
     borderWidth: 1, borderColor: '#F1F5F9',
-    shadowColor: '#0F172A', shadowOpacity: 0.04, shadowRadius: 10, elevation: 2
+    shadowColor: '#282A32', shadowOpacity: 0.04, shadowRadius: 10, elevation: 2
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
   iconSquircle: {
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     marginRight: 12, borderWidth: 1, borderColor: '#F1F5F9'
   },
   headerText: { flex: 1 },
-  projectTitle: { fontSize: 16, fontWeight: '800', color: '#1E293B', marginBottom: 2 },
+  projectTitle: { fontSize: 16, fontWeight: '800', color: '#282A32', marginBottom: 2 },
   clientName: { fontSize: 13, color: '#64748B', fontWeight: '500' },
 
   detailsRow: {
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   },
   detailItem: { flex: 1 },
   detailLabel: { fontSize: 9, fontWeight: '800', color: '#94A3B8', letterSpacing: 0.5 },
-  detailValue: { fontSize: 14, fontWeight: '700', color: '#1E293B' },
+  detailValue: { fontSize: 14, fontWeight: '700', color: '#282A32' },
   detailDivider: { width: 1, height: 20, backgroundColor: '#E2E8F0', marginHorizontal: 15 },
 
   statusBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
@@ -289,11 +289,11 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 22,
-    backgroundColor: '#6366F1',
+    backgroundColor: '#444751',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
-    shadowColor: '#6366F1',
+    shadowColor: '#444751',
     shadowOpacity: 0.4,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },

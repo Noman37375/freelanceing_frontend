@@ -95,7 +95,7 @@ export default function Freelancers() {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4F46E5" />
+          <ActivityIndicator size="large" color="#282A32" />
         </View>
       ) : (
         <FlatList
@@ -107,7 +107,7 @@ export default function Freelancers() {
             <TouchableOpacity key={freelancer.id} style={styles.freelancerCard} activeOpacity={0.9}>
               <View style={styles.cardHeader}>
                 <View style={styles.avatarBox}>
-                  <User size={28} color="#4F46E5" />
+                  <User size={28} color="#282A32" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.nameText}>{freelancer.name}</Text>
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 15,
-    color: '#1E293B',
+    color: '#282A32',
     fontWeight: '500',
   },
   filtersRow: {
@@ -264,8 +264,8 @@ const styles = StyleSheet.create({
     borderColor: '#F1F5F9',
   },
   activeChip: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
+    backgroundColor: '#282A32',
+    borderColor: '#282A32',
   },
   chipText: {
     fontSize: 13,
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 16,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#E5E4EA',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   nameText: {
     fontSize: 17,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#282A32',
     marginBottom: 2,
   },
   titleText: {
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   boldText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#282A32',
   },
   mutedText: {
     fontSize: 13,
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   priceText: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#4F46E5',
+    color: '#282A32',
   },
   badgesRow: {
     flexDirection: 'row',
@@ -396,13 +396,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   profileBtn: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#E5E4EA',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 10,
   },
   profileBtnText: {
-    color: '#4F46E5',
+    color: '#282A32',
     fontWeight: '700',
     fontSize: 13,
   },
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#282A32',
     marginBottom: 8,
   },
   emptySubtitle: {

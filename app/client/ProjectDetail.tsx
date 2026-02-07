@@ -146,7 +146,7 @@ export default function ProjectDetail() {
           <View style={styles.freelancerCard}>
             <View style={styles.freelancerHeader}>
               <View style={styles.avatarContainer}>
-                <User size={24} color="#3B82F6" strokeWidth={2} />
+                <User size={24} color="#282A32" strokeWidth={2} />
               </View>
               <View style={styles.freelancerInfo}>
                 <Text style={styles.freelancerName}>{project.freelancer.userName || 'Freelancer'}</Text>

@@ -170,7 +170,7 @@ export default function ManageClients() {
                         style={styles.iconButton}
                         disabled={!!deletingId}
                     >
-                        <Edit2 size={18} color={deletingId ? "#CBD5E1" : "#4F46E5"} />
+                        <Edit2 size={18} color={deletingId ? "#CBD5E1" : "#282A32"} />
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => openOptions(item)}
@@ -215,7 +215,7 @@ export default function ManageClients() {
 
             {isLoading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#4F46E5" />
+                    <ActivityIndicator size="large" color="#282A32" />
                 </View>
             ) : (
                 <FlatList
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 18,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#444751',
     },
     loadingContainer: {
         flex: 1,
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     userName: {
-        color: '#1E293B',
+        color: '#444751',
         fontSize: 16,
         fontWeight: '700',
     },
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     modalTitle: {
-        color: '#1E293B',
+        color: '#444751',
         fontSize: 20,
         fontWeight: '800',
     },
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
         borderColor: '#E2E8F0',
         borderRadius: 12,
         padding: 12,
-        color: '#1E293B',
+        color: '#444751',
         fontSize: 15,
     },
     switchContainer: {
@@ -556,13 +556,13 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     saveButton: {
-        backgroundColor: '#4F46E5',
+        backgroundColor: '#282A32',
         padding: 16,
         borderRadius: 16,
         alignItems: 'center',
         ...Platform.select({
             ios: {
-                shadowColor: '#4F46E5',
+                shadowColor: '#282A32',
                 shadowOpacity: 0.2,
                 shadowRadius: 10,
                 shadowOffset: { width: 0, height: 4 },
@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
     optionsModalTitle: {
         fontSize: 18,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#444751',
     },
     optionsModalSub: {
         fontSize: 13,

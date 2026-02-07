@@ -79,7 +79,7 @@ Reusable statistics card component:
   title="Projects"
   value="12"
   icon={Briefcase}
-  iconColor="#3B82F6"
+  iconColor="#282A32"
 />
 ```
 
@@ -169,7 +169,7 @@ All components use static placeholder data. Key interfaces:
 ## Design System
 
 ### Colors
-- Primary Blue: `#3B82F6`
+- Primary Blue: `#282A32`
 - Danger Red: `#EF4444`
 - Success Green: `#10B981`
 - Warning Yellow: `#F59E0B`

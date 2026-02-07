@@ -78,7 +78,7 @@ export default function FindProjectsScreen() {
             onPress={() => router.back()}
             style={styles.backButton}
           >
-            <ArrowLeft size={24} color="#1E293B" />
+            <ArrowLeft size={24} color="#444751" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Find Projects</Text>
           <View style={{ width: 40 }} />
@@ -130,7 +130,7 @@ export default function FindProjectsScreen() {
         {/* 🧩 Project List */}
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#0F172A" />
+            <ActivityIndicator size="large" color="#282A32" />
             <Text style={styles.loadingText}>Searching available projects...</Text>
           </View>
         ) : filteredProjects.length === 0 ? (
@@ -155,8 +155,8 @@ export default function FindProjectsScreen() {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                colors={['#0F172A']}
-                tintColor="#0F172A"
+                colors={['#282A32']}
+                tintColor="#282A32"
               />
             }
           />
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  headerTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B' },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#444751' },
 
   searchSection: {
     paddingHorizontal: 20,
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 16,
-    color: '#1E293B',
+    color: '#444751',
   },
 
   filterSection: {
@@ -239,8 +239,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   filterButtonActive: {
-    backgroundColor: '#0F172A',
-    borderColor: '#0F172A'
+    backgroundColor: '#282A32',
+    borderColor: '#282A32'
   },
   filterButtonText: {
     color: '#64748B',
@@ -269,6 +269,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  emptyText: { fontSize: 18, fontWeight: '700', color: '#1E293B', marginBottom: 8 },
+  emptyText: { fontSize: 18, fontWeight: '700', color: '#444751', marginBottom: 8 },
   emptySubtext: { fontSize: 14, color: '#94A3B8' },
 });

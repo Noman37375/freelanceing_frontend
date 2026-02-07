@@ -141,7 +141,7 @@ export default function AdminDisputeDetail() {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#6366F1" />
+                    <ActivityIndicator size="large" color="#444751" />
                     <Text style={styles.loadingText}>Loading dispute...</Text>
                 </View>
             </SafeAreaView>
@@ -183,7 +183,7 @@ export default function AdminDisputeDetail() {
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
-                    <ArrowLeft size={24} color="#1E293B" />
+                    <ArrowLeft size={24} color="#282A32" />
                 </TouchableOpacity>
                 <View style={styles.headerCenter}>
                     <Text style={styles.headerTitle}>Dispute Details</Text>
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#282A32',
     },
     headerSubtitle: {
         fontSize: 12,
@@ -453,10 +453,10 @@ const styles = StyleSheet.create({
     errorText: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#282A32',
     },
     backButton: {
-        backgroundColor: '#6366F1',
+        backgroundColor: '#444751',
         paddingHorizontal: 24,
         paddingVertical: 12,
         borderRadius: 12,
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 16,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#282A32',
         marginBottom: 16,
     },
     infoGrid: {
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
     infoValue: {
         fontSize: 15,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#282A32',
     },
     infoSubValue: {
         fontSize: 13,
@@ -536,8 +536,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     priorityButtonActive: {
-        backgroundColor: '#6366F1',
-        borderColor: '#6366F1',
+        backgroundColor: '#444751',
+        borderColor: '#444751',
     },
     priorityButtonText: {
         fontSize: 13,
@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
     inputLabel: {
         fontSize: 13,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#282A32',
         marginBottom: 8,
     },
     resolutionTypeGrid: {
@@ -587,8 +587,8 @@ const styles = StyleSheet.create({
         borderColor: '#E2E8F0',
     },
     resolutionTypeButtonActive: {
-        backgroundColor: '#EEF2FF',
-        borderColor: '#6366F1',
+        backgroundColor: '#E5E4EA',
+        borderColor: '#444751',
     },
     resolutionTypeText: {
         fontSize: 13,
@@ -596,7 +596,7 @@ const styles = StyleSheet.create({
         color: '#64748B',
     },
     resolutionTypeTextActive: {
-        color: '#6366F1',
+        color: '#444751',
     },
     inputGroup: {
         marginBottom: 16,
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
     amountInput: {
         flex: 1,
         fontSize: 15,
-        color: '#1E293B',
+        color: '#282A32',
         fontWeight: '600',
     },
     textArea: {
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         fontSize: 15,
-        color: '#1E293B',
+        color: '#282A32',
         borderWidth: 1,
         borderColor: '#E2E8F0',
         minHeight: 100,

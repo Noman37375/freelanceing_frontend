@@ -121,12 +121,12 @@ export default function AdminDashboard() {
     ];
 
     const ManagementCards = [
-        { title: 'Freelancers', icon: Users, color: '#3B82F6', route: '/(admin)/manage-freelancers', count: stats?.totalFreelancers || 0 },
+        { title: 'Freelancers', icon: Users, color: '#282A32', route: '/(admin)/manage-freelancers', count: stats?.totalFreelancers || 0 },
         { title: 'Clients', icon: UserCheck, color: '#F59E0B', route: '/(admin)/manage-clients', count: stats?.totalClients || 0 },
         { title: 'Services', icon: Layers, color: '#10B981', route: '/(admin)/manage-services', count: stats?.totalServices ?? 0 },
-        { title: 'Notifications', icon: Bell, color: '#6366F1', route: '/(admin)/manage-notifications', count: 0 },
-        { title: 'Projects', icon: Briefcase, color: '#EC4899', route: '/(admin)/manage-projects', count: stats?.activeProjects || 0 },
-        { title: 'Disputes', icon: Activity, color: '#8B5CF6', route: '/(admin)/manage-disputes', count: stats?.totalDisputes ?? 0 },
+        { title: 'Notifications', icon: Bell, color: '#444751', route: '/(admin)/manage-notifications', count: 0 },
+        { title: 'Projects', icon: Briefcase, color: '#444751', route: '/(admin)/manage-projects', count: stats?.activeProjects || 0 },
+        { title: 'Disputes', icon: Activity, color: '#444751', route: '/(admin)/manage-disputes', count: stats?.totalDisputes ?? 0 },
     ];
 
     // Dynamic styles based on screen size
@@ -188,7 +188,7 @@ export default function AdminDashboard() {
                                 style={styles.menuButton}
                                 onPress={() => setSidebarVisible(!sidebarVisible)}
                             >
-                                <Menu size={24} color="#1E293B" />
+                                <Menu size={24} color="#444751" />
                             </TouchableOpacity>
                         )}
                         <Text style={[styles.pageTitle, { fontSize: isMobile ? 20 : 24 }]}>Dashboard</Text>
@@ -215,7 +215,7 @@ export default function AdminDashboard() {
                             </View>
                         )}
                         <TouchableOpacity style={styles.notificationButton}>
-                            <Bell size={20} color="#1E293B" />
+                            <Bell size={20} color="#444751" />
                             <View style={styles.notifBadge} />
                         </TouchableOpacity>
                     </View>
@@ -237,7 +237,7 @@ export default function AdminDashboard() {
                                     </Text>
                                     {!isMobile && (
                                         <TouchableOpacity style={styles.reportButton}>
-                                            <FileText size={16} color="#6366F1" />
+                                            <FileText size={16} color="#444751" />
                                             <Text style={styles.reportButtonText}>Download report</Text>
                                         </TouchableOpacity>
                                     )}
@@ -271,7 +271,7 @@ export default function AdminDashboard() {
                                     onPress={() => router.push('/(admin)/manage-projects' as any)}
                                 >
                                     <Text style={styles.viewMoreText}>View all</Text>
-                                    <ChevronRight size={14} color="#6366F1" />
+                                    <ChevronRight size={14} color="#444751" />
                                 </TouchableOpacity> */}
                             </View>
 
@@ -303,7 +303,7 @@ export default function AdminDashboard() {
                                         onPress={() => router.push('/(admin)/manage-projects' as any)}
                                     >
                                         <Text style={styles.viewMoreText}>View all</Text>
-                                        <ChevronRight size={14} color="#6366F1" />
+                                        <ChevronRight size={14} color="#444751" />
                                     </TouchableOpacity>
                                 </View>
 
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 20,
         borderRadius: 10,
-        backgroundColor: '#6366F1',
+        backgroundColor: '#444751',
         justifyContent: 'center',
         paddingHorizontal: 2,
     },
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     },
     pageTitle: {
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#444751',
     },
     topBarRight: {
         flexDirection: 'row',
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 14,
         fontWeight: '600',
-        color: '#1E293B',
+        color: '#444751',
     },
     notificationButton: {
         width: 44,
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     },
     greetingText: {
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#444751',
     },
     reportButton: {
         flexDirection: 'row',
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
     reportButtonText: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#6366F1',
+        color: '#444751',
     },
     chartsGrid: {
         marginBottom: 32,
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#444751',
     },
     countText: {
         color: '#94A3B8',
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
     viewMoreText: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#6366F1',
+        color: '#444751',
     },
     managementGrid: {
         flexDirection: 'row',
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
     cardCount: {
         fontSize: 22,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#444751',
     },
     cardTitle: {
         fontSize: 13,

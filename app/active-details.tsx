@@ -96,21 +96,21 @@ export default function AvailableDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0F172A" },
+  container: { flex: 1, backgroundColor: "#282A32" },
   
   // Header
   darkHeader: { paddingHorizontal: 20, paddingBottom: 25 },
   navRow: { flexDirection: "row", alignItems: "center", marginTop: 10, gap: 12 },
-  backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: "#1E293B", justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#334155" },
+  backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: "#282A32", justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#444751" },
   headerTitle: { fontSize: 22, fontWeight: "800", color: "#F8FAFC", flex: 1 },
   
   summaryGrid: { flexDirection: "row", flexWrap: "wrap", marginTop: 20, gap: 10 },
-  summaryItem: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#1E293B", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: "#334155" },
+  summaryItem: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#282A32", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: "#444751" },
   summaryText: { color: "#F8FAFC", fontSize: 12, fontWeight: "600" },
 
   // Content Body
   contentBody: { flex: 1, backgroundColor: "#F8FAFC", borderTopLeftRadius: 32, borderTopRightRadius: 32 },
-  sectionTitle: { fontSize: 18, fontWeight: "800", color: "#1E293B", marginBottom: 12, marginTop: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: "800", color: "#282A32", marginBottom: 12, marginTop: 10 },
   descriptionCard: { backgroundColor: "#FFF", padding: 16, borderRadius: 20, marginBottom: 25, borderWidth: 1, borderColor: "#E2E8F0" },
   descriptionText: { fontSize: 14, color: "#475569", lineHeight: 22 },
 
@@ -118,8 +118,8 @@ const styles = StyleSheet.create({
   milestoneCard: { backgroundColor: "#FFF", borderRadius: 20, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: "#E2E8F0", shadowColor: "#000", shadowOpacity: 0.02, shadowRadius: 10, elevation: 2 },
   milestoneHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
   milestoneIconTitle: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
-  milestoneTitle: { fontSize: 16, fontWeight: "700", color: "#1E293B" },
-  milestonePrice: { fontSize: 16, fontWeight: "800", color: "#6366F1" },
+  milestoneTitle: { fontSize: 16, fontWeight: "700", color: "#282A32" },
+  milestonePrice: { fontSize: 16, fontWeight: "800", color: "#444751" },
   approvedText: { textDecorationLine: "line-through", color: "#94A3B8" },
   
   milestoneBody: { marginBottom: 15 },
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   detailRow: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
   detailDescription: { fontSize: 13, color: "#94A3B8", flex: 1, lineHeight: 18 },
 
-  requestButton: { backgroundColor: "#6366F1", paddingVertical: 12, borderRadius: 14, shadowColor: "#6366F1", shadowOpacity: 0.2, shadowRadius: 5 },
+  requestButton: { backgroundColor: "#444751", paddingVertical: 12, borderRadius: 14, shadowColor: "#444751", shadowOpacity: 0.2, shadowRadius: 5 },
   requestText: { color: "#FFFFFF", fontWeight: "700", textAlign: "center", fontSize: 14 },
   
   statusTag: { paddingVertical: 10, borderRadius: 14 },
@@ -135,6 +135,6 @@ const styles = StyleSheet.create({
 
   // Border accents
   approvedCardBorder: { borderLeftWidth: 5, borderLeftColor: "#10B981" },
-  activeCardBorder: { borderLeftWidth: 5, borderLeftColor: "#6366F1" },
+  activeCardBorder: { borderLeftWidth: 5, borderLeftColor: "#444751" },
   pendingCardBorder: { borderLeftWidth: 5, borderLeftColor: "#CBD5E1" },
 });

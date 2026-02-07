@@ -102,16 +102,16 @@ export default function ManageNotifications() {
         switch (type) {
             case 'alert': return <ShieldAlert size={20} color="#EF4444" />;
             case 'promo': return <Zap size={20} color="#F59E0B" />;
-            default: return <Info size={20} color="#6366F1" />;
+            default: return <Info size={20} color="#444751" />;
         }
     };
 
     const renderItem = ({ item }: { item: any }) => (
         <View style={styles.notifCard}>
             <View style={styles.notifHeader}>
-                <View style={[styles.typeBadge, { backgroundColor: item.type === 'alert' ? '#FEF2F2' : (item.type === 'promo' ? '#FFFBEB' : '#EEF2FF') }]}>
+                <View style={[styles.typeBadge, { backgroundColor: item.type === 'alert' ? '#FEF2F2' : (item.type === 'promo' ? '#FFFBEB' : '#E5E4EA') }]}>
                     {getIcon(item.type)}
-                    <Text style={[styles.typeText, { color: item.type === 'alert' ? '#EF4444' : (item.type === 'promo' ? '#B45309' : '#4F46E5') }]}>
+                    <Text style={[styles.typeText, { color: item.type === 'alert' ? '#EF4444' : (item.type === 'promo' ? '#B45309' : '#282A32') }]}>
                         {item.type.toUpperCase()}
                     </Text>
                 </View>
@@ -122,7 +122,7 @@ export default function ManageNotifications() {
                     </View>
                     <View style={styles.actions}>
                         <TouchableOpacity onPress={() => handleEdit(item)}>
-                            <Edit2 size={16} color="#4F46E5" />
+                            <Edit2 size={16} color="#282A32" />
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => handleDelete(item.id)}>
                             <Trash2 size={16} color="#EF4444" />
@@ -152,7 +152,7 @@ export default function ManageNotifications() {
 
             {isLoading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#4F46E5" />
+                    <ActivityIndicator size="large" color="#282A32" />
                 </View>
             ) : (
                 <FlatList
@@ -266,12 +266,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 12,
     },
-    headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#1E293B' },
+    headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#282A32' },
     addButton: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        backgroundColor: '#4F46E5',
+        backgroundColor: '#282A32',
         paddingVertical: 10,
         paddingHorizontal: 16,
         borderRadius: 10,
@@ -297,24 +297,24 @@ const styles = StyleSheet.create({
     typeText: { fontSize: 10, fontWeight: '800' },
     timeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     timeText: { fontSize: 11, color: '#94A3B8', fontWeight: '600' },
-    notifTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 4 },
+    notifTitle: { fontSize: 16, fontWeight: '700', color: '#282A32', marginBottom: 4 },
     notifMsg: { fontSize: 14, color: '#64748B', lineHeight: 20 },
     emptyContainer: { alignItems: 'center', marginTop: 100, backgroundColor: '#FFF', padding: 40, borderRadius: 24 },
     emptyText: { marginTop: 16, color: '#94A3B8', fontWeight: '500' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.6)', justifyContent: 'flex-end' },
     modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '85%' },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-    modalTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B' },
+    modalTitle: { fontSize: 20, fontWeight: '800', color: '#282A32' },
     inputGroup: { marginBottom: 20 },
     label: { fontSize: 14, fontWeight: '700', color: '#475569', marginBottom: 8 },
-    input: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 12, fontSize: 15, color: '#1E293B' },
+    input: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 12, fontSize: 15, color: '#282A32' },
     textArea: { height: 100, textAlignVertical: 'top' },
     typeSelector: { flexDirection: 'row', gap: 10, marginBottom: 30 },
     typeOption: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#F1F5F9', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
-    typeSelected: { backgroundColor: '#EEF2FF', borderColor: '#4F46E5', borderWidth: 2 },
+    typeSelected: { backgroundColor: '#E5E4EA', borderColor: '#282A32', borderWidth: 2 },
     typeOptionText: { fontSize: 14, fontWeight: '700', color: '#64748B' },
-    typeSelectedText: { color: '#4F46E5' },
-    sendButton: { backgroundColor: '#4F46E5', flexDirection: 'row', gap: 8, padding: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+    typeSelectedText: { color: '#282A32' },
+    sendButton: { backgroundColor: '#282A32', flexDirection: 'row', gap: 8, padding: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
     sendBtnText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
     disabledBtn: { opacity: 0.6 },
 });

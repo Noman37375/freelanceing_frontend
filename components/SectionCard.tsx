@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: TYPOGRAPHY.fontSize.lg,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#1E293B',
+    color: '#282A32',
     marginBottom: SPACING.m,
     letterSpacing: TYPOGRAPHY.letterSpacing.tight,
   },

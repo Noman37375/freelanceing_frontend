@@ -155,7 +155,7 @@ export default function ProjectsScreen() {
         {/* Project List */}
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#0F172A" />
+            <ActivityIndicator size="large" color="#282A32" />
             <Text style={styles.loadingText}>Fetching opportunities...</Text>
           </View>
         ) : (
@@ -163,7 +163,7 @@ export default function ProjectsScreen() {
             style={styles.listContainer}
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0F172A" />
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#282A32" />
             }
           >
             <View style={styles.resultsHeader}>
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 15,
-    color: "#1E293B",
+    color: "#444751",
     fontWeight: '500'
   },
   categoriesWrapper: {
@@ -353,8 +353,8 @@ const styles = StyleSheet.create({
     borderColor: '#F1F5F9',
   },
   activeChip: {
-    backgroundColor: "#0F172A",
-    borderColor: '#0F172A',
+    backgroundColor: "#282A32",
+    borderColor: '#282A32',
   },
   chipText: {
     fontSize: 13,
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   },
   bidText: {
     fontSize: 12,
-    color: "#0F172A",
+    color: "#282A32",
     fontWeight: "700"
   },
   loadingContainer: {
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#444751',
     marginTop: 16,
     marginBottom: 8,
   },
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#1E293B"
+    color: "#444751"
   },
   closeBtn: {
     padding: 4,
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 15,
-    color: "#1E293B"
+    color: "#444751"
   },
   modalFooter: {
     flexDirection: "row",
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
     flex: 2,
     height: 52,
     borderRadius: 14,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#282A32",
     alignItems: "center",
     justifyContent: 'center',
   },

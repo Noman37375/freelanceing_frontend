@@ -14,14 +14,14 @@ export const API_CONFIG = {
   retryAttempts: 3,
 };
 
-// Theme Colors
+// Theme Colors — palette: E5E4EA, F4F4F8, 282A32, 444751, C2C2C8
 export const COLORS = {
-  primary: '#3B82F6',
-  primaryDark: '#2563EB',
-  primaryLight: '#60A5FA',
-  secondary: '#10B981',
-  secondaryDark: '#059669',
-  secondaryLight: '#34D399',
+  primary: '#282A32',
+  primaryDark: '#282A32',
+  primaryLight: '#444751',
+  secondary: '#444751',
+  secondaryDark: '#282A32',
+  secondaryLight: '#C2C2C8',
   accent: '#F59E0B',
   accentDark: '#D97706',
   accentLight: '#FBBF24',
@@ -34,33 +34,33 @@ export const COLORS = {
   success: '#10B981',
   successDark: '#059669',
   successLight: '#34D399',
-  info: '#3B82F6',
-  infoDark: '#2563EB',
-  infoLight: '#60A5FA',
-  
-  // Neutral Colors
+  info: '#282A32',
+  infoDark: '#282A32',
+  infoLight: '#444751',
+
+  // Palette neutrals
   white: '#FFFFFF',
   black: '#000000',
-  gray50: '#F9FAFB',
-  gray100: '#F3F4F6',
-  gray200: '#E5E7EB',
-  gray300: '#D1D5DB',
-  gray400: '#9CA3AF',
-  gray500: '#6B7280',
-  gray600: '#4B5563',
-  gray700: '#374151',
-  gray800: '#1F2937',
-  gray900: '#111827',
-  
+  gray50: '#F4F4F8',
+  gray100: '#F4F4F8',
+  gray200: '#E5E4EA',
+  gray300: '#C2C2C8',
+  gray400: '#C2C2C8',
+  gray500: '#444751',
+  gray600: '#444751',
+  gray700: '#444751',
+  gray800: '#282A32',
+  gray900: '#282A32',
+
   // Background Colors
-  background: '#F9FAFB',
+  background: '#F4F4F8',
   surface: '#FFFFFF',
   card: '#FFFFFF',
-  
+
   // Text Colors
-  textPrimary: '#111827',
-  textSecondary: '#6B7280',
-  textTertiary: '#9CA3AF',
+  textPrimary: '#282A32',
+  textSecondary: '#444751',
+  textTertiary: '#C2C2C8',
   textInverse: '#FFFFFF',
 };
 

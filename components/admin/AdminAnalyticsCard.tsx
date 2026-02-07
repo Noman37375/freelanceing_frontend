@@ -23,7 +23,7 @@ export default function AdminAnalyticsCard({ percentage, title, subTitle, value,
         <View style={styles.card}>
             <View style={styles.header}>
                 <Text style={styles.title}>{title}</Text>
-                <TrendingUp size={20} color="#1E293B" />
+                <TrendingUp size={20} color="#282A32" />
             </View>
 
             <View style={styles.chartContainer}>
@@ -40,7 +40,7 @@ export default function AdminAnalyticsCard({ percentage, title, subTitle, value,
                         cx={center}
                         cy={center}
                         r={radius}
-                        stroke="#6366F1"
+                        stroke="#444751"
                         strokeWidth={strokeWidth}
                         strokeDasharray={circumference}
                         strokeDashoffset={strokeDashoffset}
@@ -58,7 +58,7 @@ export default function AdminAnalyticsCard({ percentage, title, subTitle, value,
             <View style={styles.footer}>
                 <View style={styles.footerItem}>
                     <View style={styles.dotContainer}>
-                        <View style={[styles.dot, { backgroundColor: '#6366F1' }]} />
+                        <View style={[styles.dot, { backgroundColor: '#444751' }]} />
                         <Text style={styles.percentageValue}>{percentage}%</Text>
                     </View>
                     <Text style={styles.footerLabel}>Response rate</Text>
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#282A32',
     },
     chartContainer: {
         alignItems: 'center',
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     percentageText: {
         fontSize: 24,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#282A32',
     },
     performanceText: {
         fontSize: 10,
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     percentageValue: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#282A32',
     },
     footerLabel: {
         fontSize: 10,

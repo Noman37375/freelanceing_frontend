@@ -135,7 +135,7 @@ export default function BidNow() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1E293B" />
+        <ActivityIndicator size="large" color="#444751" />
       </View>
     );
   }
@@ -153,11 +153,11 @@ export default function BidNow() {
         {/* Header: back left, title center, menu right */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color="#0F172A" />
+            <ArrowLeft size={24} color="#282A32" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Submit Proposal</Text>
           {/* <TouchableOpacity style={styles.menuButton}>
-            <MoreVertical size={22} color="#0F172A" />
+            <MoreVertical size={22} color="#282A32" />
           </TouchableOpacity> */}
         </View>
 
@@ -170,7 +170,7 @@ export default function BidNow() {
           <Text style={styles.applyToMeta}>{timeAgo(project?.createdAt)}</Text>
           <View style={styles.applyToMetaRow}>
             <Text style={styles.applyToMetaLine2}>Payment Verified</Text>
-            <CheckCircle size={16} color="#0F172A" style={styles.checkIcon} />
+            <CheckCircle size={16} color="#282A32" style={styles.checkIcon} />
           </View>
           <TouchableOpacity
             style={styles.showDetailsRow}
@@ -178,9 +178,9 @@ export default function BidNow() {
           >
             <Text style={styles.showDetailsText}>Show Details</Text>
             {showDetails ? (
-              <ChevronUp size={18} color="#0F172A" />
+              <ChevronUp size={18} color="#282A32" />
             ) : (
-              <ChevronDown size={18} color="#0F172A" />
+              <ChevronDown size={18} color="#282A32" />
             )}
           </TouchableOpacity>
 
@@ -195,21 +195,21 @@ export default function BidNow() {
               <View style={styles.detailsGrid}>
                 {project.budget != null && (
                   <View style={styles.detailsGridItem}>
-                    <DollarSign size={18} color="#0F172A" />
+                    <DollarSign size={18} color="#282A32" />
                     <Text style={styles.detailsGridLabel}>Budget</Text>
                     <Text style={styles.detailsGridValue}>${project.budget}</Text>
                   </View>
                 )}
                 {project.duration != null && project.duration !== "" && (
                   <View style={styles.detailsGridItem}>
-                    <Calendar size={18} color="#0F172A" />
+                    <Calendar size={18} color="#282A32" />
                     <Text style={styles.detailsGridLabel}>Duration</Text>
                     <Text style={styles.detailsGridValue}>{project.duration}</Text>
                   </View>
                 )}
                 {project.location != null && project.location !== "" && (
                   <View style={styles.detailsGridItem}>
-                    <MapPin size={18} color="#0F172A" />
+                    <MapPin size={18} color="#282A32" />
                     <Text style={styles.detailsGridLabel}>Location</Text>
                     <Text style={styles.detailsGridValue}>{project.location}</Text>
                   </View>
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   backButton: { padding: 8, minWidth: 40 },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: "700", color: "#0F172A", textAlign: "center" },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: "700", color: "#282A32", textAlign: "center" },
   menuButton: { padding: 8, minWidth: 40, alignItems: "flex-end" },
 
   applyToCard: {
@@ -366,13 +366,13 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
   },
   applyToLabel: { fontSize: 12, color: "#64748B", fontWeight: "600", marginBottom: 8 },
-  applyToTitle: { fontSize: 16, fontWeight: "700", color: "#0F172A", marginBottom: 8 },
+  applyToTitle: { fontSize: 16, fontWeight: "700", color: "#282A32", marginBottom: 8 },
   applyToMeta: { fontSize: 13, color: "#64748B", marginBottom: 4 },
   applyToMetaRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
   applyToMetaLine2: { fontSize: 13, color: "#64748B" },
   checkIcon: { marginLeft: 6 },
   showDetailsRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  showDetailsText: { fontSize: 14, color: "#0F172A", fontWeight: "600" },
+  showDetailsText: { fontSize: 14, color: "#282A32", fontWeight: "600" },
 
   detailsBlock: {
     marginTop: 16,
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   detailsHeading: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0F172A",
+    color: "#282A32",
     marginBottom: 8,
   },
   detailsText: {
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
   },
   detailsGridLabel: { fontSize: 11, color: "#64748B", marginTop: 4 },
-  detailsGridValue: { fontSize: 14, fontWeight: "700", color: "#0F172A", marginTop: 2 },
+  detailsGridValue: { fontSize: 14, fontWeight: "700", color: "#282A32", marginTop: 2 },
   tagsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   detailTag: {
     backgroundColor: "#F1F5F9",
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   detailTagText: { fontSize: 12, fontWeight: "600", color: "#475569" },
 
   section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#0F172A", marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#282A32", marginBottom: 12 },
   radioGroupRow: { flexDirection: "row", alignItems: "center", gap: 24, marginBottom: 12 },
   radioRow: { flexDirection: "row", alignItems: "center" },
   radioOuter: {
@@ -431,15 +431,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 8,
   },
-  radioOuterSelected: { borderColor: "#0F172A" },
+  radioOuterSelected: { borderColor: "#282A32" },
   radioInner: {
     width: 10,
     height: 10,
     borderRadius: 5,
     backgroundColor: "transparent",
   },
-  radioInnerSelected: { backgroundColor: "#0F172A" },
-  radioLabel: { fontSize: 15, color: "#0F172A", fontWeight: "500" },
+  radioInnerSelected: { backgroundColor: "#282A32" },
+  radioLabel: { fontSize: 15, color: "#282A32", fontWeight: "500" },
   radioLabelMuted: { color: "#94A3B8" },
   bidDesc: {
     fontSize: 13,
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
   milestoneDateInput: { flex: 1 },
   milestoneAmountInput: { flex: 1 },
   addMilestoneBtn: { marginTop: 8 },
-  addMilestoneText: { fontSize: 14, color: "#0F172A", fontWeight: "600" },
+  addMilestoneText: { fontSize: 14, color: "#282A32", fontWeight: "600" },
 
   input: {
     borderWidth: 1,
@@ -470,12 +470,12 @@ const styles = StyleSheet.create({
     padding: 14,
     backgroundColor: "#FFF",
     fontSize: 15,
-    color: "#0F172A",
+    color: "#282A32",
   },
   coverLetterInput: { height: 120, paddingTop: 14 },
 
   sendBtn: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#282A32",
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",

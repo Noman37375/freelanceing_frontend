@@ -20,14 +20,14 @@ export default function DisputeStatusBadge({ status, size = 'medium' }: DisputeS
         };
       case 'under_review':
         return {
-          color: '#3B82F6',
+          color: '#282A32',
           bg: '#EFF6FF',
           icon: Eye,
           label: 'Under Review',
         };
       case 'awaiting_response':
         return {
-          color: '#8B5CF6',
+          color: '#444751',
           bg: '#F5F3FF',
           icon: AlertCircle,
           label: 'Awaiting Response',

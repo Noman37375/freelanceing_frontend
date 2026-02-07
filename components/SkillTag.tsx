@@ -12,7 +12,7 @@ interface SkillTagProps {
 const getSkillColor = (skill: string) => {
   const hash = skill.split('').reduce((acc, char) => char.charCodeAt(0) + acc, 0);
   const colors = [
-    { bg: '#EEF2FF', border: '#C7D2FE', text: '#4F46E5' }, // Indigo
+    { bg: '#E5E4EA', border: '#C2C2C8', text: '#282A32' }, // Neutral
     { bg: '#F0FDF4', border: '#BBF7D0', text: '#16A34A' }, // Green
     { bg: '#FEF3C7', border: '#FDE68A', text: '#D97706' }, // Amber
     { bg: '#FCE7F3', border: '#FBCFE8', text: '#DB2777' }, // Pink

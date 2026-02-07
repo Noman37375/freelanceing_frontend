@@ -77,7 +77,7 @@ export default function AdminProfilePage() {
         <SafeAreaView style={styles.container}>
             {/* <View style={styles.header}>
                 <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <ArrowLeft size={24} color="#1E293B" />
+                    <ArrowLeft size={24} color="#444751" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Account Settings</Text>
                 <View style={{ width: 40 }} />
@@ -97,7 +97,7 @@ export default function AdminProfilePage() {
                     <View style={styles.infoCard}>
                         <View style={styles.infoRow}>
                             <View style={styles.iconBox}>
-                                <Mail size={18} color="#6366F1" />
+                                <Mail size={18} color="#444751" />
                             </View>
                             <View>
                                 <Text style={styles.infoLabel}>Email Address</Text>
@@ -107,7 +107,7 @@ export default function AdminProfilePage() {
 
                         <View style={styles.infoRow}>
                             <View style={styles.iconBox}>
-                                <Shield size={18} color="#6366F1" />
+                                <Shield size={18} color="#444751" />
                             </View>
                             <View>
                                 <Text style={styles.infoLabel}>Account Role</Text>
@@ -117,7 +117,7 @@ export default function AdminProfilePage() {
 
                         <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
                             <View style={styles.iconBox}>
-                                <Calendar size={18} color="#6366F1" />
+                                <Calendar size={18} color="#444751" />
                             </View>
                             <View>
                                 <Text style={styles.infoLabel}>Joined Date</Text>
@@ -139,7 +139,7 @@ export default function AdminProfilePage() {
                             { label: 'System Config', icon: MapPin },
                         ].map((item, index) => (
                             <View key={index} style={styles.permissionItem}>
-                                <item.icon size={20} color="#6366F1" />
+                                <item.icon size={20} color="#444751" />
                                 <Text style={styles.permissionLabel}>{item.label}</Text>
                             </View>
                         ))}
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#444751',
     },
     scrollContent: {
         padding: 24,
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 10,
-        backgroundColor: '#EEF2FF',
+        backgroundColor: '#E5E4EA',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     infoValue: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#444751',
     },
     permissionsGrid: {
         flexDirection: 'row',
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     },
     saveButton: {
         marginTop: 40,
-        backgroundColor: '#1E293B',
+        backgroundColor: '#444751',
         paddingVertical: 18,
         borderRadius: 16,
         alignItems: 'center',
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     modalTitle: {
         fontSize: 18,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#444751',
         marginBottom: 20,
         textAlign: 'center',
     },
@@ -342,10 +342,10 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E2E8F0',
         fontSize: 14,
-        color: '#0F172A',
+        color: '#282A32',
     },
     modalButtonPrimary: {
-        backgroundColor: '#4F46E5',
+        backgroundColor: '#282A32',
         paddingVertical: 14,
         borderRadius: 14,
         alignItems: 'center',
@@ -357,14 +357,14 @@ const styles = StyleSheet.create({
         fontWeight: '800',
     },
     modalButtonSecondary: {
-        backgroundColor: '#EEF2FF',
+        backgroundColor: '#E5E4EA',
         paddingVertical: 12,
         borderRadius: 14,
         alignItems: 'center',
         marginBottom: 8,
     },
     modalButtonSecondaryText: {
-        color: '#4F46E5',
+        color: '#282A32',
         fontSize: 14,
         fontWeight: '700',
     },

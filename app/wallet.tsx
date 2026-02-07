@@ -35,7 +35,7 @@ export default function WalletScreen() {
   if (isLoading) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#4F46E5" />
+        <ActivityIndicator size="large" color="#282A32" />
       </View>
     );
   }
@@ -51,11 +51,11 @@ export default function WalletScreen() {
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={22} color="#1E293B" />
+          <ArrowLeft size={22} color="#282A32" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Financial Wallet</Text>
         <TouchableOpacity style={styles.headerRight}>
-          <Settings2 size={22} color="#1E293B" />
+          <Settings2 size={22} color="#282A32" />
         </TouchableOpacity>
       </View>
 
@@ -88,7 +88,7 @@ export default function WalletScreen() {
 
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.primaryAction}>
-              <Plus size={18} color="#4F46E5" />
+              <Plus size={18} color="#282A32" />
               <Text style={styles.primaryActionText}>Add Funds</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.secondaryAction}>
@@ -111,7 +111,7 @@ export default function WalletScreen() {
           </View>
           <TouchableOpacity
             activeOpacity={0.8}
-            style={[styles.toggle, { backgroundColor: autoReplenish ? '#4F46E5' : '#E2E8F0' }]}
+            style={[styles.toggle, { backgroundColor: autoReplenish ? '#282A32' : '#E2E8F0' }]}
             onPress={() => setAutoReplenish(!autoReplenish)}
           >
             <View style={[styles.knob, { alignSelf: autoReplenish ? 'flex-end' : 'flex-start' }]} />
@@ -176,7 +176,7 @@ export default function WalletScreen() {
                 </View>
 
                 <View style={styles.txnAmountWrapper}>
-                  <Text style={[styles.txnAmount, { color: txn.type === 'credit' ? '#10B981' : '#1E293B' }]}>
+                  <Text style={[styles.txnAmount, { color: txn.type === 'credit' ? '#10B981' : '#282A32' }]}>
                     {txn.type === 'credit' ? '+' : '-'}${txn.amount}
                   </Text>
                 </View>
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     backgroundColor: '#FFFFFF',
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1E293B' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#282A32' },
   backButton: { padding: 8, backgroundColor: '#F1F5F9', borderRadius: 12 },
   headerRight: { padding: 8 },
   
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 75,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#282A32',
     top: -50,
     right: -50,
     opacity: 0.3,
@@ -238,8 +238,8 @@ const styles = StyleSheet.create({
   
   actionRow: { flexDirection: 'row', gap: 12 },
   primaryAction: { flex: 1, backgroundColor: '#FFFFFF', height: 50, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  primaryActionText: { color: '#4F46E5', fontWeight: '700' },
-  secondaryAction: { flex: 1, backgroundColor: '#4F46E5', height: 50, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  primaryActionText: { color: '#282A32', fontWeight: '700' },
+  secondaryAction: { flex: 1, backgroundColor: '#282A32', height: 50, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   secondaryActionText: { color: '#FFF', fontWeight: '700' },
 
   autoSection: {
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     borderColor: '#F1F5F9',
   },
   autoHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  autoTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
+  autoTitle: { fontSize: 16, fontWeight: '700', color: '#282A32' },
   statusIndicator: { width: 8, height: 8, borderRadius: 4 },
   autoDesc: { fontSize: 13, color: '#64748B', marginTop: 4 },
   toggle: { width: 44, height: 24, borderRadius: 12, justifyContent: 'center', paddingHorizontal: 3 },
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
 
   section: { paddingHorizontal: 20, marginTop: 30 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B' },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#282A32' },
   
   searchWrapper: { 
     flexDirection: 'row', 
@@ -275,11 +275,11 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     marginBottom: 15 
   },
-  searchBar: { flex: 1, marginLeft: 10, fontSize: 15, color: '#1E293B' },
+  searchBar: { flex: 1, marginLeft: 10, fontSize: 15, color: '#282A32' },
   
   filterRow: { marginBottom: 20 },
   chip: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#FFF', borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#E2E8F0' },
-  activeChip: { backgroundColor: '#4F46E5', borderColor: '#4F46E5' },
+  activeChip: { backgroundColor: '#282A32', borderColor: '#282A32' },
   chipText: { color: '#64748B', fontWeight: '600', fontSize: 13 },
   activeChipText: { color: '#FFF' },
 
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   },
   txnIconWrapper: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#F1F5F9' },
   txnContent: { flex: 1, marginLeft: 12 },
-  txnDesc: { fontSize: 15, fontWeight: '600', color: '#1E293B', marginBottom: 4 },
+  txnDesc: { fontSize: 15, fontWeight: '600', color: '#282A32', marginBottom: 4 },
   txnMetaRow: { flexDirection: 'row', alignItems: 'center' },
   txnDate: { fontSize: 12, color: '#94A3B8' },
   dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#CBD5E1', marginHorizontal: 8 },

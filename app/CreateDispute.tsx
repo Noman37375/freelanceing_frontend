@@ -85,7 +85,7 @@ export default function CreateDispute() {
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                        <ArrowLeft size={24} color="#1E293B" />
+                        <ArrowLeft size={24} color="#282A32" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Open a Dispute</Text>
                     <View style={{ width: 40 }} />
@@ -95,7 +95,7 @@ export default function CreateDispute() {
                     <View style={styles.formSection}>
                         <Text style={styles.sectionTitle}>Project Details</Text>
                         <View style={styles.infoRow}>
-                            <Briefcase size={18} color="#6366F1" />
+                            <Briefcase size={18} color="#444751" />
                             <Text style={styles.projectTitle}>{initialProjectTitle || 'Select Project'}</Text>
                         </View>
                     </View>
@@ -185,22 +185,22 @@ const styles = StyleSheet.create({
         borderBottomColor: '#F1F5F9',
     },
     backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' },
-    headerTitle: { fontSize: 20, fontWeight: '900', color: '#1E293B' },
+    headerTitle: { fontSize: 20, fontWeight: '900', color: '#282A32' },
     content: { flex: 1, paddingHorizontal: 20, paddingTop: 20 },
     formSection: { marginBottom: 25 },
     sectionTitle: { fontSize: 14, fontWeight: '800', color: '#64748B', textTransform: 'uppercase', marginBottom: 12, letterSpacing: 1 },
-    label: { fontSize: 15, fontWeight: '700', color: '#1E293B', marginBottom: 10 },
+    label: { fontSize: 15, fontWeight: '700', color: '#282A32', marginBottom: 10 },
     infoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#F8FAFC', padding: 15, borderRadius: 16 },
-    projectTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
+    projectTitle: { fontSize: 16, fontWeight: '700', color: '#282A32' },
     reasonsScroll: { flexDirection: 'row', marginHorizontal: -5 },
     reasonChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 25, backgroundColor: '#F1F5F9', marginHorizontal: 5, borderWidth: 1, borderColor: '#E2E8F0' },
-    reasonChipActive: { backgroundColor: '#6366F1', borderColor: '#6366F1' },
+    reasonChipActive: { backgroundColor: '#444751', borderColor: '#444751' },
     reasonChipText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
     reasonChipTextActive: { color: '#FFFFFF' },
     inputWrapper: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, paddingHorizontal: 15, paddingVertical: 12 },
-    input: { flex: 1, fontSize: 16, fontWeight: '600', color: '#1E293B' },
-    textArea: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, padding: 15, fontSize: 16, color: '#1E293B', minHeight: 120 },
-    submitButton: { backgroundColor: '#6366F1', borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginTop: 10, shadowColor: '#6366F1', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
+    input: { flex: 1, fontSize: 16, fontWeight: '600', color: '#282A32' },
+    textArea: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, padding: 15, fontSize: 16, color: '#282A32', minHeight: 120 },
+    submitButton: { backgroundColor: '#444751', borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginTop: 10, shadowColor: '#444751', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
     submitButtonDisabled: { opacity: 0.6 },
     submitButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
     spacer: { height: 40 }

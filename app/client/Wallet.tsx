@@ -73,7 +73,7 @@ export default function Wallet() {
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <ActivityIndicator size="large" color="#282A32" />
       </View>
     );
   }
@@ -99,7 +99,7 @@ export default function Wallet() {
 
       <View style={styles.balanceCard}>
         <View style={styles.balanceHeader}>
-          <WalletIcon size={32} color="#3B82F6" strokeWidth={2} />
+          <WalletIcon size={32} color="#282A32" strokeWidth={2} />
           <Text style={styles.balanceLabel}>Total Balance</Text>
         </View>
         <Text style={styles.balanceAmount}>${wallet.total.toFixed(2)}</Text>
@@ -122,7 +122,7 @@ export default function Wallet() {
             <Text style={styles.primaryButtonText}>Add Funds</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.secondaryButton}>
-            <ArrowUpFromLine size={20} color="#3B82F6" strokeWidth={2} />
+            <ArrowUpFromLine size={20} color="#282A32" strokeWidth={2} />
             <Text style={styles.secondaryButtonText}>Withdraw</Text>
           </TouchableOpacity>
         </View>
@@ -172,7 +172,7 @@ export default function Wallet() {
       </View>
 
       <View style={styles.infoBox}>
-        <Lock size={20} color="#3B82F6" strokeWidth={2} />
+        <Lock size={20} color="#282A32" strokeWidth={2} />
         <View style={styles.infoContent}>
           <Text style={styles.infoTitle}>About Escrow</Text>
           <Text style={styles.infoText}>
@@ -231,10 +231,10 @@ const styles = StyleSheet.create({
   breakdownAmount: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
   escrowAmount: { color: '#F59E0B' },
   actionButtons: { flexDirection: 'row', gap: 12 },
-  primaryButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#3B82F6', paddingVertical: 14, borderRadius: 10 },
+  primaryButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#282A32', paddingVertical: 14, borderRadius: 10 },
   primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
-  secondaryButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#EFF6FF', paddingVertical: 14, borderRadius: 10, borderWidth: 1, borderColor: '#3B82F6' },
-  secondaryButtonText: { color: '#3B82F6', fontSize: 16, fontWeight: '600' },
+  secondaryButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#F4F4F8', paddingVertical: 14, borderRadius: 10, borderWidth: 1, borderColor: '#282A32' },
+  secondaryButtonText: { color: '#282A32', fontSize: 16, fontWeight: '600' },
   section: { padding: 20 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 16 },
   transactionCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   negativeAmount: { color: '#1F2937' },
   statusBadge: { backgroundColor: '#FEF3C7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
   statusText: { fontSize: 10, color: '#F59E0B', fontWeight: '600' },
-  infoBox: { flexDirection: 'row', margin: 20, marginTop: 0, padding: 16, backgroundColor: '#EFF6FF', borderRadius: 12, borderWidth: 1, borderColor: '#BFDBFE' },
+  infoBox: { flexDirection: 'row', margin: 20, marginTop: 0, padding: 16, backgroundColor: '#F4F4F8', borderRadius: 12, borderWidth: 1, borderColor: '#BFDBFE' },
   infoContent: { flex: 1, marginLeft: 12 },
   infoTitle: { fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 },
   infoText: { fontSize: 12, color: '#6B7280', lineHeight: 18 },

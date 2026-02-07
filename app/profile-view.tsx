@@ -88,11 +88,11 @@ export default function ProfileViewScreen() {
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={22} color="#1E293B" />
+          <ArrowLeft size={22} color="#444751" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
         <TouchableOpacity onPress={() => setEditMode(!editMode)}>
-            <Text style={[styles.editAction, { color: editMode ? "#10B981" : "#0F172A" }]}>
+            <Text style={[styles.editAction, { color: editMode ? "#10B981" : "#282A32" }]}>
                 {editMode ? "Save" : "Edit"}
             </Text>
         </TouchableOpacity>
@@ -134,7 +134,7 @@ export default function ProfileViewScreen() {
         {!editMode && (
             <View style={styles.statsRow}>
                 <View style={styles.statBox}>
-                    <DollarSign size={18} color="#0F172A" />
+                    <DollarSign size={18} color="#282A32" />
                     <Text style={styles.statValue}>{formPricing}</Text>
                     <Text style={styles.statLabel}>Rate</Text>
                 </View>
@@ -192,7 +192,7 @@ export default function ProfileViewScreen() {
                   </View>
                 </View>
                 <View style={styles.expandCircle}>
-                    {expanded ? <ChevronUp size={18} color="#0F172A" /> : <ChevronDown size={18} color="#0F172A" />}
+                    {expanded ? <ChevronUp size={18} color="#282A32" /> : <ChevronDown size={18} color="#282A32" />}
                 </View>
               </TouchableOpacity>
 
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10
   },
   backButton: { padding: 8, backgroundColor: '#F1F5F9', borderRadius: 12 },
-  headerTitle: { fontSize: 17, fontWeight: "800", color: "#1E293B" },
+  headerTitle: { fontSize: 17, fontWeight: "800", color: "#444751" },
   editAction: { fontSize: 15, fontWeight: "700" },
 
   content: { paddingVertical: 20 },
@@ -229,33 +229,33 @@ const styles = StyleSheet.create({
   profileHero: { alignItems: "center", marginBottom: 25 },
   avatarContainer: { marginBottom: 15, position: 'relative' },
   avatarPlaceholder: { width: 100, height: 100, borderRadius: 35, backgroundColor: "#F1F5F9", justifyContent: "center", alignItems: "center", borderWidth: 4, borderColor: '#FFF' },
-  avatarInitial: { fontSize: 40, fontWeight: "800", color: "#0F172A" },
-  cameraIcon: { position: 'absolute', bottom: -5, right: -5, backgroundColor: '#0F172A', padding: 8, borderRadius: 12, borderWidth: 3, borderColor: '#FFF' },
+  avatarInitial: { fontSize: 40, fontWeight: "800", color: "#282A32" },
+  cameraIcon: { position: 'absolute', bottom: -5, right: -5, backgroundColor: '#282A32', padding: 8, borderRadius: 12, borderWidth: 3, borderColor: '#FFF' },
 
-  nameInput: { fontSize: 24, fontWeight: "800", color: "#1E293B", textAlign: "center", minWidth: 200 },
+  nameInput: { fontSize: 24, fontWeight: "800", color: "#444751", textAlign: "center", minWidth: 200 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
   titleInput: { fontSize: 15, fontWeight: "600", color: "#64748B", textAlign: "center" },
-  inputActive: { color: '#0F172A', textDecorationLine: 'underline' },
+  inputActive: { color: '#282A32', textDecorationLine: 'underline' },
 
   statsRow: { flexDirection: 'row', backgroundColor: '#FFF', marginHorizontal: 20, borderRadius: 24, padding: 20, marginBottom: 25, borderWidth: 1, borderColor: '#F1F5F9' },
   statBox: { flex: 1, alignItems: 'center', gap: 4 },
   statBorder: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#F1F5F9' },
-  statValue: { fontSize: 16, fontWeight: '800', color: '#1E293B' },
+  statValue: { fontSize: 16, fontWeight: '800', color: '#444751' },
   statLabel: { fontSize: 11, color: '#94A3B8', fontWeight: '700', textTransform: 'uppercase' },
 
   section: { paddingHorizontal: 20, marginBottom: 25 },
-  sectionTitle: { fontSize: 16, fontWeight: "800", color: "#1E293B", marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionTitle: { fontSize: 16, fontWeight: "800", color: "#444751", marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
   
   bioText: { fontSize: 15, color: "#475569", lineHeight: 24 },
-  bioInputActive: { backgroundColor: '#FFF', padding: 15, borderRadius: 16, borderWidth: 1, borderColor: '#0F172A', color: '#1E293B' },
+  bioInputActive: { backgroundColor: '#FFF', padding: 15, borderRadius: 16, borderWidth: 1, borderColor: '#282A32', color: '#444751' },
 
   skillsWrapper: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   skillBadge: { backgroundColor: "#FFF", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' },
-  skillText: { color: "#0F172A", fontSize: 13, fontWeight: "700" },
+  skillText: { color: "#282A32", fontSize: 13, fontWeight: "700" },
 
   projectCard: { backgroundColor: "#FFF", marginHorizontal: 20, borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9' },
   projectHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  projectTitle: { fontSize: 15, fontWeight: "700", color: "#1E293B" },
+  projectTitle: { fontSize: 15, fontWeight: "700", color: "#444751" },
   ratingInline: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   projectRating: { fontSize: 13, fontWeight: '700', color: "#F59E0B" },
   expandCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' },
@@ -265,5 +265,5 @@ const styles = StyleSheet.create({
   milestoneList: { gap: 10 },
   milestoneItem: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F8FAFC', padding: 10, borderRadius: 12 },
   milestoneName: { flex: 1, fontSize: 13, fontWeight: '600', color: '#475569' },
-  milestoneScore: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
+  milestoneScore: { fontSize: 13, fontWeight: '700', color: '#282A32' },
 });

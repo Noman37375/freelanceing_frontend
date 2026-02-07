@@ -15,7 +15,7 @@ export default function ClientStatsCard({
   title,
   value,
   icon: Icon,
-  iconColor = '#3B82F6',
+  iconColor = '#282A32',
   backgroundColor = '#FFFFFF',
 }: ClientStatsCardProps) {
   return (
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   value: {
     fontSize: TYPOGRAPHY.fontSize['4xl'],
     fontWeight: TYPOGRAPHY.fontWeight.extrabold,
-    color: '#1E293B',
+    color: '#282A32',
     marginBottom: 4,
   },
   title: {

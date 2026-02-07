@@ -52,7 +52,7 @@ export default function AdminSidebar({ onLogout }: { onLogout: () => void }) {
         <View style={styles.container}>
             <View style={styles.header}>
                 <View style={styles.logoBox}>
-                    <PlusSquare size={24} color="#6366F1" />
+                    <PlusSquare size={24} color="#444751" />
                 </View>
                 <Text style={styles.logoText}>Admin.io</Text>
             </View>
@@ -108,7 +108,7 @@ export default function AdminSidebar({ onLogout }: { onLogout: () => void }) {
 const styles = StyleSheet.create({
     container: {
         width: 240,
-        backgroundColor: '#0F172A', // Dark sidebar to match reference
+        backgroundColor: '#282A32', // Dark sidebar to match reference
         height: '100%',
         paddingVertical: 32,
     },
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     itemActive: {
-        backgroundColor: '#1E293B',
+        backgroundColor: '#282A32',
     },
     itemText: {
         fontSize: 14,
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingTop: 20,
         borderTopWidth: 1,
-        borderTopColor: '#1E293B',
+        borderTopColor: '#282A32',
     },
     profileBox: {
         flexDirection: 'row',
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 12,
         paddingHorizontal: 12,
-        backgroundColor: '#1E293B',
+        backgroundColor: '#282A32',
         borderRadius: 16,
     },
     profileInfo: {
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     avatarPlaceholder: {
         width: '100%',
         height: '100%',
-        backgroundColor: '#6366F1',
+        backgroundColor: '#444751',
         alignItems: 'center',
         justifyContent: 'center',
     },

@@ -34,7 +34,7 @@ export default function EarningsScreen() {
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={22} color="#1E293B" />
+          <ArrowLeft size={22} color="#444751" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Earnings Analytics</Text>
         <View style={{ width: 40 }} /> 
@@ -83,7 +83,7 @@ export default function EarningsScreen() {
               propsForDots: {
                 r: '4',
                 strokeWidth: '2',
-                stroke: '#0F172A',
+                stroke: '#282A32',
               },
               propsForBackgroundLines: {
                 strokeDasharray: '', // solid background lines
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1E293B' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#444751' },
   
   heroCard: {
     backgroundColor: '#1E1B4B',
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
   },
   chartHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  sectionTitle: { fontSize: 17, fontWeight: '800', color: '#1E293B' },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: '#444751' },
   chart: { marginVertical: 8, borderRadius: 16, marginLeft: -20 }, // Nudge for alignment
 
   listContainer: { paddingHorizontal: 20, marginTop: 25 },
@@ -191,10 +191,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  monthInitial: { color: '#0F172A', fontWeight: '800', fontSize: 16 },
+  monthInitial: { color: '#282A32', fontWeight: '800', fontSize: 16 },
   monthDetails: { flex: 1, marginLeft: 12 },
-  monthName: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
+  monthName: { fontSize: 15, fontWeight: '700', color: '#444751' },
   subText: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
   amountContainer: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  monthAmount: { fontSize: 16, fontWeight: '800', color: '#1E293B' },
+  monthAmount: { fontSize: 16, fontWeight: '800', color: '#444751' },
 });

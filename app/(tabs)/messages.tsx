@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: TYPOGRAPHY.fontSize['3xl'],
     fontWeight: TYPOGRAPHY.fontWeight.extrabold,
-    color: "#1E293B",
+    color: "#444751",
   },
   newChatButton: {
     width: 48,
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: SPACING.m,
     fontSize: TYPOGRAPHY.fontSize.base,
-    color: "#1E293B",
+    color: "#444751",
   },
   listContent: {
     paddingHorizontal: SPACING.l,
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.small,
   },
   unreadItem: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#E5E4EA',
     borderWidth: 1,
     borderColor: '#C7D2FE',
   },
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontWeight: TYPOGRAPHY.fontWeight.extrabold,
     fontSize: TYPOGRAPHY.fontSize.md,
-    color: "#1E293B",
+    color: "#444751",
   },
   timeContainer: {
     flexDirection: 'row',
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     fontWeight: TYPOGRAPHY.fontWeight.regular,
   },
   unreadMessage: {
-    color: "#1E293B",
+    color: "#444751",
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
   },
   separator: {

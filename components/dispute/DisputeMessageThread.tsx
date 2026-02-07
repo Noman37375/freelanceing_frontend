@@ -33,12 +33,12 @@ export default function DisputeMessageThread({ messages, currentUserId }: Disput
     const getRoleColor = (role: string) => {
         switch (role) {
             case 'client':
-                return '#3B82F6';
+                return '#282A32';
             case 'freelancer':
                 return '#10B981';
             case 'mediator':
             case 'admin':
-                return '#8B5CF6';
+                return '#444751';
             default:
                 return '#64748B';
         }
@@ -145,8 +145,8 @@ export default function DisputeMessageThread({ messages, currentUserId }: Disput
                         </View>
 
                         {isCurrentUser && (
-                            <View style={[styles.avatar, styles.avatarRight, { backgroundColor: '#6366F115' }]}>
-                                <User size={18} color="#6366F1" />
+                            <View style={[styles.avatar, styles.avatarRight, { backgroundColor: '#44475115' }]}>
+                                <User size={18} color="#444751" />
                             </View>
                         )}
                     </View>
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatarRight: {
-        backgroundColor: '#EEF2FF',
+        backgroundColor: '#E5E4EA',
     },
     messageContent: {
         flex: 1,
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     senderName: {
         fontSize: 13,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#282A32',
     },
     roleBadge: {
         paddingHorizontal: 8,
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 4,
     },
     messageBubbleRight: {
-        backgroundColor: '#6366F1',
+        backgroundColor: '#444751',
         borderTopRightRadius: 4,
     },
     messageBubbleInternal: {
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
     messageTextLeft: {
-        color: '#1E293B',
+        color: '#282A32',
     },
     messageTextRight: {
         color: '#FFFFFF',

@@ -99,7 +99,7 @@ export default function DisputeDetail() {
 
         <View style={styles.actionButtons}>
           <TouchableOpacity style={styles.contactButton}>
-            <MessageSquare size={18} color="#3B82F6" />
+            <MessageSquare size={18} color="#282A32" />
             <Text style={styles.contactButtonText}>Contact Support</Text>
           </TouchableOpacity>
         </View>
@@ -132,6 +132,6 @@ const styles = StyleSheet.create({
   reviewCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 20, elevation: 3 },
   reviewMessage: { fontSize: 14, color: '#6B7280', lineHeight: 22 },
   actionButtons: { padding: 20, paddingBottom: 40 },
-  contactButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#EFF6FF', paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#3B82F6' },
-  contactButtonText: { color: '#3B82F6', fontSize: 16, fontWeight: '600' },
+  contactButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#F4F4F8', paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#282A32' },
+  contactButtonText: { color: '#282A32', fontSize: 16, fontWeight: '600' },
 });

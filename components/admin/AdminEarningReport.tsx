@@ -42,7 +42,7 @@ export default function AdminEarningReport({ revenue, trend }: AdminEarningRepor
                         </LinearGradient>
                     </Defs>
                     <Path d={path} fill="url(#grad)" />
-                    <Path d={linePath} stroke="#8B5CF6" strokeWidth="3" fill="none" strokeLinecap="round" />
+                    <Path d={linePath} stroke="#444751" strokeWidth="3" fill="none" strokeLinecap="round" />
 
                     {/* Data Point */}
                     <View style={[styles.dataPoint, { left: '80%', top: '25%' }]}>
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#1E293B',
+        color: '#282A32',
         marginBottom: 8,
     },
     revenueContainer: {
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     revenue: {
         fontSize: 28,
         fontWeight: '800',
-        color: '#1E293B',
+        color: '#282A32',
     },
     trendBadge: {
         flexDirection: 'row',
@@ -108,12 +108,12 @@ const styles = StyleSheet.create({
         width: 6,
         height: 6,
         borderRadius: 3,
-        backgroundColor: '#8B5CF6',
+        backgroundColor: '#444751',
     },
     trendText: {
         fontSize: 10,
         fontWeight: '700',
-        color: '#8B5CF6',
+        color: '#444751',
     },
     filterContainer: {
         flexDirection: 'row',

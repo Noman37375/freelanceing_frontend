@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 15,
-    color: "#1E293B",
+    color: "#444751",
     fontWeight: '500'
   },
   categoriesWrapper: {

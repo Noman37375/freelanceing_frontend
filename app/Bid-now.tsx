@@ -122,7 +122,7 @@ export default function BidNow() {
         bidAmount: total,
       });
       Alert.alert("Success", "Your proposal has been submitted successfully!", [
-        { text: "OK", onPress: () => router.replace("/(tabs)") },
+        { text: "OK", onPress: () => router.back() },
       ]);
     } catch (err: any) {
       console.error("Proposal submission error", err);

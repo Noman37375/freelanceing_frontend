@@ -65,12 +65,12 @@ export default function HomeScreen() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [servicesData, projectsData] = await Promise.all([
+      const [servicesResult, projectsResult] = await Promise.allSettled([
         adminService.getServiceCategories(),
         projectService.getProjects({ status: 'ACTIVE' }),
       ]);
-      setCategories(servicesData || []);
-      setRecentProjects(projectsData || []);
+      setCategories(servicesResult.status === 'fulfilled' ? (servicesResult.value || []) : []);
+      setRecentProjects(projectsResult.status === 'fulfilled' ? (projectsResult.value || []) : []);
     } catch (error: any) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -81,6 +81,15 @@ export default function HomeScreen() {
   const goToFindProjects = () => router.push('/find-projects');
   // Search stays on same page: filter projects locally (no redirect)
   const handleSearchSubmit = () => { /* no redirect */ };
+
+  const DEFAULT_SERVICES = [
+    { id: 'design', name: 'Design' },
+    { id: 'development', name: 'Development' },
+    { id: 'writing', name: 'Writing' },
+    { id: 'marketing', name: 'Marketing' },
+    { id: 'data', name: 'Data' },
+  ];
+  const displayCategories = (categories && categories.length > 0) ? categories : DEFAULT_SERVICES;
 
   const q = (searchQuery || '').trim().toLowerCase();
   const filteredProjects = q
@@ -222,12 +231,9 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.serviceScrollContent}
           >
-            {(categories || []).length === 0 ? (
-              <Text style={styles.allServiceEmpty}>No services yet</Text>
-            ) : (
-              (categories || []).map((cat: any) => (
+            {displayCategories.map((cat: any) => (
                 <TouchableOpacity
-                  key={cat.id}
+                  key={cat.id || cat.name || String(cat)}
                   style={styles.serviceGridItem}
                   onPress={() => router.push({ pathname: '/find-projects', params: { category: cat.name } })}
                   activeOpacity={0.8}
@@ -247,8 +253,7 @@ export default function HomeScreen() {
                     {cat.name || 'Service'}
                   </Text>
                 </TouchableOpacity>
-              ))
-            )}
+            ))}
           </ScrollView>
         </View>
 

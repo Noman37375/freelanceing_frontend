@@ -81,9 +81,9 @@ async function main() {
   await resizeContainSquare(sourceBuffer, 1024, paths.icon);
   log(`Wrote: ${path.relative(projectRoot, paths.icon)} (1024x1024)`);
 
-  // Favicon (browser tab) — keep it small and crisp
-  await resizeContainSquare(sourceBuffer, 64, paths.favicon);
-  log(`Wrote: ${path.relative(projectRoot, paths.favicon)} (64x64)`);
+  // Favicon (browser tab) — use 192px so it scales down sharply to 16/32px in the tab
+  await resizeContainSquare(sourceBuffer, 192, paths.favicon);
+  log(`Wrote: ${path.relative(projectRoot, paths.favicon)} (192x192)`);
 
   // PWA icons (useful for custom manifest setups + future-proofing)
   const pwa192 = path.join(paths.pwaDir, "icon-192.png");

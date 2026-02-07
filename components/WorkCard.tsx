@@ -27,7 +27,7 @@ export default function WorkCard({ project, type }: { project: any, type: string
   let statusGradient = ['#F1F5F9', '#E2E8F0'];
 
   if (project.status === 'inProgress' || type === 'active') {
-    statusColor = "#2563EB";
+    statusColor = "#0F172A";
     statusBg = "#EFF6FF";
     statusText = "In Progress";
     statusGradient = ['#DBEAFE', '#BFDBFE'];

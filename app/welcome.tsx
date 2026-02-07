@@ -5,11 +5,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Image,
   useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import UndrawIllustration from '@/assets/images/undraw_personalization_0q05.svg';
 import { COLORS, TYPOGRAPHY, BORDER_RADIUS, SPACING, SHADOWS } from '@/constants/theme';
 
 export default function Welcome() {
@@ -29,9 +29,10 @@ export default function Welcome() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.illustrationWrap}>
-          <UndrawIllustration
-            width={illustrationSize}
-            height={illustrationSize * (607.63 / 683.76)}
+          <Image
+            source={require('../assets/images/welcome.jpeg')}
+            style={{ width: illustrationSize, height: illustrationSize * 0.9 }}
+            resizeMode="contain"
           />
         </View>
         <View style={styles.textBlock}>

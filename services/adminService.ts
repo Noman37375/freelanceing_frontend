@@ -184,4 +184,6 @@ export interface DashboardStats {
     totalClients: number;
     activeProjects: number;
     totalRevenue: number;
+    totalServices: number;
+    totalDisputes: number;
 }

@@ -83,7 +83,7 @@ export default function EarningsScreen() {
               propsForDots: {
                 r: '4',
                 strokeWidth: '2',
-                stroke: '#4F46E5',
+                stroke: '#0F172A',
               },
               propsForBackgroundLines: {
                 strokeDasharray: '', // solid background lines
@@ -187,11 +187,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 10,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  monthInitial: { color: '#4F46E5', fontWeight: '800', fontSize: 16 },
+  monthInitial: { color: '#0F172A', fontWeight: '800', fontSize: 16 },
   monthDetails: { flex: 1, marginLeft: 12 },
   monthName: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
   subText: { fontSize: 12, color: '#94A3B8', marginTop: 2 },

@@ -104,7 +104,7 @@ export default function ChangePassword() {
             style={styles.backToLoginButton}
           >
             <Text style={styles.backToLoginText}>
-              <ArrowLeft size={16} color="#3B82F6" /> Back to Login
+              <ArrowLeft size={16} color="#0F172A" /> Back to Login
             </Text>
           </TouchableOpacity>
         </View>
@@ -130,7 +130,7 @@ export default function ChangePassword() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.iconContainer}>
-            <Lock size={48} color="#3B82F6" />
+            <Lock size={48} color="#0F172A" />
           </View>
           <Text style={styles.title}>Reset Password</Text>
           <Text style={styles.subtitle}>
@@ -243,7 +243,7 @@ export default function ChangePassword() {
           style={styles.backToLoginButton}
         >
           <Text style={styles.backToLoginText}>
-            <ArrowLeft size={16} color="#3B82F6" /> Back to Login
+            <ArrowLeft size={16} color="#0F172A" /> Back to Login
           </Text>
         </TouchableOpacity>
       </View>
@@ -335,9 +335,9 @@ const styles = StyleSheet.create({
     minHeight: 56,
   },
   inputWrapperFocused: {
-    borderColor: "#3B82F6",
+    borderColor: "#0F172A",
     backgroundColor: "#FFFFFF",
-    shadowColor: "#3B82F6",
+    shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -358,12 +358,12 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   button: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#0F172A",
     padding: 18,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#3B82F6",
+    shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   backToLoginText: {
-    color: "#3B82F6",
+    color: "#0F172A",
     fontSize: 14,
     fontWeight: "600",
     flexDirection: "row",

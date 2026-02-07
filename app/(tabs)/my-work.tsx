@@ -79,7 +79,7 @@ export default function MyWorkScreen() {
   const getStats = () => {
     if (activeTab === "Active") {
       const total = projects.reduce((sum, p) => sum + Number(p.budget || 0), 0);
-      return { label: "Current Earnings", value: `$${total.toLocaleString()}`, color: "#4F46E5" };
+      return { label: "Current Earnings", value: `$${total.toLocaleString()}`, color: "#0F172A" };
     }
     if (activeTab === "Completed") {
       const total = projects.reduce((sum, p) => sum + Number(p.budget || 0), 0);
@@ -152,12 +152,12 @@ export default function MyWorkScreen() {
           contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 20 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={loading} onRefresh={fetchData} tintColor="#4F46E5" />
+            <RefreshControl refreshing={loading} onRefresh={fetchData} tintColor="#0F172A" />
           }
         >
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#4F46E5" />
+              <ActivityIndicator size="large" color="#0F172A" />
             </View>
           ) : displayProjects.length > 0 ? (
             displayProjects.map((project) => (
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 20,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,

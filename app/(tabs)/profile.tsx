@@ -44,6 +44,11 @@ import {
   Inbox,
   History as HistoryIcon,
   Zap,
+  TrendingUp,
+  Target,
+  CheckCircle2,
+  Sparkles,
+  BarChart3,
 } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from 'expo-image-picker';
@@ -89,7 +94,7 @@ export default function ProfileScreen() {
   }, [editModalVisible, user]);
 
   const defaultAvatar = user?.profileImage ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.userName || "User")}&background=4F46E5&color=fff&size=200`;
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.userName || "User")}&background=444751&color=fff&size=200`;
 
   const handleLogout = async () => {
     await logout();
@@ -162,251 +167,311 @@ export default function ProfileScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4F46E5" />
+        <ActivityIndicator size="large" color="#444751" />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.topGradient} />
+      <StatusBar barStyle="dark-content" backgroundColor="#F4F4F8" />
 
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Premium Profile Header - Cleaned */}
-          <View style={styles.heroHeader}>
-            {/* Centralized Identity Section */}
-            <View style={styles.profileIdentity}>
-              <View style={styles.premiumAvatarContainer}>
-                <View style={styles.avatarBorder}>
-                  <Image source={{ uri: defaultAvatar }} style={styles.premiumAvatar} />
-                </View>
-                <TouchableOpacity style={styles.premiumCameraBtn} onPress={handlePickImage} disabled={isSaving}>
-                  <Camera size={14} color="#FFF" />
-                </TouchableOpacity>
-                <View style={styles.onlineBadge} />
-              </View>
-
-              <View style={styles.identityTextContainer}>
-                <View style={styles.nameProRow}>
-                  <Text style={styles.premiumNameText}>{user?.userName || "User"}</Text>
-                  <View style={styles.proPill}>
-                    <Zap size={10} color="#FFF" fill="#FFF" />
-                    <Text style={styles.proPillText}>PRO</Text>
+          {/* REDESIGNED HERO HEADER */}
+          <View style={styles.heroSection}>
+            {/* Top Bar */}
+            <View style={styles.topBar}>
+              <TouchableOpacity style={styles.settingsBtn} onPress={() => setEditModalVisible(true)}>
+                <Settings size={22} color="#282A32" strokeWidth={2.5} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.notifBtn} onPress={() => setNotifModalVisible(true)}>
+                <Bell size={22} color="#282A32" strokeWidth={2.5} />
+                {unreadCount > 0 && (
+                  <View style={styles.notifDot}>
+                    <Text style={styles.notifDotText}>{unreadCount}</Text>
                   </View>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Profile Avatar & Info */}
+            <View style={styles.profileHero}>
+              <View style={styles.avatarSection}>
+                <View style={styles.avatarRing}>
+                  <Image source={{ uri: defaultAvatar }} style={styles.heroAvatar} />
+                  {/* <View style={styles.verifiedBadge}>
+                    <CheckCircle2 size={18} color="#FFFFFF" fill="#444751" strokeWidth={3} />
+                  </View> */}
                 </View>
-                <Text style={styles.roleTagline}>{user?.role || "Premium Freelancer"}</Text>
+                <TouchableOpacity 
+                  style={styles.editAvatarBtn} 
+                  onPress={handlePickImage}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Camera size={16} color="#FFFFFF" strokeWidth={2.5} />
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.heroInfo}>
+                <View style={styles.nameRow}>
+                  <Text style={styles.heroName}>{user?.userName || "User"}</Text>
+                  {/* <View style={styles.levelBadge}>
+                    <Sparkles size={12} color="#444751" fill="#444751" strokeWidth={2} />
+                    <Text style={styles.levelText}>Level 3</Text>
+                  </View> */}
+                </View>
+                <Text style={styles.heroRole}>{user?.role || "Freelancer"}</Text>
+                {user?.bio && <Text style={styles.heroBio}>{user.bio}</Text>}
               </View>
             </View>
 
-            {/* Trust Stats Bar */}
-            <View style={styles.trustStatsBar}>
-              <View style={styles.trustStat}>
-                <Star size={14} color="#F59E0B" fill="#F59E0B" />
-                <Text style={styles.trustVal}>4.9</Text>
-                <Text style={styles.trustLab}>Rating</Text>
+            {/* Stats Cards Grid */}
+            <View style={styles.statsGrid}>
+              <View style={styles.statCard}>
+                <View style={styles.statIcon}>
+                  <Star size={20} color="#444751" fill="#444751" strokeWidth={2} />
+                </View>
+                <Text style={styles.statValue}>4.9</Text>
+                <Text style={styles.statLabel}>Rating</Text>
               </View>
-              <View style={styles.statDivider} />
-              <View style={styles.trustStat}>
-                <Award size={14} color="#10B981" />
-                <Text style={styles.trustVal}>98%</Text>
-                <Text style={styles.trustLab}>Success</Text>
+
+              <View style={styles.statCard}>
+                <View style={styles.statIcon}>
+                  <TrendingUp size={20} color="#444751" strokeWidth={2.5} />
+                </View>
+                <Text style={styles.statValue}>127</Text>
+                <Text style={styles.statLabel}>Projects</Text>
               </View>
-              <View style={styles.statDivider} />
-              <View style={styles.trustStat}>
-                <Clock size={14} color="#444751" />
-                <Text style={styles.trustVal}>1h</Text>
-                <Text style={styles.trustLab}>Response</Text>
+
+              <View style={styles.statCard}>
+                <View style={styles.statIcon}>
+                  <Target size={20} color="#444751" strokeWidth={2.5} />
+                </View>
+                <Text style={styles.statValue}>98%</Text>
+                <Text style={styles.statLabel}>Success</Text>
               </View>
             </View>
+
+            {/* Earnings Card */}
+            <View style={styles.earningsCard}>
+              <View style={styles.earningsLeft}>
+                <View style={styles.walletIconBox}>
+                  <WalletIcon size={24} color="#FFFFFF" strokeWidth={2.5} />
+                </View>
+                <View>
+                  <Text style={styles.earningsLabel}>Total Earnings</Text>
+                  <Text style={styles.earningsValue}>${balance.toLocaleString()}</Text>
+                </View>
+              </View>
+              <TouchableOpacity 
+                style={styles.viewWalletBtn}
+                onPress={() => setWalletModalVisible(true)}
+              >
+                <Text style={styles.viewWalletText}>View</Text>
+                <ChevronRight size={18} color="#444751" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
           </View>
-          {/* My Workspace Section */}
-          <Text style={styles.sectionTitle}>My Workspace</Text>
-          <View style={styles.sectionContainer}>
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuItemLeft}>
-                <View style={[styles.iconBox, { backgroundColor: '#F8FAFC' }]}>
-                  <Briefcase size={18} color="#444751" />
-                </View>
-                <Text style={styles.menuItemText}>My briefs</Text>
+
+          {/* Quick Actions */}
+          <View style={styles.quickActions}>
+            <TouchableOpacity style={styles.actionBtn}>
+              <View style={styles.actionIconBox}>
+                <Briefcase size={20} color="#444751" strokeWidth={2.5} />
               </View>
-              <ChevronRight size={20} color="#CBD5E1" />
+              <Text style={styles.actionText}>Briefs</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuItemLeft}>
-                <View style={[styles.iconBox, { backgroundColor: '#F8FAFC' }]}>
-                  <Diamond size={18} color="#444751" />
-                </View>
-                <Text style={styles.menuItemText}>Get inspired</Text>
+            <TouchableOpacity style={styles.actionBtn}>
+              <View style={styles.actionIconBox}>
+                <Heart size={20} color="#444751" strokeWidth={2.5} />
               </View>
-              <ChevronRight size={20} color="#CBD5E1" />
+              <Text style={styles.actionText}>Saved</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuItemLeft}>
-                <View style={[styles.iconBox, { backgroundColor: '#F8FAFC' }]}>
-                  <Heart size={18} color="#444751" />
-                </View>
-                <Text style={styles.menuItemText}>Saved lists</Text>
+            <TouchableOpacity style={styles.actionBtn}>
+              <View style={styles.actionIconBox}>
+                <BarChart3 size={20} color="#444751" strokeWidth={2.5} />
               </View>
-              <ChevronRight size={20} color="#CBD5E1" />
+              <Text style={styles.actionText}>Analytics</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuItemLeft}>
-                <View style={[styles.iconBox, { backgroundColor: '#F8FAFC' }]}>
-                  <Inbox size={18} color="#444751" />
-                </View>
-                <Text style={styles.menuItemText}>My interests</Text>
+            <TouchableOpacity style={styles.actionBtn}>
+              <View style={styles.actionIconBox}>
+                <Send size={20} color="#444751" strokeWidth={2.5} />
               </View>
-              <ChevronRight size={20} color="#CBD5E1" />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]}>
-              <View style={styles.menuItemLeft}>
-                <View style={[styles.iconBox, { backgroundColor: '#F8FAFC' }]}>
-                  <Send size={18} color="#444751" />
-                </View>
-                <Text style={styles.menuItemText}>Invite friends</Text>
-              </View>
-              <ChevronRight size={20} color="#CBD5E1" />
+              <Text style={styles.actionText}>Invite</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Settings Section */}
-          <Text style={styles.sectionTitle}>Settings</Text>
-          <View style={styles.sectionContainer}>
-            <TouchableOpacity style={styles.menuItem} onPress={() => setEditModalVisible(true)}>
-              <View style={styles.menuItemLeft}>
-                <View style={styles.iconBox}>
-                  <User size={18} color="#4F46E5" />
+          {/* Menu Sections */}
+          <View style={styles.menuSection}>
+            <Text style={styles.sectionTitle}>ACCOUNT</Text>
+            <View style={styles.menuCard}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => setEditModalVisible(true)}>
+                <View style={styles.menuLeft}>
+                  <View style={styles.menuIconBox}>
+                    <User size={20} color="#444751" strokeWidth={2.5} />
+                  </View>
+                  <Text style={styles.menuText}>Edit Profile</Text>
                 </View>
-                <Text style={styles.menuItemText}>Account</Text>
-              </View>
-              <ChevronRight size={20} color="#CBD5E1" />
-            </TouchableOpacity>
+                <ChevronRight size={20} color="#C2C2C8" strokeWidth={2.5} />
+              </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => setNotifModalVisible(true)}>
-              <View style={styles.menuItemLeft}>
-                <View style={styles.iconBox}>
-                  <Bell size={18} color="#4F46E5" />
-                  {unreadCount > 0 && <View style={styles.menuBadge} />}
-                </View>
-                <Text style={styles.menuItemText}>Notifications</Text>
-              </View>
-              <ChevronRight size={20} color="#CBD5E1" />
-            </TouchableOpacity>
+              <View style={styles.menuDivider} />
 
-            <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={() => setWalletModalVisible(true)}>
-              <View style={styles.menuItemLeft}>
-                <View style={styles.iconBox}>
-                  <WalletIcon size={18} color="#4F46E5" />
+              <TouchableOpacity style={styles.menuItem} onPress={() => setWalletModalVisible(true)}>
+                <View style={styles.menuLeft}>
+                  <View style={styles.menuIconBox}>
+                    <WalletIcon size={20} color="#444751" strokeWidth={2.5} />
+                  </View>
+                  <Text style={styles.menuText}>Wallet & Payments</Text>
                 </View>
-                <Text style={styles.menuItemText}>Wallet</Text>
-              </View>
-              <ChevronRight size={20} color="#CBD5E1" />
-            </TouchableOpacity>
+                <ChevronRight size={20} color="#C2C2C8" strokeWidth={2.5} />
+              </TouchableOpacity>
+
+              <View style={styles.menuDivider} />
+
+              <TouchableOpacity style={styles.menuItem} onPress={() => setNotifModalVisible(true)}>
+                <View style={styles.menuLeft}>
+                  <View style={styles.menuIconBox}>
+                    <Bell size={20} color="#444751" strokeWidth={2.5} />
+                  </View>
+                  <Text style={styles.menuText}>Notifications</Text>
+                  {unreadCount > 0 && (
+                    <View style={styles.menuBadge}>
+                      <Text style={styles.menuBadgeText}>{unreadCount}</Text>
+                    </View>
+                  )}
+                </View>
+                <ChevronRight size={20} color="#C2C2C8" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
           </View>
 
-          {/* Resources Section */}
-          <Text style={styles.sectionTitle}>Resources</Text>
-          <View style={styles.sectionContainer}>
-            <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={() => setDisputeModalVisible(true)}>
-              <View style={styles.menuItemLeft}>
-                <View style={styles.iconBox}>
-                  <ShieldCheck size={18} color="#4F46E5" />
+          <View style={styles.menuSection}>
+            <Text style={styles.sectionTitle}>SUPPORT</Text>
+            <View style={styles.menuCard}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => setDisputeModalVisible(true)}>
+                <View style={styles.menuLeft}>
+                  <View style={styles.menuIconBox}>
+                    <ShieldCheck size={20} color="#444751" strokeWidth={2.5} />
+                  </View>
+                  <Text style={styles.menuText}>Resolution Center</Text>
                 </View>
-                <Text style={styles.menuItemText}>Resolution Center</Text>
-              </View>
-              <ChevronRight size={20} color="#CBD5E1" />
-            </TouchableOpacity>
+                <ChevronRight size={20} color="#C2C2C8" strokeWidth={2.5} />
+              </TouchableOpacity>
+
+              <View style={styles.menuDivider} />
+
+              <TouchableOpacity style={styles.menuItem}>
+                <View style={styles.menuLeft}>
+                  <View style={styles.menuIconBox}>
+                    <MessageCircle size={20} color="#444751" strokeWidth={2.5} />
+                  </View>
+                  <Text style={styles.menuText}>Help Center</Text>
+                </View>
+                <ChevronRight size={20} color="#C2C2C8" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <View style={styles.logoutContainer}>
-            <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-              <View style={styles.logoutIconBox}>
-                <LogOut size={18} color="#EF4444" />
-              </View>
-              <Text style={styles.logoutText}>Log out</Text>
-            </TouchableOpacity>
-          </View>
+          {/* Logout Button */}
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <View style={styles.logoutIconBox}>
+              <LogOut size={20} color="#FFFFFF" strokeWidth={2.5} />
+            </View>
+            <Text style={styles.logoutText}>Sign Out</Text>
+          </TouchableOpacity>
 
+          <View style={{ height: 40 }} />
         </ScrollView>
       </SafeAreaView>
 
-      {/* Edit Modal */}
+      {/* EDIT PROFILE MODAL - REDESIGNED */}
       <Modal
         visible={editModalVisible}
         transparent
         animationType="slide"
         onRequestClose={() => setEditModalVisible(false)}
       >
-        <View style={styles.overlay}>
-          <View style={styles.sheet}>
-            <View style={styles.sheetHead}>
-              <Text style={styles.sheetTitle}>Edit Profile</Text>
-              <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                <X size={24} color="#64748B" />
+        <View style={styles.modalBackdrop}>
+          <Pressable style={styles.backdropPress} onPress={() => setEditModalVisible(false)} />
+          <View style={styles.modalSheet}>
+            <View style={styles.sheetHandle} />
+            
+            <View style={styles.sheetHeader}>
+              <View>
+                <Text style={styles.sheetTitle}>Edit Profile</Text>
+                <Text style={styles.sheetSubtitle}>Update your information</Text>
+              </View>
+              <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.closeBtn}>
+                <X size={24} color="#C2C2C8" strokeWidth={2.5} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <View style={styles.inputBox}>
-                <Text style={styles.boxLab}>Username</Text>
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.sheetScroll}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Username</Text>
                 <TextInput
-                  style={styles.textInput}
+                  style={styles.inputField}
                   value={editedUserName}
                   onChangeText={setEditedUserName}
                   placeholder="Enter username"
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="#C2C2C8"
                 />
               </View>
 
-              <View style={styles.inputBox}>
-                <Text style={styles.boxLab}>Professional Bio</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Professional Bio</Text>
                 <TextInput
-                  style={[styles.textInput, styles.areaInput]}
+                  style={[styles.inputField, styles.textArea]}
                   value={editedBio}
                   onChangeText={setEditedBio}
                   multiline
+                  numberOfLines={4}
                   placeholder="Tell clients about yourself..."
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="#C2C2C8"
+                  textAlignVertical="top"
                 />
               </View>
 
-              <View style={styles.inputBox}>
-                <Text style={styles.boxLab}>Hourly Rate ($)</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Hourly Rate (USD)</Text>
                 <TextInput
-                  style={styles.textInput}
+                  style={styles.inputField}
                   value={editedHourlyRate}
                   onChangeText={setEditedHourlyRate}
                   keyboardType="numeric"
                   placeholder="0.00"
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="#C2C2C8"
                 />
               </View>
 
-              <View style={styles.inputBox}>
-                <Text style={styles.boxLab}>Core Skills</Text>
-                <View style={styles.skillEntry}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Skills</Text>
+                <View style={styles.skillInputRow}>
                   <TextInput
-                    style={[styles.textInput, { flex: 1, marginBottom: 0 }]}
+                    style={[styles.inputField, { flex: 1, marginBottom: 0 }]}
                     value={newSkill}
                     onChangeText={setNewSkill}
                     placeholder="e.g. React Native"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#C2C2C8"
                   />
-                  <TouchableOpacity onPress={handleAddSkill} style={styles.plusBtn}>
-                    <Plus size={20} color="#FFF" />
+                  <TouchableOpacity onPress={handleAddSkill} style={styles.addSkillBtn}>
+                    <Plus size={22} color="#FFFFFF" strokeWidth={2.5} />
                   </TouchableOpacity>
                 </View>
 
-                <View style={styles.sheetSkills}>
+                <View style={styles.skillsWrap}>
                   {editedSkills.map((s, i) => (
                     <SkillTag
                       key={i}
@@ -419,11 +484,18 @@ export default function ProfileScreen() {
               </View>
 
               <TouchableOpacity
-                style={[styles.saveBtn, isSaving && { opacity: 0.7 }]}
+                style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
                 onPress={handleSaveProfile}
                 disabled={isSaving}
               >
-                {isSaving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Save Profile</Text>}
+                {isSaving ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <>
+                    <CheckCircle2 size={20} color="#FFFFFF" strokeWidth={2.5} />
+                    <Text style={styles.saveButtonText}>Save Changes</Text>
+                  </>
+                )}
               </TouchableOpacity>
               <View style={{ height: 30 }} />
             </ScrollView>
@@ -431,48 +503,54 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      {/* Wallet Drawer */}
+      {/* WALLET MODAL - REDESIGNED */}
       <Modal
         visible={walletModalVisible}
         transparent
         animationType="slide"
         onRequestClose={() => setWalletModalVisible(false)}
       >
-        <View style={styles.overlay}>
-          <View style={styles.sheet}>
-            <View style={styles.sheetHead}>
-              <Text style={styles.sheetTitle}>My Wallet</Text>
-              <TouchableOpacity onPress={() => setWalletModalVisible(false)}>
-                <X size={24} color="#64748B" />
+        <View style={styles.modalBackdrop}>
+          <Pressable style={styles.backdropPress} onPress={() => setWalletModalVisible(false)} />
+          <View style={styles.modalSheet}>
+            <View style={styles.sheetHandle} />
+            
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Wallet</Text>
+              <TouchableOpacity onPress={() => setWalletModalVisible(false)} style={styles.closeBtn}>
+                <X size={24} color="#C2C2C8" strokeWidth={2.5} />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.drawerWalletCard}>
-              <Text style={styles.drawerBalanceLabel}>Available Balance</Text>
-              <Text style={styles.drawerBalanceValue}>${balance.toLocaleString()}</Text>
+            <View style={styles.walletHero}>
+              <View style={styles.walletIconCircle}>
+                <WalletIcon size={32} color="#FFFFFF" strokeWidth={2.5} />
+              </View>
+              <Text style={styles.walletLabel}>Available Balance</Text>
+              <Text style={styles.walletAmount}>${balance.toLocaleString()}</Text>
             </View>
 
-            <View style={styles.drawerActionRow}>
+            <View style={styles.actionRow}>
               <TouchableOpacity
-                style={styles.drawerPrimaryBtn}
+                style={styles.primaryActionBtn}
                 onPress={() => {
                   setWalletModalVisible(false);
                   router.push('../wallet' as any);
                 }}
               >
-                <HistoryIcon size={18} color="#4F46E5" />
-                <Text style={styles.drawerPrimaryBtnText}>View History</Text>
+                <HistoryIcon size={20} color="#444751" strokeWidth={2.5} />
+                <Text style={styles.primaryActionText}>History</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.drawerSecondaryBtn}
+                style={styles.secondaryActionBtn}
                 onPress={() => {
                   setWalletModalVisible(false);
-                  router.push('../wallet' as any); // Assuming add funds is on wallet screen
+                  router.push('../wallet' as any);
                 }}
               >
-                <Plus size={18} color="#FFF" />
-                <Text style={styles.drawerSecondaryBtnText}>Add Funds</Text>
+                <Plus size={20} color="#FFFFFF" strokeWidth={2.5} />
+                <Text style={styles.secondaryActionText}>Add Funds</Text>
               </TouchableOpacity>
             </View>
             <View style={{ height: 40 }} />
@@ -480,42 +558,45 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      {/* Notifications Drawer */}
+      {/* NOTIFICATIONS MODAL - REDESIGNED */}
       <Modal
         visible={notifModalVisible}
         transparent
         animationType="slide"
         onRequestClose={() => setNotifModalVisible(false)}
       >
-        <View style={styles.overlay}>
-          <View style={styles.sheet}>
-            <View style={styles.sheetHead}>
+        <View style={styles.modalBackdrop}>
+          <Pressable style={styles.backdropPress} onPress={() => setNotifModalVisible(false)} />
+          <View style={styles.modalSheet}>
+            <View style={styles.sheetHandle} />
+            
+            <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>Notifications</Text>
-              <TouchableOpacity onPress={() => setNotifModalVisible(false)}>
-                <X size={24} color="#64748B" />
+              <TouchableOpacity onPress={() => setNotifModalVisible(false)} style={styles.closeBtn}>
+                <X size={24} color="#C2C2C8" strokeWidth={2.5} />
               </TouchableOpacity>
             </View>
 
             {isNotifLoading && notifications.length === 0 ? (
-              <ActivityIndicator style={{ marginVertical: 30 }} color="#4F46E5" />
+              <ActivityIndicator style={{ marginVertical: 30 }} color="#444751" />
             ) : (
               <FlatList
                 data={notifications}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                  <View style={styles.drawerNotifItem}>
-                    <View style={[styles.notifDot, !item.isRead && styles.notifDotActive]} />
+                  <View style={styles.notifItem}>
+                    <View style={[styles.notifIndicator, !item.isRead && styles.notifIndicatorActive]} />
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.drawerNotifItemTitle}>{item.title}</Text>
-                      <Text style={styles.drawerNotifItemMsg} numberOfLines={1}>{item.message}</Text>
+                      <Text style={styles.notifTitle}>{item.title}</Text>
+                      <Text style={styles.notifMessage} numberOfLines={1}>{item.message}</Text>
                     </View>
                   </View>
                 )}
                 ListEmptyComponent={
-                  <View style={styles.drawerNotifPlaceholder}>
-                    <Bell size={48} color="#CBD5E1" />
-                    <Text style={styles.drawerNotifTitle}>No New Notifications</Text>
-                    <Text style={styles.drawerNotifSub}>We'll let you know when something important happens.</Text>
+                  <View style={styles.emptyState}>
+                    <Bell size={56} color="#E5E4EA" strokeWidth={1.5} />
+                    <Text style={styles.emptyTitle}>No Notifications</Text>
+                    <Text style={styles.emptySubtitle}>We'll notify you when something arrives</Text>
                   </View>
                 }
                 style={{ maxHeight: 300 }}
@@ -523,64 +604,70 @@ export default function ProfileScreen() {
             )}
 
             <TouchableOpacity
-              style={styles.drawerFullBtn}
+              style={styles.viewAllBtn}
               onPress={() => {
                 setNotifModalVisible(false);
                 router.push('../notifications' as any);
               }}
             >
-              <Text style={styles.drawerFullBtnText}>View All Notifications</Text>
+              <Text style={styles.viewAllText}>View All Notifications</Text>
+              <ChevronRight size={18} color="#444751" strokeWidth={2.5} />
             </TouchableOpacity>
             <View style={{ height: 40 }} />
           </View>
         </View>
       </Modal>
 
-      {/* Resolution Center Drawer */}
+      {/* DISPUTE MODAL - REDESIGNED */}
       <Modal
         visible={disputeModalVisible}
         transparent
         animationType="slide"
         onRequestClose={() => setDisputeModalVisible(false)}
       >
-        <View style={styles.overlay}>
-          <View style={styles.sheet}>
-            <View style={styles.sheetHead}>
+        <View style={styles.modalBackdrop}>
+          <Pressable style={styles.backdropPress} onPress={() => setDisputeModalVisible(false)} />
+          <View style={styles.modalSheet}>
+            <View style={styles.sheetHandle} />
+            
+            <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>Resolution Center</Text>
-              <TouchableOpacity onPress={() => setDisputeModalVisible(false)}>
-                <X size={24} color="#64748B" />
+              <TouchableOpacity onPress={() => setDisputeModalVisible(false)} style={styles.closeBtn}>
+                <X size={24} color="#C2C2C8" strokeWidth={2.5} />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.drawerSupportCard}>
-              <AlertTriangle size={24} color="#EF4444" />
-              <View style={styles.drawerSupportContent}>
-                <Text style={styles.drawerSupportTitle}>Need Help?</Text>
-                <Text style={styles.drawerSupportSub}>Open a dispute or view your cases</Text>
+            <View style={styles.alertCard}>
+              <View style={styles.alertIconBox}>
+                <ShieldCheck size={28} color="#444751" strokeWidth={2.5} />
+              </View>
+              <View style={styles.alertContent}>
+                <Text style={styles.alertTitle}>Need Help?</Text>
+                <Text style={styles.alertSubtitle}>Open a dispute or view your cases</Text>
               </View>
             </View>
 
-            <View style={styles.drawerActionRow}>
+            <View style={styles.actionRow}>
               <TouchableOpacity
-                style={styles.drawerPrimaryBtn}
+                style={styles.primaryActionBtn}
                 onPress={() => {
                   setDisputeModalVisible(false);
                   router.push('../FDisputes' as any);
                 }}
               >
-                <HistoryIcon size={18} color="#4F46E5" />
-                <Text style={styles.drawerPrimaryBtnText}>My Disputes</Text>
+                <HistoryIcon size={20} color="#444751" strokeWidth={2.5} />
+                <Text style={styles.primaryActionText}>My Cases</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.drawerSecondaryBtn}
+                style={styles.secondaryActionBtn}
                 onPress={() => {
                   setDisputeModalVisible(false);
                   router.push('../CreateDispute' as any);
                 }}
               >
-                <Plus size={18} color="#FFF" />
-                <Text style={styles.drawerSecondaryBtnText}>New Dispute</Text>
+                <Plus size={20} color="#FFFFFF" strokeWidth={2.5} />
+                <Text style={styles.secondaryActionText}>New Case</Text>
               </TouchableOpacity>
             </View>
             <View style={{ height: 40 }} />
@@ -592,424 +679,659 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FAFC" },
-  topGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 350,
-    backgroundColor: '#1E1B4B',
+  container: {
+    flex: 1,
+    backgroundColor: "#F4F4F8",
   },
-  heroHeader: {
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: '#F4F4F8',
+  },
+  scrollContent: {
+    paddingBottom: 30,
+  },
+
+  // ========== HERO SECTION ==========
+  heroSection: {
+    backgroundColor: "#FFFFFF",
+    paddingTop: 14,
+    paddingBottom: 22,
     paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 25,
-    alignItems: 'center',
   },
-  topActions: {
-    width: '100%',
+  topBar: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 12,
-    marginBottom: 10,
+    gap: 10,
+    marginBottom: 20,
   },
-  translucentBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    justifyContent: 'center',
+  settingsBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#F4F4F8',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  btnDot: {
+  notifBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#F4F4F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  notifDot: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#10B981',
+    top: 6,
+    right: 6,
+    backgroundColor: '#444751',
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
     borderWidth: 2,
-    borderColor: '#1E1B4B',
+    borderColor: '#FFFFFF',
   },
-  profileIdentity: {
+  notifDotText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+
+  profileHero: {
     alignItems: 'center',
     marginBottom: 24,
   },
-  premiumAvatarContainer: {
+  avatarSection: {
     position: 'relative',
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  avatarBorder: {
+  avatarRing: {
+    position: 'relative',
     padding: 4,
-    borderRadius: 54,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 64,
+    borderWidth: 3,
+    borderColor: '#E5E4EA',
+    backgroundColor: '#FFFFFF',
   },
-  premiumAvatar: { width: 100, height: 100, borderRadius: 50 },
-  premiumCameraBtn: {
+  heroAvatar: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+  },
+  verifiedBadge: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
-    backgroundColor: '#4F46E5',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    top: -2,
+    right: -2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 2,
+  },
+  editAvatarBtn: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#444751',
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#1E1B4B',
+    borderColor: '#FFFFFF',
   },
-  onlineBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#10B981',
-    borderWidth: 3,
-    borderColor: '#1E1B4B',
-  },
-  identityTextContainer: {
+
+  heroInfo: {
     alignItems: 'center',
   },
-  nameProRow: {
+  nameRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 6,
+  },
+  heroName: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#282A32',
+    letterSpacing: -0.5,
+  },
+  levelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#E5E4EA',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  levelText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#444751',
+    letterSpacing: 0.3,
+  },
+  heroRole: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#C2C2C8',
+    marginBottom: 10,
+    letterSpacing: 0.3,
+  },
+  heroBio: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#C2C2C8',
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 30,
+  },
+
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 18,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#F4F4F8',
+    borderRadius: 14,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E4EA',
+  },
+  statIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E5E4EA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#282A32',
+    marginBottom: 2,
+    letterSpacing: -0.3,
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#C2C2C8',
+    letterSpacing: 0.2,
+  },
+
+  earningsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#444751',
+    borderRadius: 18,
+    padding: 18,
+  },
+  earningsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  walletIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  earningsLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#C2C2C8',
+    marginBottom: 4,
+    letterSpacing: 0.3,
+  },
+  earningsValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+  viewWalletBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 10,
+  },
+  viewWalletText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#444751',
+    letterSpacing: 0.2,
+  },
+
+  // ========== QUICK ACTIONS ==========
+  quickActions: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+  },
+  actionBtn: {
+    flex: 1,
     alignItems: 'center',
     gap: 8,
   },
-  premiumNameText: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#FFF',
-    letterSpacing: -0.5,
-  },
-  proPill: {
-    backgroundColor: '#4F46E5',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  proPillText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: '900',
-  },
-  roleTagline: {
-    fontSize: 14,
-    color: '#C7D2FE',
-    fontWeight: '500',
-    marginTop: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  trustStatsBar: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    width: '100%',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  trustStat: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 6,
-  },
-  statDivider: {
-    width: 1,
-    height: 16,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  trustVal: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  trustLab: {
-    color: '#94A3B8',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  scrollContent: { paddingBottom: 40 },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#444751",
-    paddingHorizontal: 20,
-    marginTop: 32,
-    marginBottom: 12,
-  },
-  sectionContainer: {
+  actionIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    marginHorizontal: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#E5E4EA',
+  },
+  actionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#282A32',
+    letterSpacing: 0.2,
+  },
+
+  // ========== MENU SECTIONS ==========
+  menuSection: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#C2C2C8',
+    letterSpacing: 1.8,
+    marginBottom: 10,
+  },
+  menuCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E5E4EA',
     overflow: 'hidden',
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
-  menuItemLeft: {
+  menuLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-  },
-  logoutContainer: {
-    marginTop: 32,
-    marginHorizontal: 15,
-  },
-
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     gap: 12,
-    paddingVertical: 16,
-    borderRadius: 18,
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
+    flex: 1,
   },
-
-  logoutIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#FEF2F2',
-    justifyContent: 'center',
+  menuIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: '#F4F4F8',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-
-  logoutText: {
+  menuText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#EF4444',
+    color: '#282A32',
+    letterSpacing: -0.2,
   },
-  iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
+  menuBadge: {
+    backgroundColor: '#444751',
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    marginLeft: 8,
   },
-  menuItemText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#444751",
+  menuBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
   },
-  vText: { textAlign: 'center', color: '#94A3B8', fontSize: 12, marginTop: 20, marginBottom: 20 },
-  loadingContainer: { flex: 1, justifyContent: "flex-start", alignItems: "center", backgroundColor: '#F8FAFC' },
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#E5E4EA',
+    marginHorizontal: 16,
+  },
 
-  overlay: { flex: 1, backgroundColor: "rgba(15, 23, 42, 0.7)", justifyContent: "flex-end" },
-  sheet: { backgroundColor: "#FFF", borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%' },
-  sheetHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 },
-  sheetTitle: { fontSize: 20, fontWeight: "800", color: "#444751" },
-  inputBox: { marginBottom: 20 },
-  boxLab: { fontWeight: "700", marginBottom: 8, color: "#475569", fontSize: 14 },
-  textInput: {
-    backgroundColor: "#F8FAFC",
+  // ========== LOGOUT BUTTON ==========
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#444751',
+    marginHorizontal: 20,
+    paddingVertical: 16,
     borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    fontSize: 15,
-    color: "#444751"
+    marginTop: 6,
   },
-  areaInput: { height: 100, textAlignVertical: "top" },
-  skillEntry: { flexDirection: "row", gap: 10, marginBottom: 12 },
-  plusBtn: {
-    backgroundColor: "#4F46E5",
+  logoutIconBox: {
+    width: 26,
+    height: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+
+  // ========== MODALS ==========
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(40, 42, 50, 0.85)',
+    justifyContent: 'flex-end',
+  },
+  backdropPress: {
+    flex: 1,
+  },
+  modalSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: 12,
+    paddingBottom: 32,
+    paddingHorizontal: 24,
+    maxHeight: '90%',
+  },
+  sheetHandle: {
+    width: 48,
+    height: 5,
+    backgroundColor: '#E5E4EA',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  sheetTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#282A32',
+    marginBottom: 4,
+    letterSpacing: -0.6,
+  },
+  sheetSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#C2C2C8',
+    letterSpacing: 0.1,
+  },
+  closeBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#F4F4F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetScroll: {
+    flex: 1,
+  },
+
+  // ========== INPUTS ==========
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#444751',
+    marginBottom: 8,
+    letterSpacing: 0.2,
+  },
+  inputField: {
+    backgroundColor: '#F4F4F8',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#282A32',
+    borderWidth: 2,
+    borderColor: '#E5E4EA',
+  },
+  textArea: {
+    height: 110,
+    paddingTop: 14,
+  },
+  skillInputRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
+  addSkillBtn: {
     width: 52,
     height: 52,
     borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-  sheetSkills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
-  saveBtn: {
-    backgroundColor: "#4F46E5",
-    paddingVertical: 18,
-    borderRadius: 16,
+    backgroundColor: '#444751',
     alignItems: 'center',
-    marginTop: 20,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#4F46E5",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
-      },
-      android: {
-        elevation: 6,
-      },
-      web: {
-        boxShadow: '0px 6px 15px rgba(79, 70, 229, 0.3)',
-      }
-    }),
+    justifyContent: 'center',
   },
-  saveBtnText: { color: "#FFF", fontWeight: "800", fontSize: 16 },
+  skillsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
 
-  drawerWalletCard: {
-    backgroundColor: '#1E1B4B',
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 24,
+  // ========== BUTTONS ==========
+  saveButton: {
+    backgroundColor: '#444751',
+    paddingVertical: 16,
+    borderRadius: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 6,
   },
-  drawerBalanceLabel: {
-    color: '#C7D2FE',
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
+  saveButtonDisabled: {
+    opacity: 0.6,
   },
-  drawerBalanceValue: {
+  saveButtonText: {
     color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+
+  // ========== WALLET MODAL ==========
+  walletHero: {
+    backgroundColor: '#444751',
+    borderRadius: 20,
+    padding: 28,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  walletIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  walletLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#C2C2C8',
+    marginBottom: 6,
+    letterSpacing: 0.3,
+  },
+  walletAmount: {
     fontSize: 32,
     fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.8,
   },
-  drawerActionRow: {
+
+  actionRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
-  drawerPrimaryBtn: {
+  primaryActionBtn: {
     flex: 1,
     height: 52,
     borderRadius: 14,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#F4F4F8',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
+    borderWidth: 2,
+    borderColor: '#E5E4EA',
   },
-  drawerPrimaryBtnText: {
-    color: '#4F46E5',
-    fontWeight: '700',
+  primaryActionText: {
     fontSize: 15,
-  },
-  drawerSecondaryBtn: {
-    flex: 1,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: '#4F46E5',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  drawerSecondaryBtnText: {
-    color: '#FFF',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  drawerSupportCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    padding: 20,
-    borderRadius: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
-  },
-  drawerSupportContent: {
-    marginLeft: 16,
-    flex: 1,
-  },
-  drawerSupportTitle: {
-    fontSize: 16,
     fontWeight: '700',
     color: '#444751',
+    letterSpacing: 0.2,
   },
-  drawerSupportSub: {
-    fontSize: 13,
-    color: '#64748B',
-    marginTop: 2,
-  },
-  drawerNotifPlaceholder: {
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  drawerNotifTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#444751',
-    marginTop: 16,
-  },
-  drawerNotifSub: {
-    fontSize: 14,
-    color: '#64748B',
-    textAlign: 'center',
-    paddingHorizontal: 30,
-    marginTop: 8,
-  },
-  drawerFullBtn: {
-    backgroundColor: '#EEF2FF',
+  secondaryActionBtn: {
+    flex: 1,
     height: 52,
     borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  drawerFullBtnText: {
-    color: '#4F46E5',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  drawerNotifItem: {
+    backgroundColor: '#444751',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
+    justifyContent: 'center',
+    gap: 6,
+  },
+  secondaryActionText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+
+  // ========== NOTIFICATIONS ==========
+  notifItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9'
+    borderBottomColor: '#E5E4EA',
   },
-  notifDot: {
+  notifIndicator: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: 'transparent',
-    marginRight: 12
+    marginRight: 14,
   },
-  notifDotActive: {
-    backgroundColor: '#4F46E5'
+  notifIndicatorActive: {
+    backgroundColor: '#444751',
   },
-  drawerNotifItemTitle: {
+  notifTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#444751'
+    color: '#282A32',
+    marginBottom: 3,
   },
-  drawerNotifItemMsg: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 2
+  notifMessage: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#C2C2C8',
   },
-  menuBadge: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#EF4444',
-    borderWidth: 1,
-    borderColor: '#FFF'
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 48,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#282A32',
+    marginTop: 16,
+    marginBottom: 6,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#C2C2C8',
+    textAlign: 'center',
+    paddingHorizontal: 40,
+  },
+  viewAllBtn: {
+    backgroundColor: '#F4F4F8',
+    height: 52,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 16,
+    borderWidth: 2,
+    borderColor: '#E5E4EA',
+  },
+  viewAllText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#444751',
+    letterSpacing: 0.2,
+  },
+
+  // ========== ALERT CARD ==========
+  alertCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F4F4F8',
+    padding: 18,
+    borderRadius: 18,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#E5E4EA',
+  },
+  alertIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  alertContent: {
+    flex: 1,
+  },
+  alertTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#282A32',
+    marginBottom: 2,
+  },
+  alertSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#C2C2C8',
   },
 });

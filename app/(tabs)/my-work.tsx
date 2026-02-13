@@ -11,12 +11,13 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Briefcase, CheckCircle, FileText, Bell, Search, LayoutDashboard, Filter, ChevronLeft } from "lucide-react-native";
+import { Briefcase, Bell, LayoutDashboard } from "lucide-react-native";
 import WorkCard from "@/components/WorkCard";
 import { projectService, proposalService } from "@/services/projectService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Project, Proposal } from "@/models/Project";
 import { useRouter } from "expo-router";
+import { SPACING, TYPOGRAPHY, BORDER_RADIUS } from "@/constants/theme";
 
 export default function MyWorkScreen() {
   const router = useRouter();
@@ -47,39 +48,46 @@ export default function MyWorkScreen() {
         setProposals([]);
       }
     } catch (error: any) {
-      console.error('Failed to fetch data:', error);
+      console.error("Failed to fetch data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const displayProjects = activeTab === "Proposals"
-    ? proposals.map(p => ({
-      id: p.id,
-      title: p.project?.title || 'Unknown Project',
-      client: p.project?.client?.userName || 'Unknown Client',
-      budget: `$${p.bidAmount.toFixed(2)}`,
-      deadline: p.project?.duration || 'N/A',
-      location: p.project?.location || 'Remote',
-      status: p.status === 'ACCEPTED' ? 'inProgress' : 'proposal',
-      proposalStatus: p.status === 'ACCEPTED' ? 'shortlisted' : p.status === 'PENDING' ? 'submitted' : 'rejected',
-      milestones: [],
-    }))
-    : projects.map(p => ({
-      id: p.id,
-      title: p.title,
-      client: p.client?.userName || 'Unknown Client',
-      budget: `$${p.budget.toFixed(2)}`,
-      deadline: p.duration || 'N/A',
-      location: p.location || 'Remote',
-      status: p.status === 'ACTIVE' ? 'inProgress' : p.status === 'COMPLETED' ? 'completed' : 'available',
-      milestones: [],
-    }));
+  const displayProjects =
+    activeTab === "Proposals"
+      ? proposals.map((p) => ({
+          id: p.id,
+          title: p.project?.title || "Unknown Project",
+          client: p.project?.client?.userName || "Unknown Client",
+          budget: `$${p.bidAmount.toFixed(2)}`,
+          deadline: p.project?.duration || "N/A",
+          location: p.project?.location || "Remote",
+          status: p.status === "ACCEPTED" ? "inProgress" : "proposal",
+          proposalStatus:
+            p.status === "ACCEPTED" ? "shortlisted" : p.status === "PENDING" ? "submitted" : "rejected",
+          milestones: [],
+        }))
+      : projects.map((p) => ({
+          id: p.id,
+          title: p.title,
+          client: p.client?.userName || "Unknown Client",
+          budget: `$${p.budget.toFixed(2)}`,
+          deadline: p.duration || "N/A",
+          location: p.location || "Remote",
+          status:
+            p.status === "ACTIVE"
+              ? "inProgress"
+              : p.status === "COMPLETED"
+                ? "completed"
+                : "available",
+          milestones: [],
+        }));
 
   const getStats = () => {
     if (activeTab === "Active") {
       const total = projects.reduce((sum, p) => sum + Number(p.budget || 0), 0);
-      return { label: "Current Earnings", value: `$${total.toLocaleString()}`, color: "#282A32" };
+      return { label: "Current Earnings", value: `$${total.toLocaleString()}`, color: "#4F46E5" };
     }
     if (activeTab === "Completed") {
       const total = projects.reduce((sum, p) => sum + Number(p.budget || 0), 0);
@@ -92,281 +100,233 @@ export default function MyWorkScreen() {
   const stats = getStats();
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.topGradient} />
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
 
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ChevronLeft size={24} color="#FFF" />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>My Workspace</Text>
-            <Text style={styles.headerSubtitle}>Manage your tasks and earnings</Text>
-          </View>
-          <TouchableOpacity style={styles.iconCircle}>
-            <Filter size={20} color="#FFF" />
-          </TouchableOpacity>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Work</Text>
+      </View>
+
+      <View style={styles.statsCard}>
+        <View style={styles.statInfo}>
+          <Text style={styles.statLabel}>{stats.label}</Text>
+          <Text style={[styles.statValue, { color: stats.color }]}>{stats.value}</Text>
         </View>
-
-        <View style={styles.statsWrapper}>
-          <View style={styles.statsCard}>
-            <View style={styles.statInfo}>
-              <Text style={styles.statLabel}>{stats.label}</Text>
-              <Text style={[styles.statValue, { color: stats.color }]}>{stats.value}</Text>
-            </View>
-            <View style={styles.statRight}>
-              <Text style={styles.statCount}>
-                {activeTab === "Proposals" ? proposals.length : projects.length} {activeTab === "Proposals" ? "Proposals" : "Projects"}
-              </Text>
-              <View style={[styles.statIconBg, { backgroundColor: stats.color + '15' }]}>
-                <LayoutDashboard size={20} color={stats.color} />
-              </View>
-            </View>
+        <View style={styles.statRight}>
+          <Text style={styles.statCount}>
+            {activeTab === "Proposals" ? proposals.length : projects.length}{" "}
+            {activeTab === "Proposals" ? "Proposals" : "Projects"}
+          </Text>
+          <View style={[styles.statIconBg, { backgroundColor: stats.color + "20" }]}>
+            <LayoutDashboard size={20} color={stats.color} />
           </View>
+        </View>
+      </View>
 
-          <View style={styles.tabBar}>
-            {[
-              { key: "Active", icon: Briefcase },
-              { key: "Completed", icon: CheckCircle },
-              { key: "Proposals", icon: FileText },
-            ].map((tab) => {
-              const isActive = activeTab === tab.key;
-              return (
-                <TouchableOpacity
-                  key={tab.key}
-                  activeOpacity={0.8}
-                  style={[styles.tabItem, isActive && styles.tabItemActive]}
-                  onPress={() => setActiveTab(tab.key as any)}
+      <View style={styles.tabBarWrapper}>
+        <View style={styles.tabBar}>
+          {(["Active", "Completed", "Proposals"] as const).map((key) => {
+            const isActive = activeTab === key;
+            return (
+              <TouchableOpacity
+                key={key}
+                activeOpacity={0.8}
+                style={[
+                  styles.tabChip,
+                  isActive && styles.tabChipActive,
+                ]}
+                onPress={() => setActiveTab(key)}
+              >
+                <Text
+                  style={[
+                    styles.tabChipText,
+                    isActive && styles.tabChipTextActive,
+                  ]}
                 >
-                  <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{tab.key}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                  {key}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
+      </View>
 
-        <ScrollView
-          style={styles.contentBody}
-          contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 20 }}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={loading} onRefresh={fetchData} tintColor="#282A32" />
-          }
-        >
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#282A32" />
+      <ScrollView
+        style={styles.contentBody}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={fetchData} tintColor="#4F46E5" />
+        }
+      >
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4F46E5" />
+          </View>
+        ) : displayProjects.length > 0 ? (
+          displayProjects.map((project) => (
+            <View key={project.id} style={styles.cardWrapper}>
+              <WorkCard project={project as any} type={activeTab.toLowerCase()} />
             </View>
-          ) : displayProjects.length > 0 ? (
-            displayProjects.map((project) => (
-              <View key={project.id} style={styles.cardWrapper}>
-                <WorkCard
-                  project={project as any}
-                  type={activeTab.toLowerCase()}
-                />
-              </View>
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIconBg}>
-                <Briefcase size={32} color="#CBD5E1" />
-              </View>
-              <Text style={styles.emptyText}>No items found</Text>
-              <Text style={styles.emptySubtext}>Items in the "{activeTab}" category will appear here once available.</Text>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconBg}>
+              <Briefcase size={32} color="#64748B" />
             </View>
-          )}
-        </ScrollView>
-      </SafeAreaView>
-    </View>
+            <Text style={styles.emptyText}>No items found</Text>
+            <Text style={styles.emptySubtext}>
+              Items in the "{activeTab}" category will appear here once available.
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFC"
-  },
-  topGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 300,
-    backgroundColor: '#1E1B4B',
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
+  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 100 },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
     paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#FFFFFF"
+    fontSize: 26,
+    // fontSize: TYPOGRAPHY.fontSize.xl,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: "#1E293B",
   },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#C7D2FE',
-    fontWeight: '500'
-  },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  notificationBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#FFF",
     justifyContent: "center",
-    alignItems: "center"
-  },
-  statsWrapper: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  statsCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 24,
-    flexDirection: "row",
-    justifyContent: 'space-between',
     alignItems: "center",
-    marginBottom: 20,
     ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.08,
-        shadowRadius: 20,
-      },
-      android: {
-        elevation: 8,
-      },
-      web: {
-        boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.08)',
-      },
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
+      android: { elevation: 3 },
     }),
   },
-  statInfo: {
-    flex: 1,
+
+  statsCard: {
+    backgroundColor: "#FFF",
+    borderRadius: BORDER_RADIUS.l,
+    padding: SPACING.m,
+    marginHorizontal: 20,
+    marginBottom: SPACING.m,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    ...Platform.select({
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
+      android: { elevation: 3 },
+    }),
   },
+  statInfo: { flex: 1 },
   statLabel: {
     color: "#64748B",
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
     textTransform: "uppercase",
-    letterSpacing: 0.5
+    letterSpacing: 0.5,
   },
   statValue: {
-    fontSize: 28,
-    fontWeight: "800",
-    marginTop: 4
+    fontSize: TYPOGRAPHY.fontSize["3xl"],
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    marginTop: SPACING.xs,
   },
-  statRight: {
-    alignItems: 'flex-end',
-  },
+  statRight: { alignItems: "flex-end" },
   statCount: {
     color: "#64748B",
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 8
+    fontSize: TYPOGRAPHY.fontSize.base,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
+    marginBottom: SPACING.s,
   },
   statIconBg: {
     width: 44,
     height: 44,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: BORDER_RADIUS.m,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  tabBarWrapper: {
+    marginBottom: 12,
   },
   tabBar: {
     flexDirection: "row",
-    gap: 10,
+    paddingHorizontal: 20,
+    gap: 8,
+    paddingBottom: 4,
   },
-  tabItem: {
-    paddingVertical: 10,
+  tabChip: {
     paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: "#F1F5F9",
   },
-  tabItemActive: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FFFFFF',
+  tabChipActive: {
+    backgroundColor: "#0F172A",
+    borderColor: "#0F172A",
   },
-  tabText: {
-    color: "#C7D2FE",
+  tabChipText: {
     fontSize: 13,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: "#64748B",
   },
-  tabTextActive: {
-    color: "#1E1B4B",
+  tabChipTextActive: {
+    color: "#FFFFFF",
   },
-  contentBody: {
-    flex: 1,
-  },
+
+  contentBody: { flex: 1 },
   cardWrapper: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    marginBottom: 16,
+    backgroundColor: "#FFF",
+    borderRadius: BORDER_RADIUS.l,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: "#E2E8F0",
+    overflow: "hidden",
     ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.03,
-        shadowRadius: 10,
-      },
-      android: {
-        elevation: 2,
-      },
-      web: {
-        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.03)',
-      },
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
+      android: { elevation: 3 },
     }),
   },
-  emptyState: {
-    marginTop: 60,
-    alignItems: "center"
-  },
+  emptyState: { marginTop: SPACING.xxl, alignItems: "center" },
   emptyIconBg: {
     width: 64,
     height: 64,
-    borderRadius: 20,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
+    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: SPACING.m,
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#444751"
+    fontSize: TYPOGRAPHY.fontSize.lg,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: "#1E293B",
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.fontSize.base,
     color: "#64748B",
-    marginTop: 8,
-    textAlign: 'center',
+    marginTop: SPACING.s,
+    textAlign: "center",
     maxWidth: 260,
     lineHeight: 20,
   },
   loadingContainer: {
     padding: 60,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
 });

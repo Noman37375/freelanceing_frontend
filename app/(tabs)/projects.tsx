@@ -19,6 +19,7 @@ import ProjectListCard from "@/components/ProjectListCard";
 import { projectService } from "@/services/projectService";
 import { Project } from "@/models/Project";
 import { useRouter } from "expo-router";
+import { TYPOGRAPHY } from "@/constants/theme";
 
 export default function ProjectsScreen() {
   const router = useRouter();
@@ -96,13 +97,7 @@ export default function ProjectsScreen() {
         {/* Top: light gray bg – back, title "Search", menu (three dots) */}
         <View style={styles.topSection}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <ChevronLeft size={24} color="#1E293B" />
-            </TouchableOpacity>
             <Text style={styles.headerTitle}>Search</Text>
-            {/* <TouchableOpacity style={styles.menuButton} onPress={() => setShowFilter(true)}>
-              <MoreHorizontal size={22} color="#1E293B" />
-            </TouchableOpacity> */}
           </View>
 
           {/* Search bar (light gray) + blue FAB on right */}
@@ -118,7 +113,7 @@ export default function ProjectsScreen() {
               />
             </View>
             <TouchableOpacity style={styles.fabFilter} onPress={() => setShowFilter(true)}>
-              <SlidersHorizontal size={20} color="#FFF" />
+              <SlidersHorizontal size={20} color="#1E293B" />
             </TouchableOpacity>
           </View>
         </View>
@@ -268,9 +263,12 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   headerTitle: {
-    flex: 1,
+    // flex: 1,
     fontSize: 26,
-    fontWeight: "800",
+    // fontWeight: "800",
+    // color: "#1E293B",
+    // fontSize: TYPOGRAPHY.fontSize.xl,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: "#1E293B",
   },
   menuButton: {
@@ -302,8 +300,25 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 15,
-    color: "#444751",
-    fontWeight: '500'
+    color: "#1E293B",
+    fontWeight: '500',
+  },
+  fabFilter: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#4F46E5',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: { elevation: 4 },
+    }),
   },
   categoriesWrapper: {
     marginBottom: 12,

@@ -126,12 +126,12 @@ const MessagesScreen = () => {
         </View>
         <TouchableOpacity style={styles.newChatButton}>
           <LinearGradient
-            colors={GRADIENTS.primary as any}
+            colors={['#F8FAFC', '']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.newChatGradient}
           >
-            <MessageSquare size={20} color="#FFFFFF" />
+            <MessageSquare size={20} color="#1E293B" />
           </LinearGradient>
         </TouchableOpacity>
       </View>

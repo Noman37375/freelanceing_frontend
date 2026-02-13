@@ -32,9 +32,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import newly created components
 import AdminSidebar from '@/components/admin/AdminSidebar';
-import AdminAnalyticsCard from '@/components/admin/AdminAnalyticsCard';
+import AdminAnalyticsOverview from '@/components/admin/AdminAnalyticsOverview';
 import AdminProfileCard from '@/components/admin/AdminProfileCard';
-import AdminEarningReport from '@/components/admin/AdminEarningReport';
 import AdminApplicationStatus from '@/components/admin/AdminApplicationStatus';
 import AdminActivityTable from '@/components/admin/AdminActivityTable';
 
@@ -152,6 +151,7 @@ export default function AdminDashboard() {
         },
         scrollContent: {
             padding: isMobile ? 16 : 24,
+            paddingBottom: isMobile ? 24 : 24,
         },
         topBar: {
             height: isMobile ? 64 : 80,
@@ -163,8 +163,8 @@ export default function AdminDashboard() {
         <View style={styles.outerContainer}>
             <StatusBar barStyle="dark-content" />
 
-            {/* Sidebar Overlay for Mobile */}
-            {!isDesktop && sidebarVisible && (
+            {/* Sidebar overlay: tablet only (when sidebar open) */}
+            {isTablet && sidebarVisible && (
                 <TouchableOpacity
                     style={styles.sidebarOverlay}
                     activeOpacity={1}
@@ -172,18 +172,23 @@ export default function AdminDashboard() {
                 />
             )}
 
-            {/* Sidebar */}
-            {(sidebarVisible || isDesktop) && (
-                <View style={isDesktop ? styles.desktopSidebar : styles.mobileSidebar}>
+            {/* Sidebar: desktop always; tablet when open; mobile uses bottom bar instead */}
+            {isDesktop && (
+                <View style={styles.desktopSidebar}>
+                    <AdminSidebar onLogout={handleLogout} />
+                </View>
+            )}
+            {isTablet && sidebarVisible && (
+                <View style={styles.mobileSidebar}>
                     <AdminSidebar onLogout={handleLogout} />
                 </View>
             )}
 
-            <SafeAreaView style={styles.container}>
+            <SafeAreaView style={styles.container} edges={isMobile ? ['top'] : undefined}>
                 {/* Header Bar */}
                 <View style={[styles.topBar, dynamicStyles.topBar]}>
                     <View style={styles.topBarLeft}>
-                        {!isDesktop && (
+                        {isTablet && (
                             <TouchableOpacity
                                 style={styles.menuButton}
                                 onPress={() => setSidebarVisible(!sidebarVisible)}
@@ -245,34 +250,13 @@ export default function AdminDashboard() {
                             </View>
 
                             <View style={[styles.chartsGrid, dynamicStyles.chartsGrid]}>
-                                <View style={{ flex: isMobile ? undefined : 1, width: isMobile ? '100%' : undefined }}>
-                                    <AdminAnalyticsCard
-                                        percentage={90}
-                                        title="Analytics"
-                                        subTitle="Performance"
-                                        value={stats?.totalClients?.toString() || '0'}
-                                        subValue="1,298"
-                                    />
-                                </View>
-                                <View style={{ flex: isMobile ? undefined : 1.6, width: isMobile ? '100%' : undefined }}>
-                                    <AdminEarningReport
-                                        revenue={`$${(stats?.totalRevenue || 0).toLocaleString()}`}
-                                        trend="+2.3%"
-                                    />
-                                </View>
+                                <AdminAnalyticsOverview stats={stats} isMobile={isMobile} />
                             </View>
 
                             <View style={styles.sectionHeader}>
                                 <Text style={[styles.sectionTitle, { fontSize: isMobile ? 18 : 22 }]}>
                                     Management View
                                 </Text>
-                                {/* <TouchableOpacity
-                                    style={styles.viewMoreButton}
-                                    onPress={() => router.push('/(admin)/manage-projects' as any)}
-                                >
-                                    <Text style={styles.viewMoreText}>View all</Text>
-                                    <ChevronRight size={14} color="#444751" />
-                                </TouchableOpacity> */}
                             </View>
 
                             <View style={styles.managementGrid}>
@@ -298,13 +282,7 @@ export default function AdminDashboard() {
                                     <Text style={[styles.sectionTitle, { fontSize: isMobile ? 18 : 22 }]}>
                                         Active projects <Text style={styles.countText}>({activeProjects.length})</Text>
                                     </Text>
-                                    <TouchableOpacity
-                                        style={styles.viewMoreButton}
-                                        onPress={() => router.push('/(admin)/manage-projects' as any)}
-                                    >
-                                        <Text style={styles.viewMoreText}>View all</Text>
-                                        <ChevronRight size={14} color="#444751" />
-                                    </TouchableOpacity>
+                                   
                                 </View>
 
                                 <View style={styles.projectsCard}>
@@ -315,19 +293,20 @@ export default function AdminDashboard() {
                         </View>
 
                         {/* Right Column (Profile & Activity) */}
-                        <View style={isMobile ? {} : styles.rightColumn}>
-                            {/* <AdminProfileCard
+                        {/* <View style={isMobile ? {} : styles.rightColumn}>
+                            <AdminProfileCard
                                 name={user?.userName || 'Admin'}
                                 role="System Administrator"
                                 location="Platform Control Center"
                                 avatarUrl={undefined}
-                            /> */}
-                            {/* <View style={{ height: 24 }} /> */}
+                            />
+                            <View style={{ height: 24 }} />
                             <AdminApplicationStatus items={StatusItems} />
-                        </View>
+                        </View> */}
                     </View>
                 </ScrollView>
-            </SafeAreaView>
+
+                </SafeAreaView>
         </View>
     );
 }

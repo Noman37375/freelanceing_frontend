@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Platform, StatusBar } from 'react-native';
-import { Search, Filter, User, Star, MapPin, Briefcase, ChevronLeft, UserCheck } from 'lucide-react-native';
+import { Search, Filter, User, Star, MapPin, Briefcase, ChevronLeft, UserCheck, X, Award, TrendingUp } from 'lucide-react-native';
 import { freelancerService, Freelancer } from '@/services/freelancerService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -42,392 +42,488 @@ export default function Freelancers() {
 
   const getAvailabilityColor = (availability: string) => {
     switch (availability) {
-      case 'Available': return '#10B981';
-      case 'Busy': return '#F59E0B';
-      default: return '#EF4444';
+      case 'Available': return '#444751';
+      case 'Busy': return '#C2C2C8';
+      default: return '#E5E4EA';
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.topGradient} />
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ChevronLeft size={24} color="#FFF" />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Find Talent</Text>
-          <Text style={styles.headerSubtitle}>Discover top freelancers</Text>
-        </View>
-        <TouchableOpacity style={styles.iconCircle}>
-          <Filter size={20} color="#FFF" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.contentHeader}>
-        <View style={styles.searchBar}>
-          <Search size={20} color="#94A3B8" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by skills, name..."
-            placeholderTextColor="#94A3B8"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* CLEAN HEADER */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ChevronLeft size={22} color="#282A32" strokeWidth={2.5} />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>Find Talent</Text>
+            <Text style={styles.headerSubtitle}>{freelancers.length} freelancers</Text>
+          </View>
+          <TouchableOpacity style={styles.filterButton}>
+            <Filter size={20} color="#282A32" strokeWidth={2.5} />
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.filtersRow}>
-          {['All', 'Top Rated', 'Available', 'New'].map((filter) => (
-            <TouchableOpacity
-              key={filter}
-              style={[styles.filterChip, activeFilter === filter && styles.activeChip]}
-              onPress={() => setActiveFilter(filter)}
-            >
-              <Text style={[styles.chipText, activeFilter === filter && styles.activeChipText]}>
-                {filter}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        {/* SEARCH & FILTERS */}
+        <View style={styles.searchSection}>
+          <View style={styles.searchBar}>
+            <Search size={20} color="#C2C2C8" strokeWidth={2.5} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by skills, name..."
+              placeholderTextColor="#C2C2C8"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <X size={18} color="#C2C2C8" strokeWidth={2.5} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={styles.filtersRow}>
+            {['All', 'Top Rated', 'Available', 'New'].map((filter) => (
+              <TouchableOpacity
+                key={filter}
+                style={[styles.filterChip, activeFilter === filter && styles.activeChip]}
+                onPress={() => setActiveFilter(filter)}
+              >
+                <Text style={[styles.chipText, activeFilter === filter && styles.activeChipText]}>
+                  {filter}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-      </View>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#282A32" />
-        </View>
-      ) : (
-        <FlatList
-          data={freelancers}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item: freelancer }) => (
-            <TouchableOpacity key={freelancer.id} style={styles.freelancerCard} activeOpacity={0.9}>
-              <View style={styles.cardHeader}>
-                <View style={styles.avatarBox}>
-                  <User size={28} color="#282A32" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.nameText}>{freelancer.name}</Text>
-                  <Text style={styles.titleText}>{freelancer.title}</Text>
-                </View>
-                <View style={[styles.statusDot, { backgroundColor: getAvailabilityColor(freelancer.availability) }]} />
-              </View>
-
-              <View style={styles.statsRow}>
-                <View style={styles.inlineStat}>
-                  <Star size={14} color="#F59E0B" fill="#F59E0B" />
-                  <Text style={styles.boldText}>{freelancer.rating}</Text>
-                  <Text style={styles.mutedText}>({freelancer.reviews})</Text>
-                </View>
-                <Text style={styles.divider}>•</Text>
-                <Text style={styles.priceText}>{freelancer.hourlyRate}</Text>
-                <Text style={styles.mutedText}>/hr</Text>
-              </View>
-
-              <View style={styles.badgesRow}>
-                {freelancer.skills.slice(0, 3).map((skill, index) => (
-                  <View key={index} style={styles.skillBadge}>
-                    <Text style={styles.skillText}>{skill}</Text>
+        {/* FREELANCERS LIST */}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#444751" />
+          </View>
+        ) : (
+          <FlatList
+            data={freelancers}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+            renderItem={({ item: freelancer }) => (
+              <TouchableOpacity 
+                key={freelancer.id} 
+                style={styles.freelancerCard} 
+                activeOpacity={0.7}
+              >
+                {/* Card Header */}
+                <View style={styles.cardHeader}>
+                  <View style={styles.avatarBox}>
+                    <User size={26} color="#444751" strokeWidth={2} />
                   </View>
-                ))}
-                {freelancer.skills.length > 3 && (
-                  <Text style={styles.moreText}>+{freelancer.skills.length - 3} more</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.nameText}>{freelancer.name}</Text>
+                    <Text style={styles.titleText}>{freelancer.title}</Text>
+                  </View>
+                  <View style={[styles.statusDot, { backgroundColor: getAvailabilityColor(freelancer.availability) }]} />
+                </View>
+
+                {/* Stats Row */}
+                <View style={styles.statsRow}>
+                  <View style={styles.statItem}>
+                    <Star size={14} color="#444751" fill="#444751" strokeWidth={2} />
+                    <Text style={styles.statValue}>{freelancer.rating}</Text>
+                    <Text style={styles.statLabel}>({freelancer.reviews})</Text>
+                  </View>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statItem}>
+                    <Text style={styles.priceValue}>{freelancer.hourlyRate}</Text>
+                    <Text style={styles.priceLabel}>/hr</Text>
+                  </View>
+                </View>
+
+                {/* Skills */}
+                <View style={styles.skillsRow}>
+                  {freelancer.skills.slice(0, 3).map((skill, index) => (
+                    <View key={index} style={styles.skillBadge}>
+                      <Text style={styles.skillText}>{skill}</Text>
+                    </View>
+                  ))}
+                  {freelancer.skills.length > 3 && (
+                    <Text style={styles.moreText}>+{freelancer.skills.length - 3}</Text>
+                  )}
+                </View>
+
+                {/* Footer */}
+                <View style={styles.cardFooter}>
+                  <View style={styles.footerLeft}>
+                    <View style={styles.footerItem}>
+                      <MapPin size={13} color="#C2C2C8" strokeWidth={2} />
+                      <Text style={styles.footerText}>{freelancer.location}</Text>
+                    </View>
+                    <View style={styles.footerDot} />
+                    <View style={styles.footerItem}>
+                      <Briefcase size={13} color="#C2C2C8" strokeWidth={2} />
+                      <Text style={styles.footerText}>{freelancer.completedProjects} done</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity style={styles.viewBtn}>
+                    <Text style={styles.viewBtnText}>View</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <View style={styles.emptyIconBox}>
+                  <UserCheck size={40} color="#C2C2C8" strokeWidth={1.5} />
+                </View>
+                <Text style={styles.emptyTitle}>
+                  {error ? 'Connection Error' : 'No Freelancers Found'}
+                </Text>
+                <Text style={styles.emptySubtitle}>
+                  {error || 'Try adjusting your search or filters to find the perfect match'}
+                </Text>
+                {error && (
+                  <TouchableOpacity style={styles.emptyActionBtn} onPress={fetchFreelancers}>
+                    <Text style={styles.emptyActionText}>Try Again</Text>
+                  </TouchableOpacity>
                 )}
               </View>
-
-              <View style={styles.footerRow}>
-                <View style={styles.inlineStat}>
-                  <MapPin size={12} color="#94A3B8" />
-                  <Text style={styles.footerText}>{freelancer.location}</Text>
-                </View>
-                <View style={[styles.inlineStat, { marginLeft: 16 }]}>
-                  <Briefcase size={12} color="#94A3B8" />
-                  <Text style={styles.footerText}>{freelancer.completedProjects} projects</Text>
-                </View>
-                <View style={{ flex: 1 }} />
-                <TouchableOpacity style={styles.profileBtn}>
-                  <Text style={styles.profileBtnText}>View</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>{error ? 'Connection Error' : 'No matches found'}</Text>
-              <Text style={styles.emptySubtitle}>
-                {error || 'Try adjusting your search or filters to find what you are looking for.'}
-              </Text>
-            </View>
-          }
-        />
-      )}
-    </SafeAreaView>
+            }
+          />
+        )}
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F4F4F8',
   },
-  topGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 180,
-    backgroundColor: '#1E1B4B',
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
+
+  // ========== HEADER ==========
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 25,
+    paddingVertical: 14,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E4EA',
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#F4F4F8',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#282A32',
+    letterSpacing: -0.3,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: '#C7D2FE',
-    fontWeight: '500',
+    fontSize: 13,
+    color: '#C2C2C8',
+    fontWeight: '600',
+    marginTop: 2,
+    letterSpacing: 0.2,
   },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  filterButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#F4F4F8',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  contentHeader: {
+
+  // ========== SEARCH SECTION ==========
+  searchSection: {
     paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E4EA',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: '#F4F4F8',
+    borderRadius: 14,
     paddingHorizontal: 16,
-    height: 52,
-    marginBottom: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-      },
-      android: {
-        elevation: 4,
-      },
-      web: {
-        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.05)',
-      },
-    }),
+    height: 48,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E4EA',
   },
   searchInput: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 10,
     fontSize: 15,
     color: '#282A32',
-    fontWeight: '500',
+    fontWeight: '600',
   },
+
   filtersRow: {
     flexDirection: 'row',
     gap: 8,
   },
   filterChip: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F4F8',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#E5E4EA',
   },
   activeChip: {
-    backgroundColor: '#282A32',
-    borderColor: '#282A32',
+    backgroundColor: '#444751',
+    borderColor: '#444751',
   },
   chipText: {
     fontSize: 13,
-    color: '#64748B',
+    color: '#C2C2C8',
     fontWeight: '700',
+    letterSpacing: 0.2,
   },
   activeChipText: {
     color: '#FFFFFF',
   },
+
+  // ========== LIST ==========
   listContent: {
     paddingHorizontal: 20,
+    paddingTop: 20,
     paddingBottom: 40,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 60,
+  },
+
+  // ========== FREELANCER CARD ==========
   freelancerCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.03,
-        shadowRadius: 10,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    borderColor: '#E5E4EA',
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   avatarBox: {
     width: 52,
     height: 52,
-    borderRadius: 16,
-    backgroundColor: '#E5E4EA',
+    borderRadius: 14,
+    backgroundColor: '#F4F4F8',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#E5E4EA',
   },
   nameText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '800',
     color: '#282A32',
-    marginBottom: 2,
+    marginBottom: 3,
+    letterSpacing: -0.2,
   },
   titleText: {
     fontSize: 13,
-    color: '#64748B',
-    fontWeight: '500',
+    color: '#C2C2C8',
+    fontWeight: '600',
+    letterSpacing: 0.1,
   },
   statusDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
     borderWidth: 2,
-    borderColor: '#FFF',
+    borderColor: '#FFFFFF',
   },
+
+  // ========== STATS ROW ==========
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E4EA',
   },
-  inlineStat: {
+  statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
-  boldText: {
+  statValue: {
     fontSize: 14,
     fontWeight: '700',
     color: '#282A32',
+    letterSpacing: -0.2,
   },
-  mutedText: {
+  statLabel: {
     fontSize: 13,
-    color: '#94A3B8',
+    color: '#C2C2C8',
+    fontWeight: '500',
   },
-  divider: {
-    marginHorizontal: 8,
-    color: '#E2E8F0',
+  statDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor: '#E5E4EA',
+    marginHorizontal: 12,
   },
-  priceText: {
-    fontSize: 15,
+  priceValue: {
+    fontSize: 16,
     fontWeight: '800',
     color: '#282A32',
+    letterSpacing: -0.3,
   },
-  badgesRow: {
+  priceLabel: {
+    fontSize: 13,
+    color: '#C2C2C8',
+    fontWeight: '600',
+  },
+
+  // ========== SKILLS ==========
+  skillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   skillBadge: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F4F4F8',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#E5E4EA',
   },
   skillText: {
     fontSize: 12,
-    color: '#475569',
+    color: '#444751',
     fontWeight: '700',
+    letterSpacing: 0.2,
   },
   moreText: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: '#C2C2C8',
     fontWeight: '600',
     alignSelf: 'center',
   },
-  footerRow: {
+
+  // ========== FOOTER ==========
+  cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 16,
+    justifyContent: 'space-between',
+    paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: '#E5E4EA',
+  },
+  footerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  footerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  footerDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#E5E4EA',
+    marginHorizontal: 10,
   },
   footerText: {
     fontSize: 12,
-    color: '#64748B',
-    fontWeight: '500',
+    color: '#C2C2C8',
+    fontWeight: '600',
+    letterSpacing: 0.1,
   },
-  profileBtn: {
-    backgroundColor: '#E5E4EA',
+  viewBtn: {
+    backgroundColor: '#444751',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 10,
   },
-  profileBtnText: {
-    color: '#282A32',
+  viewBtnText: {
+    color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 13,
+    letterSpacing: 0.2,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyCard: {
+
+  // ========== EMPTY STATE ==========
+  emptyState: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 32,
+    borderRadius: 20,
+    padding: 40,
     alignItems: 'center',
     marginTop: 20,
+    borderWidth: 1,
+    borderColor: '#E5E4EA',
+  },
+  emptyIconBox: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#F4F4F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
   emptyTitle: {
     fontSize: 18,
     fontWeight: '800',
     color: '#282A32',
     marginBottom: 8,
+    letterSpacing: -0.3,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#C2C2C8',
     textAlign: 'center',
     lineHeight: 20,
+    marginBottom: 24,
+    paddingHorizontal: 20,
+    fontWeight: '500',
+  },
+  emptyActionBtn: {
+    backgroundColor: '#444751',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 14,
+  },
+  emptyActionText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
 });

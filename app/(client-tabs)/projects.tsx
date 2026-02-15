@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Platform, StatusBar } from 'react-native';
-import { Search, Filter, Plus, ChevronLeft, Calendar, DollarSign, Briefcase } from 'lucide-react-native';
+import { Search, Filter, Plus, ChevronLeft, Calendar, DollarSign, Briefcase, X, TrendingUp, CheckCircle2, Clock } from 'lucide-react-native';
 import ProjectCard from '@/components/ClientProjectCard';
 import { useRouter } from 'expo-router';
 import { projectService } from '@/services/projectService';
@@ -67,257 +67,342 @@ export default function Projects() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.topGradient} />
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ChevronLeft size={24} color="#FFF" />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>My Projects</Text>
-          <Text style={styles.headerSubtitle}>Manage your listings</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push('/create-project' as any)}
-        >
-          <Plus size={22} color="#FFF" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Search and Stats */}
-      <View style={styles.contentHeader}>
-        <View style={styles.searchBar}>
-          <Search size={20} color="#94A3B8" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search projects..."
-            placeholderTextColor="#94A3B8"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{stats.total}</Text>
-            <Text style={styles.statLabel}>All</Text>
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* CLEAN HEADER */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ChevronLeft size={22} color="#282A32" strokeWidth={2.5} />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>My Projects</Text>
+            <Text style={styles.headerSubtitle}>{projects.length} {projects.length === 1 ? 'project' : 'projects'}</Text>
           </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: '#282A32' }]}>{stats.active}</Text>
-            <Text style={styles.statLabel}>Active</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: '#10B981' }]}>{stats.completed}</Text>
-            <Text style={styles.statLabel}>Done</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => router.push('/create-project' as any)}
+          >
+            <Plus size={20} color="#FFFFFF" strokeWidth={2.5} />
+          </TouchableOpacity>
         </View>
-      </View>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#282A32" />
-        </View>
-      ) : (
-        <FlatList
-          data={filteredProjects}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ProjectCard
-              title={item.title}
-              budget={`$${item.budget}`}
-              status={getProjectDisplayStatus(item)}
-              freelancer={item.freelancer?.userName}
-              deadline={item.duration || 'Not specified'}
-              totalBids={item.bidsCount ?? 0}
-              onPress={() =>
-                router.push({
-                  pathname: '/client/ProjectDetail' as any,
-                  params: { id: item.id },
-                } as any)
-              }
+        {/* SEARCH BAR */}
+        <View style={styles.searchSection}>
+          <View style={styles.searchBar}>
+            <Search size={20} color="#C2C2C8" strokeWidth={2.5} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search projects..."
+              placeholderTextColor="#C2C2C8"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
             />
-          )}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#282A32" />}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            error ? (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyTitle}>Couldn't load projects</Text>
-                <Text style={styles.emptySubtitle}>{error}</Text>
-                <TouchableOpacity style={styles.retryBtn} onPress={fetchProjects}>
-                  <Text style={styles.retryBtnText}>Retry Now</Text>
-                </TouchableOpacity>
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <X size={18} color="#C2C2C8" strokeWidth={2.5} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* STATS CARDS */}
+        <View style={styles.statsSection}>
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <View style={styles.statIconBox}>
+                <Briefcase size={18} color="#444751" strokeWidth={2.5} />
               </View>
-            ) : (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyTitle}>No projects found</Text>
-                <Text style={styles.emptySubtitle}>
-                  {searchQuery ? 'Try a different search term' : 'Post your first project today!'}
-                </Text>
+              <Text style={styles.statValue}>{stats.total}</Text>
+              <Text style={styles.statLabel}>Total</Text>
+            </View>
+
+            <View style={styles.statCard}>
+              <View style={styles.statIconBox}>
+                <TrendingUp size={18} color="#444751" strokeWidth={2.5} />
               </View>
-            )
-          }
-        />
-      )}
-    </SafeAreaView>
+              <Text style={styles.statValue}>{stats.active}</Text>
+              <Text style={styles.statLabel}>Active</Text>
+            </View>
+
+            <View style={styles.statCard}>
+              <View style={styles.statIconBox}>
+                <CheckCircle2 size={18} color="#444751" strokeWidth={2.5} />
+              </View>
+              <Text style={styles.statValue}>{stats.completed}</Text>
+              <Text style={styles.statLabel}>Done</Text>
+            </View>
+
+            <View style={styles.statCard}>
+              <View style={styles.statIconBox}>
+                <Clock size={18} color="#444751" strokeWidth={2.5} />
+              </View>
+              <Text style={styles.statValue}>{stats.cancelled}</Text>
+              <Text style={styles.statLabel}>Closed</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* PROJECTS LIST */}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#444751" />
+          </View>
+        ) : (
+          <FlatList
+            data={filteredProjects}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <ProjectCard
+                title={item.title}
+                budget={`$${item.budget}`}
+                status={getProjectDisplayStatus(item)}
+                freelancer={item.freelancer?.userName}
+                deadline={item.duration || 'Not specified'}
+                totalBids={item.bidsCount ?? 0}
+                onPress={() =>
+                  router.push({
+                    pathname: '/client/ProjectDetail' as any,
+                    params: { id: item.id },
+                  } as any)
+                }
+              />
+            )}
+            refreshControl={
+              <RefreshControl 
+                refreshing={refreshing} 
+                onRefresh={onRefresh} 
+                tintColor="#444751" 
+              />
+            }
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              error ? (
+                <View style={styles.emptyState}>
+                  <View style={styles.emptyIconBox}>
+                    <Briefcase size={40} color="#C2C2C8" strokeWidth={1.5} />
+                  </View>
+                  <Text style={styles.emptyTitle}>Couldn't Load Projects</Text>
+                  <Text style={styles.emptySubtitle}>{error}</Text>
+                  <TouchableOpacity style={styles.emptyActionBtn} onPress={fetchProjects}>
+                    <Text style={styles.emptyActionText}>Try Again</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={styles.emptyState}>
+                  <View style={styles.emptyIconBox}>
+                    <Briefcase size={40} color="#C2C2C8" strokeWidth={1.5} />
+                  </View>
+                  <Text style={styles.emptyTitle}>
+                    {searchQuery ? 'No Results Found' : 'No Projects Yet'}
+                  </Text>
+                  <Text style={styles.emptySubtitle}>
+                    {searchQuery 
+                      ? 'Try adjusting your search terms' 
+                      : 'Start by posting your first project'}
+                  </Text>
+                  {!searchQuery && (
+                    <TouchableOpacity 
+                      style={styles.emptyActionBtn} 
+                      onPress={() => router.push('/create-project' as any)}
+                    >
+                      <Plus size={18} color="#FFFFFF" strokeWidth={2.5} />
+                      <Text style={styles.emptyActionText}>Post Project</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )
+            }
+          />
+        )}
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F4F4F8',
   },
-  topGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 180,
-    backgroundColor: '#1E1B4B',
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
+
+  // ========== HEADER ==========
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 25,
+    paddingVertical: 14,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E4EA',
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#F4F4F8',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#282A32',
+    letterSpacing: -0.3,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: '#C7D2FE',
-    fontWeight: '500',
+    fontSize: 13,
+    color: '#C2C2C8',
+    fontWeight: '600',
+    marginTop: 2,
+    letterSpacing: 0.2,
   },
   addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#282A32',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#444751',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#282A32',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
   },
-  contentHeader: {
+
+  // ========== SEARCH SECTION ==========
+  searchSection: {
     paddingHorizontal: 20,
-    marginTop: 0,
-    marginBottom: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E4EA',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: '#F4F4F8',
+    borderRadius: 14,
     paddingHorizontal: 16,
-    height: 52,
-    marginBottom: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-      },
-      android: {
-        elevation: 4,
-      },
-      web: {
-        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.05)',
-      },
-    }),
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#E5E4EA',
   },
   searchInput: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 10,
     fontSize: 15,
-    color: '#444751',
-    fontWeight: '500',
+    color: '#282A32',
+    fontWeight: '600',
   },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  statItem: {
-    flex: 1,
+
+  // ========== STATS SECTION ==========
+  statsSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#F4F4F8',
+    borderRadius: 14,
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#E5E4EA',
+  },
+  statIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E5E4EA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
-    color: '#444751',
+    color: '#282A32',
     marginBottom: 2,
+    letterSpacing: -0.3,
   },
   statLabel: {
     fontSize: 11,
-    color: '#94A3B8',
-    fontWeight: '700',
-    textTransform: 'uppercase',
+    color: '#C2C2C8',
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
+
+  // ========== PROJECTS LIST ==========
   listContent: {
     paddingHorizontal: 20,
+    paddingTop: 20,
     paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: 60,
   },
-  emptyCard: {
+
+  // ========== EMPTY STATE ==========
+  emptyState: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 32,
+    borderRadius: 20,
+    padding: 40,
     alignItems: 'center',
     marginTop: 20,
+    borderWidth: 1,
+    borderColor: '#E5E4EA',
+  },
+  emptyIconBox: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#F4F4F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
   emptyTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#444751',
+    color: '#282A32',
     marginBottom: 8,
+    letterSpacing: -0.3,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#C2C2C8',
     textAlign: 'center',
     lineHeight: 20,
-  },
-  retryBtn: {
-    marginTop: 16,
-    backgroundColor: '#282A32',
+    marginBottom: 24,
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 12,
+    fontWeight: '500',
   },
-  retryBtnText: {
-    color: '#FFF',
+  emptyActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#444751',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 14,
+  },
+  emptyActionText: {
+    fontSize: 15,
     fontWeight: '700',
-    fontSize: 14,
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
 });

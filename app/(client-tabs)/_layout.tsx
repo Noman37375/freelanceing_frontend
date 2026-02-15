@@ -2,7 +2,7 @@
 
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, Platform } from 'react-native';
-import { Home, Briefcase, Users, User, FileText } from 'lucide-react-native';
+import { Home, Briefcase, Users, User, FileText, MessageCircle } from 'lucide-react-native';
 import { COLORS } from '@/utils/constants';
 
 export default function ClientTabLayout() {
@@ -92,6 +92,18 @@ export default function ClientTabLayout() {
       />
 
       <Tabs.Screen
+        name="messages"
+        options={{
+          title: 'Chat',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconContainer, focused && styles.activeIconBg]}>
+              <MessageCircle size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+            </View>
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Account',
@@ -102,6 +114,7 @@ export default function ClientTabLayout() {
           ),
         }}
       />
+
 
     </Tabs>
   );

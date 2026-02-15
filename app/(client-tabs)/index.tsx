@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Platform, StatusBar } from 'react-native';
-import { Briefcase, DollarSign, MessageSquare, AlertCircle, Plus, Search, ArrowRight, Wallet, UserCheck } from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Platform, StatusBar, Image } from 'react-native';
+import { Briefcase, DollarSign, MessageSquare, AlertCircle, Plus, Search, ArrowRight, Wallet, UserCheck, TrendingUp, Clock, CheckCircle2, Sparkles } from 'lucide-react-native';
 import StatsCard from '@/components/ClientStatsCard';
 import ProjectCard from '@/components/ClientProjectCard';
 import { useRouter } from 'expo-router';
@@ -22,6 +22,9 @@ export default function ClientHome() {
     messages: 0,
     disputes: 0,
   });
+
+  const defaultAvatar = user?.profileImage ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.userName || "Client")}&background=444751&color=fff&size=200`;
 
   const fetchProjects = async () => {
     if (!user?.id) {
@@ -71,301 +74,446 @@ export default function ClientHome() {
   if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#282A32" />
+        <ActivityIndicator size="large" color="#444751" />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.topGradient} />
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFF" />
-        }
-        contentContainerStyle={{ paddingBottom: 100 }}
-      >
-        {/* HEADER */}
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* CLEAN HEADER */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Welcome back,</Text>
-            <Text style={styles.userName}>{user?.userName || 'Client'}</Text>
+          <View style={styles.headerLeft}>
+            <Image source={{ uri: defaultAvatar }} style={styles.avatar} />
+            <View style={styles.headerInfo}>
+              <Text style={styles.greeting}>Welcome back</Text>
+              <Text style={styles.userName}>{user?.userName || 'Client'}</Text>
+            </View>
           </View>
-          <TouchableOpacity
-            style={styles.profileCircle}
+          {/* <TouchableOpacity 
+            style={styles.notifBtn}
             onPress={() => router.push('/(client-tabs)/profile' as any)}
           >
-            <UserCheck size={20} color="#FFF" />
-          </TouchableOpacity>
+            <UserCheck size={22} color="#282A32" strokeWidth={2.5} />
+          </TouchableOpacity> */}
         </View>
 
-        {/* STATS OVERVIEW */}
-        <View style={styles.section}>
-          <View style={styles.statsRow}>
-            <TouchableOpacity
-              style={styles.statBox}
-              activeOpacity={0.8}
-              onPress={() => router.push('/(client-tabs)/projects' as any)}
-            >
-              <View style={[styles.iconCircle, { backgroundColor: '#E5E4EA' }]}>
-                <Briefcase size={20} color="#282A32" />
-              </View>
-              <Text style={styles.statValue}>{stats.total}</Text>
-              <Text style={styles.statLabel}>Total Projects</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.statBox}
-              activeOpacity={0.8}
-              onPress={() => router.push('/client/Wallet' as any)}
-            >
-              <View style={[styles.iconCircle, { backgroundColor: '#ECFDF5' }]}>
-                <Wallet size={20} color="#10B981" />
-              </View>
-              <Text style={styles.statValue}>${(stats.totalSpent / 1000).toFixed(1)}K</Text>
-              <Text style={styles.statLabel}>Total Spent</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* QUICK ACTIONS */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.actionsGrid}>
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: '#282A32' }]}
-              onPress={() => router.push('/create-project' as any)}
-            >
-              <Plus size={24} color="#FFF" />
-              <Text style={styles.actionCardTitle}>Post Project</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: '#10B981' }]}
-              onPress={() => router.push('/(client-tabs)/freelancers' as any)}
-            >
-              <Search size={24} color="#FFF" />
-              <Text style={styles.actionCardTitle}>Find Talent</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* RECENT PROJECTS */}
-        <View style={[styles.section, { flex: 1 }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Projects</Text>
-            <TouchableOpacity onPress={() => router.push('/(client-tabs)/projects' as any)}>
-              <View style={styles.viewAllBtn}>
-                <Text style={styles.viewAllText}>See all</Text>
-                <ArrowRight size={14} color="#282A32" />
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          {recentProjects.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>You haven't posted any projects yet.</Text>
-              <Text style={styles.emptySubtitle}>Hire the best freelancers for your business.</Text>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#444751" />
+          }
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* STATS OVERVIEW */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>OVERVIEW</Text>
+            <View style={styles.statsGrid}>
               <TouchableOpacity
-                style={styles.createBtn}
-                onPress={() => router.push('/create-project' as any)}
+                style={styles.statCard}
+                activeOpacity={0.7}
+                onPress={() => router.push('/(client-tabs)/projects' as any)}
               >
-                <Text style={styles.createBtnText}>Post a Project</Text>
+                <View style={styles.statIconBox}>
+                  <Briefcase size={20} color="#444751" strokeWidth={2.5} />
+                </View>
+                <Text style={styles.statValue}>{stats.total}</Text>
+                <Text style={styles.statLabel}>Projects</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.statCard}
+                activeOpacity={0.7}
+                onPress={() => router.push('/client/Wallet' as any)}
+              >
+                <View style={styles.statIconBox}>
+                  <Wallet size={20} color="#444751" strokeWidth={2.5} />
+                </View>
+                <Text style={styles.statValue}>${(stats.totalSpent / 1000).toFixed(1)}K</Text>
+                <Text style={styles.statLabel}>Spent</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.statCard}
+                activeOpacity={0.7}
+              >
+                <View style={styles.statIconBox}>
+                  <TrendingUp size={20} color="#444751" strokeWidth={2.5} />
+                </View>
+                <Text style={styles.statValue}>{Math.round(stats.total * 0.8)}</Text>
+                <Text style={styles.statLabel}>Active</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.statCard}
+                activeOpacity={0.7}
+              >
+                <View style={styles.statIconBox}>
+                  <CheckCircle2 size={20} color="#444751" strokeWidth={2.5} />
+                </View>
+                <Text style={styles.statValue}>{Math.round(stats.total * 0.2)}</Text>
+                <Text style={styles.statLabel}>Done</Text>
               </TouchableOpacity>
             </View>
-          ) : (
-            recentProjects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                title={project.title}
-                budget={`$${project.budget}`}
-                status={getProjectDisplayStatus(project)}
-                freelancer={project.freelancer?.userName}
-                deadline={project.duration || 'Not specified'}
-                onPress={() =>
-                  router.push({
-                    pathname: '/client/ProjectDetail' as any,
-                    params: { id: project.id },
-                  } as any)
-                }
-              />
-            ))
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          </View>
+
+          {/* QUICK ACTIONS */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>QUICK ACTIONS</Text>
+            <View style={styles.actionsRow}>
+              <TouchableOpacity
+                style={styles.primaryActionCard}
+                onPress={() => router.push('/create-project' as any)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.actionIconCircle}>
+                  <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />
+                </View>
+                <View style={styles.actionContent}>
+                  <Text style={styles.actionTitle}>Post Project</Text>
+                  <Text style={styles.actionSubtitle}>Hire talented freelancers</Text>
+                </View>
+                <ArrowRight size={20} color="#FFFFFF" strokeWidth={2.5} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.secondaryActionCard}
+                onPress={() => router.push('/(client-tabs)/freelancers' as any)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.secondaryIconCircle}>
+                  <Search size={24} color="#444751" strokeWidth={2.5} />
+                </View>
+                <View style={styles.actionContent}>
+                  <Text style={styles.secondaryActionTitle}>Find Talent</Text>
+                  <Text style={styles.secondaryActionSubtitle}>Browse freelancers</Text>
+                </View>
+                <ArrowRight size={20} color="#444751" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* RECENT PROJECTS */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>RECENT PROJECTS</Text>
+              <TouchableOpacity 
+                style={styles.viewAllBtn}
+                onPress={() => router.push('/(client-tabs)/projects' as any)}
+              >
+                <Text style={styles.viewAllText}>View All</Text>
+                <ArrowRight size={16} color="#444751" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
+
+            {recentProjects.length === 0 ? (
+              <View style={styles.emptyState}>
+                <View style={styles.emptyIconBox}>
+                  <Briefcase size={40} color="#C2C2C8" strokeWidth={1.5} />
+                </View>
+                <Text style={styles.emptyTitle}>No Projects Yet</Text>
+                <Text style={styles.emptySubtitle}>Start by posting your first project and connect with talented freelancers</Text>
+                <TouchableOpacity
+                  style={styles.emptyActionBtn}
+                  onPress={() => router.push('/create-project' as any)}
+                >
+                  <Plus size={18} color="#FFFFFF" strokeWidth={2.5} />
+                  <Text style={styles.emptyActionText}>Post Your First Project</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.projectsList}>
+                {recentProjects.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    title={project.title}
+                    budget={`$${project.budget}`}
+                    status={getProjectDisplayStatus(project)}
+                    freelancer={project.freelancer?.userName}
+                    deadline={project.duration || 'Not specified'}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/client/ProjectDetail' as any,
+                        params: { id: project.id },
+                      } as any)
+                    }
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  topGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: Platform.OS === 'ios' ? 300 : 260,
-    backgroundColor: '#1E1B4B',
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 30,
-  },
-  greeting: {
-    fontSize: 14,
-    color: '#C7D2FE',
-    fontWeight: '500',
-  },
-  userName: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginTop: 4,
-  },
-  profileCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  section: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 20,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.05,
-        shadowRadius: 20,
-      },
-      android: {
-        elevation: 10,
-      },
-      web: {
-        boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.05)',
-      },
-    }),
-  },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#282A32',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 13,
-    color: '#64748B',
-    fontWeight: '600',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#282A32',
-    marginBottom: 16,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  viewAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  viewAllText: {
-    fontSize: 14,
-    color: '#282A32',
-    fontWeight: '700',
-  },
-  actionsGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  actionCard: {
-    flex: 1,
-    height: 100,
-    borderRadius: 24,
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  actionCardTitle: {
-    color: '#FFF',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  emptyCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 24,
-    padding: 32,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#282A32',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  createBtn: {
-    backgroundColor: '#282A32',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  createBtnText: {
-    color: '#FFF',
-    fontWeight: '700',
-    fontSize: 14,
+    backgroundColor: '#F4F4F8',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F4F4F8',
+  },
+
+  // ========== HEADER ==========
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E4EA',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#E5E4EA',
+  },
+  headerInfo: {
+    flex: 1,
+  },
+  greeting: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#C2C2C8',
+    marginBottom: 2,
+    letterSpacing: 0.3,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#282A32',
+    letterSpacing: -0.3,
+  },
+  notifBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#F4F4F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ========== SCROLL CONTENT ==========
+  scrollContent: {
+    paddingBottom: 30,
+  },
+
+  // ========== SECTIONS ==========
+  section: {
+    paddingHorizontal: 20,
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#C2C2C8',
+    letterSpacing: 1.8,
+    marginBottom: 14,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  viewAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F4F4F8',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E5E4EA',
+  },
+  viewAllText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#444751',
+    letterSpacing: 0.2,
+  },
+
+  // ========== STATS GRID ==========
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E4EA',
+  },
+  statIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E5E4EA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#282A32',
+    marginBottom: 4,
+    letterSpacing: -0.3,
+  },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#C2C2C8',
+    letterSpacing: 0.2,
+  },
+
+  // ========== QUICK ACTIONS ==========
+  actionsRow: {
+    gap: 12,
+  },
+  primaryActionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#444751',
+    borderRadius: 18,
+    padding: 18,
+    gap: 14,
+    marginBottom: 12,
+  },
+  actionIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionContent: {
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 2,
+    letterSpacing: -0.2,
+  },
+  actionSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.7)',
+    letterSpacing: 0.1,
+  },
+
+  secondaryActionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 18,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: '#E5E4EA',
+  },
+  secondaryIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F4F4F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryActionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#282A32',
+    marginBottom: 2,
+    letterSpacing: -0.2,
+  },
+  secondaryActionSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#C2C2C8',
+    letterSpacing: 0.1,
+  },
+
+  // ========== PROJECTS LIST ==========
+  projectsList: {
+    gap: 12,
+  },
+
+  // ========== EMPTY STATE ==========
+  emptyState: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 40,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E4EA',
+  },
+  emptyIconBox: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#F4F4F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#282A32',
+    marginBottom: 8,
+    letterSpacing: -0.3,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#C2C2C8',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+    paddingHorizontal: 20,
+  },
+  emptyActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#444751',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  emptyActionText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
 });

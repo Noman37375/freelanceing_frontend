@@ -74,6 +74,30 @@ export default function ProfileScreen() {
   const [isNotifLoading, setIsNotifLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Load unread count on mount and when user changes (real-time)
+  useEffect(() => {
+    if (!user?.id) return;
+    const loadUnreadCount = async () => {
+      try {
+        const count = await notificationService.getUnreadCount();
+        setUnreadCount(count);
+      } catch {
+        setUnreadCount(0);
+      }
+    };
+    loadUnreadCount();
+  }, [user?.id]);
+
+  // Load notifications when modal opens (real-time)
+  useEffect(() => {
+    if (!notifModalVisible || !user?.id) return;
+    setIsNotifLoading(true);
+    notificationService.getNotifications(50)
+      .then(setNotifications)
+      .catch(() => setNotifications([]))
+      .finally(() => setIsNotifLoading(false));
+  }, [notifModalVisible, user?.id]);
+
   // Form states
   const [editedUserName, setEditedUserName] = useState("");
   const [editedBio, setEditedBio] = useState("");
@@ -176,15 +200,15 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F4F4F8" />
 
-      <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView 
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
           {/* REDESIGNED HERO HEADER */}
           <View style={styles.heroSection}>
             {/* Top Bar */}
-            <View style={styles.topBar}>
+            {/* <View style={styles.topBar}>
               <TouchableOpacity style={styles.settingsBtn} onPress={() => setEditModalVisible(true)}>
                 <Settings size={22} color="#282A32" strokeWidth={2.5} />
               </TouchableOpacity>
@@ -196,7 +220,7 @@ export default function ProfileScreen() {
                   </View>
                 )}
               </TouchableOpacity>
-            </View>
+            </View> */}
 
             {/* Profile Avatar & Info */}
             <View style={styles.profileHero}>
@@ -223,23 +247,21 @@ export default function ProfileScreen() {
               <View style={styles.heroInfo}>
                 <View style={styles.nameRow}>
                   <Text style={styles.heroName}>{user?.userName || "User"}</Text>
-                  {/* <View style={styles.levelBadge}>
-                    <Sparkles size={12} color="#444751" fill="#444751" strokeWidth={2} />
-                    <Text style={styles.levelText}>Level 3</Text>
-                  </View> */}
                 </View>
                 <Text style={styles.heroRole}>{user?.role || "Freelancer"}</Text>
-                {user?.bio && <Text style={styles.heroBio}>{user.bio}</Text>}
+                {user?.bio ? <Text style={styles.heroBio} numberOfLines={2}>{user.bio}</Text> : null}
               </View>
             </View>
 
-            {/* Stats Cards Grid */}
+            {/* Stats Cards Grid - real-time from profile */}
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
                 <View style={styles.statIcon}>
                   <Star size={20} color="#444751" fill="#444751" strokeWidth={2} />
                 </View>
-                <Text style={styles.statValue}>4.9</Text>
+                <Text style={styles.statValue}>
+                  {user?.rating != null && user.rating > 0 ? user.rating.toFixed(1) : '—'}
+                </Text>
                 <Text style={styles.statLabel}>Rating</Text>
               </View>
 
@@ -247,7 +269,9 @@ export default function ProfileScreen() {
                 <View style={styles.statIcon}>
                   <TrendingUp size={20} color="#444751" strokeWidth={2.5} />
                 </View>
-                <Text style={styles.statValue}>127</Text>
+                <Text style={styles.statValue}>
+                  {user?.projectsCompleted != null ? String(user.projectsCompleted) : '0'}
+                </Text>
                 <Text style={styles.statLabel}>Projects</Text>
               </View>
 
@@ -255,13 +279,15 @@ export default function ProfileScreen() {
                 <View style={styles.statIcon}>
                   <Target size={20} color="#444751" strokeWidth={2.5} />
                 </View>
-                <Text style={styles.statValue}>98%</Text>
-                <Text style={styles.statLabel}>Success</Text>
+                <Text style={styles.statValue}>
+                  {user?.reviewsCount != null ? String(user.reviewsCount) : '0'}
+                </Text>
+                <Text style={styles.statLabel}>Reviews</Text>
               </View>
             </View>
 
             {/* Earnings Card */}
-            <View style={styles.earningsCard}>
+            {/* <View style={styles.earningsCard}>
               <View style={styles.earningsLeft}>
                 <View style={styles.walletIconBox}>
                   <WalletIcon size={24} color="#FFFFFF" strokeWidth={2.5} />
@@ -278,11 +304,11 @@ export default function ProfileScreen() {
                 <Text style={styles.viewWalletText}>View</Text>
                 <ChevronRight size={18} color="#444751" strokeWidth={2.5} />
               </TouchableOpacity>
-            </View>
+            </View> */}
           </View>
 
           {/* Quick Actions */}
-          <View style={styles.quickActions}>
+          {/* <View style={styles.quickActions}>
             <TouchableOpacity style={styles.actionBtn}>
               <View style={styles.actionIconBox}>
                 <Briefcase size={20} color="#444751" strokeWidth={2.5} />
@@ -310,7 +336,7 @@ export default function ProfileScreen() {
               </View>
               <Text style={styles.actionText}>Invite</Text>
             </TouchableOpacity>
-          </View>
+          </View> */}
 
           {/* Menu Sections */}
           <View style={styles.menuSection}>
@@ -370,9 +396,9 @@ export default function ProfileScreen() {
                 <ChevronRight size={20} color="#C2C2C8" strokeWidth={2.5} />
               </TouchableOpacity>
 
-              <View style={styles.menuDivider} />
+              {/* <View style={styles.menuDivider} /> */}
 
-              <TouchableOpacity style={styles.menuItem}>
+              {/* <TouchableOpacity style={styles.menuItem}>
                 <View style={styles.menuLeft}>
                   <View style={styles.menuIconBox}>
                     <MessageCircle size={20} color="#444751" strokeWidth={2.5} />
@@ -380,7 +406,7 @@ export default function ProfileScreen() {
                   <Text style={styles.menuText}>Help Center</Text>
                 </View>
                 <ChevronRight size={20} color="#C2C2C8" strokeWidth={2.5} />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           </View>
 
@@ -391,8 +417,6 @@ export default function ProfileScreen() {
             </View>
             <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
-
-          <View style={{ height: 40 }} />
         </ScrollView>
       </SafeAreaView>
 
@@ -689,15 +713,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: '#F4F4F8',
   },
+  safeArea: {
+    flex: 1,
+  },
   scrollContent: {
-    paddingBottom: 30,
+    paddingBottom: 80,
   },
 
   // ========== HERO SECTION ==========
   heroSection: {
     backgroundColor: "#FFFFFF",
-    paddingTop: 14,
-    paddingBottom: 22,
+    paddingTop: 10,
+    paddingBottom: 12,
     paddingHorizontal: 20,
   },
   topBar: {
@@ -745,24 +772,24 @@ const styles = StyleSheet.create({
 
   profileHero: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 14,
   },
   avatarSection: {
     position: 'relative',
-    marginBottom: 14,
+    marginBottom: 8,
   },
   avatarRing: {
     position: 'relative',
-    padding: 4,
-    borderRadius: 64,
-    borderWidth: 3,
+    padding: 3,
+    borderRadius: 48,
+    borderWidth: 2,
     borderColor: '#E5E4EA',
     backgroundColor: '#FFFFFF',
   },
   heroAvatar: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
   },
   verifiedBadge: {
     position: 'absolute',
@@ -776,13 +803,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -2,
     right: -2,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#444751',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: '#FFFFFF',
   },
 
@@ -792,11 +819,11 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 6,
+    gap: 8,
+    marginBottom: 4,
   },
   heroName: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '800',
     color: '#282A32',
     letterSpacing: -0.5,
@@ -817,53 +844,53 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   heroRole: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: '#C2C2C8',
-    marginBottom: 10,
+    marginBottom: 6,
     letterSpacing: 0.3,
   },
   heroBio: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '500',
     color: '#C2C2C8',
     textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 30,
+    lineHeight: 18,
+    paddingHorizontal: 20,
   },
 
   statsGrid: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 18,
+    gap: 8,
+    marginBottom: 12,
   },
   statCard: {
     flex: 1,
     backgroundColor: '#F4F4F8',
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: 12,
+    padding: 10,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E5E4EA',
   },
   statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#E5E4EA',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     color: '#282A32',
     marginBottom: 2,
     letterSpacing: -0.3,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: '#C2C2C8',
     letterSpacing: 0.2,
@@ -952,18 +979,18 @@ const styles = StyleSheet.create({
   // ========== MENU SECTIONS ==========
   menuSection: {
     paddingHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
     color: '#C2C2C8',
-    letterSpacing: 1.8,
-    marginBottom: 10,
+    letterSpacing: 1.6,
+    marginBottom: 6,
   },
   menuCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#E5E4EA',
     overflow: 'hidden',
@@ -972,8 +999,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
   },
   menuLeft: {
     flexDirection: 'row',
@@ -982,15 +1009,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuIconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     backgroundColor: '#F4F4F8',
     alignItems: 'center',
     justifyContent: 'center',
   },
   menuText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: '#282A32',
     letterSpacing: -0.2,
@@ -1021,12 +1048,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: 8,
     backgroundColor: '#444751',
     marginHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 14,
-    marginTop: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 4,
   },
   logoutIconBox: {
     width: 26,

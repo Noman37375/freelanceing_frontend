@@ -60,6 +60,7 @@ export interface ChatMessage {
   message: string;
   projectId?: string | null;
   read: boolean;
+  seen?: boolean;
   createdAt: string;
   updatedAt: string;
   sender?: { id: string; user_name: string; email?: string; role?: string } | null;
@@ -69,7 +70,7 @@ export interface ChatMessage {
 export interface ConversationItem {
   sender_id: string;
   receiver_id: string;
-  otherUser?: { id: string; user_name: string; email?: string; role?: string };
+  otherUser?: { id: string; user_name: string; email?: string; role?: string; profile_image?: string | null } | null;
   latestMessage: string;
   timestamp: string;
   unread: boolean;
@@ -77,11 +78,44 @@ export interface ConversationItem {
   [key: string]: any;
 }
 
+/** For list UI: other user id and display info */
+export interface ChatListItem {
+  userId: string;
+  otherUser?: { id: string; user_name: string; email?: string; role?: string } | null;
+  latestMessage: string;
+  timestamp: string;
+  unread: boolean;
+  unreadCount?: number;
+}
+
+/** User from GET /chats/users (for search) */
+export interface ChatUserItem {
+  id: string;
+  user_name: string;
+  email?: string;
+  role: string;
+  profile_image?: string | null;
+}
+
 export const chatService = {
   /** GET /api/v1/chats/history - conversations list with last message */
   getHistory: async (): Promise<ConversationItem[]> => {
     const response = await apiCall('/api/v1/chats/history');
     return response?.data ?? [];
+  },
+
+  /** GET /api/v1/chats/users?search= - users for chat search (exclude current user), with role */
+  getUsers: async (search?: string): Promise<ChatUserItem[]> => {
+    const params = new URLSearchParams();
+    if (search && search.trim()) params.set('search', search.trim());
+    const response = await apiCall(`/api/v1/chats/users?${params.toString()}`);
+    return response?.data ?? [];
+  },
+
+  /** GET /api/v1/chats/profile/:userId - one user's profile for chat header (id, user_name, profile_image) */
+  getUserProfile: async (userId: string): Promise<ChatUserItem | null> => {
+    const response = await apiCall(`/api/v1/chats/profile/${encodeURIComponent(userId)}`);
+    return response?.data ?? null;
   },
 
   /** GET /api/v1/chats/messages?receiverId=...&projectId=...&limit=...&offset=... */
@@ -115,6 +149,20 @@ export const chatService = {
   /** PATCH /api/v1/chats/:messageId/read */
   markAsRead: async (messageId: string): Promise<void> => {
     await apiCall(`/api/v1/chats/${messageId}/read`, { method: 'PATCH' });
+  },
+
+  /** DELETE /api/v1/chats/:messageId - delete message (real-time emit to both) */
+  deleteMessage: async (messageId: string): Promise<void> => {
+    await apiCall(`/api/v1/chats/${encodeURIComponent(messageId)}`, { method: 'DELETE' });
+  },
+
+  /** PATCH /api/v1/chats/:messageId - update message (real-time emit to both) */
+  updateMessage: async (messageId: string, message: string): Promise<ChatMessage | null> => {
+    const response = await apiCall(`/api/v1/chats/${encodeURIComponent(messageId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ message }),
+    });
+    return response?.data ?? null;
   },
 
   /** GET /api/v1/chats/unread-count */

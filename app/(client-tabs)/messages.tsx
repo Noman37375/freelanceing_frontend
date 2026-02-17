@@ -1,171 +1,322 @@
-import React, { useState } from "react";
+/**
+ * Client Messages - Conversation list; search all users (except self) with Client/Freelancer badge.
+ */
+
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
-  Image,
   StyleSheet,
-  TextInput
+  TextInput,
+  ActivityIndicator,
+  RefreshControl,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Search, MessageSquare, Clock, Check } from "lucide-react-native";
+import { Search, MessageSquare, Check } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSocket } from "@/contexts/SocketContext";
+import { chatService, type ConversationItem, type ChatUserItem } from "@/services/chatService";
 import { COLORS, SHADOWS, BORDER_RADIUS, SPACING, TYPOGRAPHY, GRADIENTS } from "@/constants/theme";
 
-interface Conversation {
-  _id: string;
-  client: { id: string; name: string; avatar: string };
+function formatTime(iso: string) {
+  try {
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    if (diff < 86400000) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (diff < 172800000) return "Yesterday";
+    return d.toLocaleDateString([], { month: "short", day: "numeric" });
+  } catch {
+    return "";
+  }
+}
+
+interface ListItem {
+  userId: string;
+  name: string;
+  profileImage?: string | null;
   lastMessage: string;
   updatedAt: string;
-  unread?: boolean;
-  online?: boolean;
+  unread: boolean;
 }
+
+const SEARCH_DEBOUNCE_MS = 400;
 
 const MessagesScreen = () => {
   const router = useRouter();
-  const userId = "userId1";
+  const { user } = useAuth();
+  const { onlineUserIds } = useSocket();
+  const [conversations, setConversations] = useState<ListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<ChatUserItem[]>([]);
+  const [searching, setSearching] = useState(false);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [conversations] = useState<Conversation[]>([
-    {
-      _id: "c1",
-      client: { id: "client1", name: "Alice Johnson", avatar: "https://i.pravatar.cc/150?img=1" },
-      lastMessage: "Hey, can we discuss the project timeline?",
-      updatedAt: "10:15 AM",
-      unread: true,
-      online: true,
-    },
-    {
-      _id: "c2",
-      client: { id: "client2", name: "Bob Smith", avatar: "" },
-      lastMessage: "I approved your latest milestone. Thanks for the quick turnaround!",
-      updatedAt: "Yesterday",
-      unread: false,
-      online: false,
-    },
-    {
-      _id: "c3",
-      client: { id: "client3", name: "Charlie Davis", avatar: "https://i.pravatar.cc/150?img=3" },
-      lastMessage: "Please review the attached document.",
-      updatedAt: "Dec 25",
-      unread: false,
-      online: true,
-    },
-  ]);
+  const loadHistory = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const data = await chatService.getHistory();
+      const currentUserId = user.id;
+      const items: ListItem[] = (data || []).map((item: ConversationItem) => {
+        const otherUserId = item.sender_id === currentUserId ? item.receiver_id : item.sender_id;
+        const name = item.otherUser?.user_name ?? otherUserId?.slice(0, 8) ?? "User";
+        return {
+          userId: otherUserId,
+          name,
+          profileImage: item.otherUser?.profile_image ?? null,
+          lastMessage: item.latestMessage ?? "",
+          updatedAt: formatTime(item.timestamp ?? ""),
+          unread: item.unread ?? false,
+        };
+      });
+      setConversations(items);
+    } catch (e) {
+      console.error("Load chat history failed", e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [user?.id]);
 
-  const handlePress = (conv: Conversation) => {
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const data = await chatService.getUsers(searchQuery.trim());
+        setSearchResults(data || []);
+      } catch (e) {
+        console.error("Search users failed", e);
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, SEARCH_DEBOUNCE_MS);
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, [searchQuery]);
+
+  const handlePressConversation = (item: ListItem) => {
     router.push({
       pathname: "/ChatScreen" as any,
       params: {
-        conversationId: conv._id,
-        userId,
-        receiverId: conv.client.id,
-        client: JSON.stringify(conv.client),
+        receiverId: item.userId,
+        userName: item.name,
+        client: JSON.stringify({
+          id: item.userId,
+          name: item.name,
+          avatar: item.profileImage ?? "",
+          profileImage: item.profileImage ?? "",
+        }),
       },
     });
   };
 
-  const renderItem = ({ item }: { item: Conversation }) => {
-    const { client, lastMessage, updatedAt, unread, online } = item;
+  const handlePressUser = (u: ChatUserItem) => {
+    const name = u.user_name ?? u.id?.slice(0, 8) ?? "User";
+    router.push({
+      pathname: "/ChatScreen" as any,
+      params: {
+        receiverId: u.id,
+        userName: name,
+        client: JSON.stringify({
+          id: u.id,
+          name,
+          avatar: u.profile_image || "",
+          profileImage: u.profile_image || "",
+        }),
+      },
+    });
+  };
 
+  const renderConversationItem = ({ item }: { item: ListItem }) => {
+    const online = onlineUserIds.has(item.userId);
     return (
       <TouchableOpacity
-        style={[styles.item, unread && styles.unreadItem]}
-        onPress={() => handlePress(item)}
+        style={[styles.item, item.unread && styles.unreadItem]}
+        onPress={() => handlePressConversation(item)}
         activeOpacity={0.9}
       >
-        {/* Avatar Section */}
         <View style={styles.avatarWrapper}>
-          {client.avatar ? (
-            <View style={styles.avatarContainer}>
-              <Image source={{ uri: client.avatar }} style={styles.avatar} />
+          {item.profileImage ? (
+            <View style={styles.avatarImageWrap}>
+              <Image source={{ uri: item.profileImage }} style={styles.avatarImage} />
               {online && <View style={styles.onlineDot} />}
             </View>
           ) : (
             <LinearGradient
-              colors={GRADIENTS.primary as any}
+              colors={GRADIENTS.primary as [string, string]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.placeholderAvatar}
             >
-              <Text style={styles.placeholderText}>{client.name.charAt(0)}</Text>
+              <Text style={styles.avatarLetter}>{item.name.charAt(0).toUpperCase()}</Text>
               {online && <View style={styles.onlineDot} />}
             </LinearGradient>
           )}
-          {unread && <View style={styles.unreadBadge}>
-            <Text style={styles.unreadCount}>1</Text>
-          </View>}
+          {item.unread && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadCount}>1</Text>
+            </View>
+          )}
         </View>
-
-        {/* Text Content */}
         <View style={styles.textContainer}>
           <View style={styles.nameRow}>
-            <Text style={styles.name} numberOfLines={1}>{client.name}</Text>
+            <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
             <View style={styles.timeContainer}>
-              {!unread && <Check size={12} color="#10B981" />}
-              <Text style={[styles.time, unread && styles.unreadTime]}>{updatedAt}</Text>
+              {!item.unread && <Check size={12} color="#10B981" />}
+              <Text style={[styles.time, item.unread && styles.unreadTime]}>{item.updatedAt}</Text>
             </View>
           </View>
-
-          <Text style={[styles.message, unread && styles.unreadMessage]} numberOfLines={1}>
-            {lastMessage}
+          <Text style={[styles.message, item.unread && styles.unreadMessage]} numberOfLines={1}>
+            {item.lastMessage || "No messages yet"}
           </Text>
         </View>
       </TouchableOpacity>
     );
   };
 
+  const renderSearchResultItem = ({ item }: { item: ChatUserItem }) => {
+    const name = item.user_name ?? item.id?.slice(0, 8) ?? "User";
+    const role = item.role === "Client" ? "Client" : "Freelancer";
+    const online = onlineUserIds.has(item.id);
+    return (
+      <TouchableOpacity
+        style={styles.item}
+        onPress={() => handlePressUser(item)}
+        activeOpacity={0.9}
+      >
+        <View style={styles.avatarWrapper}>
+          {item.profile_image ? (
+            <View style={styles.avatarImageWrap}>
+              <Image source={{ uri: item.profile_image }} style={styles.avatarImage} />
+              {online && <View style={styles.onlineDot} />}
+            </View>
+          ) : (
+            <LinearGradient
+              colors={GRADIENTS.primary as [string, string]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.placeholderAvatar}
+            >
+              <Text style={styles.avatarLetter}>{name.charAt(0).toUpperCase()}</Text>
+              {online && <View style={styles.onlineDot} />}
+            </LinearGradient>
+          )}
+        </View>
+        <View style={styles.textContainer}>
+          <View style={styles.nameRow}>
+            <Text style={styles.name} numberOfLines={1}>{name}</Text>
+            <View style={[styles.roleBadge, role === "Client" ? styles.roleBadgeClient : styles.roleBadgeFreelancer]}>
+              <Text style={styles.roleBadgeText}>{role}</Text>
+            </View>
+          </View>
+          <Text style={styles.message} numberOfLines={1}>{item.email || "Start a conversation"}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const showSearchResults = searchQuery.trim().length > 0;
+
+  if (!user?.id) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <Text style={styles.emptyText}>Sign in to view messages</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header Area */}
       <View style={styles.header}>
         <View>
           <Text style={styles.headerSubtitle}>Inbox</Text>
           <Text style={styles.headerTitle}>Messages</Text>
         </View>
-        <TouchableOpacity style={styles.newChatButton}>
-          <LinearGradient
-            colors={['#F8FAFC', '']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.newChatGradient}
-          >
-            <MessageSquare size={20} color="#1E293B" />
-          </LinearGradient>
-        </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Search size={18} color="#94A3B8" />
           <TextInput
-            placeholder="Search conversations..."
-            style={styles.searchInput}
+            placeholder="Search conversations or find users..."
             placeholderTextColor="#94A3B8"
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
         </View>
       </View>
 
-      {/* List */}
-      <FlatList
-        data={conversations}
-        keyExtractor={(item) => item._id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
+      {showSearchResults ? (
+        searching ? (
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+          </View>
+        ) : (
+          <FlatList
+            data={searchResults}
+            keyExtractor={(item) => item.id}
+            renderItem={renderSearchResultItem}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Text style={styles.emptyText}>No users found. Try a different search.</Text>
+              </View>
+            }
+          />
+        )
+      ) : loading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={conversations}
+          keyExtractor={(item) => item.userId}
+          renderItem={renderConversationItem}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => setRefreshing(true) || loadHistory()} />
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <MessageSquare size={48} color={COLORS.textTertiary} />
+              <Text style={styles.emptyText}>No conversations yet</Text>
+              <Text style={styles.emptySubtext}>Search above to find users and start a chat</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFC"
-  },
+  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -183,22 +334,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   headerTitle: {
-    fontSize: TYPOGRAPHY.fontSize['3xl'],
+    fontSize: TYPOGRAPHY.fontSize["3xl"],
     fontWeight: TYPOGRAPHY.fontWeight.extrabold,
     color: "#444751",
-  },
-  newChatButton: {
-    width: 48,
-    height: 48,
-    borderRadius: BORDER_RADIUS.m,
-    overflow: 'hidden',
-    ...SHADOWS.medium,
-  },
-  newChatGradient: {
-    width: '100%',
-    height: '100%',
-    justifyContent: "center",
-    alignItems: "center",
   },
   searchContainer: {
     paddingHorizontal: SPACING.l,
@@ -235,22 +373,22 @@ const styles = StyleSheet.create({
     ...SHADOWS.small,
   },
   unreadItem: {
-    backgroundColor: '#E5E4EA',
+    backgroundColor: "#E5E4EA",
     borderWidth: 1,
-    borderColor: '#C7D2FE',
+    borderColor: "#C7D2FE",
   },
-  avatarWrapper: {
-    position: "relative",
-  },
-  avatarContainer: {
-    position: 'relative',
-  },
-  avatar: {
+  avatarWrapper: { position: "relative" },
+  avatarImageWrap: {
     width: 56,
     height: 56,
     borderRadius: BORDER_RADIUS.l,
-    borderWidth: 2,
-    borderColor: '#F1F5F9',
+    position: "relative",
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: 56,
+    height: 56,
+    borderRadius: BORDER_RADIUS.l,
   },
   placeholderAvatar: {
     width: 56,
@@ -258,12 +396,12 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.l,
     justifyContent: "center",
     alignItems: "center",
-    position: 'relative',
+    position: "relative",
   },
-  placeholderText: {
+  avatarLetter: {
     color: COLORS.white,
     fontWeight: TYPOGRAPHY.fontWeight.extrabold,
-    fontSize: TYPOGRAPHY.fontSize['2xl'],
+    fontSize: TYPOGRAPHY.fontSize["2xl"],
   },
   onlineDot: {
     position: "absolute",
@@ -284,8 +422,8 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     backgroundColor: COLORS.error,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
     borderColor: COLORS.white,
   },
@@ -294,10 +432,7 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.xs,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
   },
-  textContainer: {
-    flex: 1,
-    marginLeft: SPACING.m,
-  },
+  textContainer: { flex: 1, marginLeft: SPACING.m },
   nameRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -310,20 +445,25 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.md,
     color: "#444751",
   },
-  timeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  roleBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: BORDER_RADIUS.s,
   },
+  roleBadgeClient: { backgroundColor: "#DBEAFE" },
+  roleBadgeFreelancer: { backgroundColor: "#D1FAE5" },
+  roleBadgeText: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: "#444751",
+  },
+  timeContainer: { flexDirection: "row", alignItems: "center", gap: 4 },
   time: {
     fontSize: TYPOGRAPHY.fontSize.xs,
     color: "#94A3B8",
     fontWeight: TYPOGRAPHY.fontWeight.medium,
   },
-  unreadTime: {
-    color: COLORS.primary,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-  },
+  unreadTime: { color: COLORS.primary, fontWeight: TYPOGRAPHY.fontWeight.bold },
   message: {
     color: "#64748B",
     fontSize: TYPOGRAPHY.fontSize.sm,
@@ -333,10 +473,10 @@ const styles = StyleSheet.create({
     color: "#444751",
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
   },
-  separator: {
-    height: 1,
-    backgroundColor: "transparent",
-  }
+  separator: { height: 1, backgroundColor: "transparent" },
+  empty: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 48 },
+  emptyText: { marginTop: SPACING.m, fontSize: TYPOGRAPHY.fontSize.base, color: COLORS.textTertiary },
+  emptySubtext: { marginTop: SPACING.s, fontSize: TYPOGRAPHY.fontSize.sm, color: COLORS.textTertiary },
 });
 
 export default MessagesScreen;

@@ -46,8 +46,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       const token = await storageGet('accessToken');
       if (!token) return;
 
+      const userId = user?.id != null ? String(user.id).trim() : '';
       s = io(API_BASE_URL, {
         auth: { token },
+        query: { userId },
         transports: ['websocket', 'polling'],
       });
 
@@ -55,6 +57,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       s.on('disconnect', () => setConnected(false));
       s.on('connect_error', () => setConnected(false));
 
+      s.on('getOnlineUser', (userIds: string[]) => {
+        setOnlineUserIds(new Set(Array.isArray(userIds) ? userIds : []));
+      });
       s.on('user_online', (payload: { userId?: string }) => {
         if (payload?.userId) {
           setOnlineUserIds((prev) => new Set(prev).add(payload.userId));

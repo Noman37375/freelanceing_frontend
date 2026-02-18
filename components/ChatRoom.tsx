@@ -14,12 +14,55 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
+  Animated,
+  RefreshControl,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useSocket } from '@/contexts/SocketContext';
 import { chatService, type ChatMessage } from '@/services/chatService';
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '@/constants/theme';
+
+const CHAT_SKELETON_COUNT = 6;
+
+function ChatBubbleSkeleton({ isMe, opacity }: { isMe: boolean; opacity: Animated.Value }) {
+  return (
+    <View style={[chatSkeletonStyles.msgRow, isMe ? chatSkeletonStyles.msgRowMe : chatSkeletonStyles.msgRowThem]}>
+      {!isMe && <Animated.View style={[chatSkeletonStyles.avatar, { opacity }]} />}
+      <Animated.View
+        style={[
+          chatSkeletonStyles.bubble,
+          isMe ? chatSkeletonStyles.bubbleMe : chatSkeletonStyles.bubbleThem,
+          { opacity },
+        ]}
+      >
+        <View style={[chatSkeletonStyles.line, chatSkeletonStyles.lineShort]} />
+        <View style={[chatSkeletonStyles.line, chatSkeletonStyles.lineLong]} />
+      </Animated.View>
+      {isMe && <View style={chatSkeletonStyles.avatarSpacer} />}
+    </View>
+  );
+}
+
+function ChatSkeleton() {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.8, useNativeDriver: true, duration: 600 }),
+        Animated.timing(opacity, { toValue: 0.4, useNativeDriver: true, duration: 600 }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return (
+    <View style={chatSkeletonStyles.list}>
+      {Array.from({ length: CHAT_SKELETON_COUNT }).map((_, i) => (
+        <ChatBubbleSkeleton key={i} isMe={i % 2 === 1} opacity={opacity} />
+      ))}
+    </View>
+  );
+}
 
 export interface ActiveUser {
   id: string;
@@ -46,7 +89,7 @@ interface ChatRoomProps {
 }
 
 export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, projectId }: ChatRoomProps) {
-  const { socket } = useSocket();
+  const { socket, connected, onlineUserIds } = useSocket();
   const [messages, setMessages] = useState<Map<string, ChatMessage>>(new Map());
   const [loading, setLoading] = useState(true);
   const [messageInput, setMessageInput] = useState('');
@@ -55,6 +98,7 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
   const [editedText, setEditedText] = useState('');
   const [menuMessageId, setMenuMessageId] = useState<string | null>(null);
   const [receiverProfileImage, setReceiverProfileImage] = useState<string | null>(activeUser?.profileImage ?? null);
+  const [refreshing, setRefreshing] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -93,6 +137,56 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
     loadMessages();
   }, [loadMessages]);
 
+  const prevConnectedRef = useRef(true);
+  // When socket (re)connects (disconnected -> connected), sync once for missed real-time events
+  useEffect(() => {
+    if (!activeUser?.id) return;
+    const justReconnected = connected && !prevConnectedRef.current;
+    prevConnectedRef.current = connected;
+    if (justReconnected) loadMessages(true);
+  }, [connected, activeUser?.id, loadMessages]);
+
+  // Poll only when socket is disconnected; when connected, real-time handles new messages
+  const POLL_WHEN_DISCONNECTED_MS = 15000;
+  useEffect(() => {
+    if (!activeUser?.id || connected) return;
+    const interval = setInterval(() => loadMessages(true), POLL_WHEN_DISCONNECTED_MS);
+    return () => clearInterval(interval);
+  }, [activeUser?.id, connected, loadMessages]);
+
+  // Emit messagesSeen when chat opens - tell sender we've seen their messages
+  useEffect(() => {
+    if (!socket || !currentUser?.id || !activeUser?.id) return;
+    // Find unread messages from the active user (messages they sent to us)
+    const unseenIds = Array.from(messages.values())
+      .filter(m => m.senderId === activeUser.id && !m.seenAt && !m.read)
+      .map(m => m.id);
+    if (unseenIds.length > 0) {
+      socket.emit('messagesSeen', {
+        sender: activeUser.id,
+        receiver: currentUser.id,
+        messageIds: unseenIds,
+      });
+      // Update local state immediately
+      setMessages(prev => {
+        const next = new Map(prev);
+        const now = new Date().toISOString();
+        unseenIds.forEach(id => {
+          const msg = next.get(id);
+          if (msg) next.set(id, { ...msg, read: true, seenAt: now });
+        });
+        return next;
+      });
+    }
+  }, [socket, currentUser?.id, activeUser?.id, messages.size]);
+
+  const onRefresh = useCallback(async () => {
+    if (!activeUser?.id) return;
+    setRefreshing(true);
+    await loadMessages(true);
+    setRefreshing(false);
+  }, [activeUser?.id, loadMessages]);
+
   useEffect(() => {
     if (!socket || !currentUser?.id) return;
 
@@ -109,10 +203,11 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
     }) => {
       const key = data?.id;
       if (!key) return;
-      const s = String(data.sender ?? '');
-      const r = String(data.receiver ?? '');
-      const cur = String(currentUser.id ?? '');
-      const act = String(activeUser.id ?? '');
+      const s = String(data.sender ?? '').trim().toLowerCase();
+      const r = String(data.receiver ?? '').trim().toLowerCase();
+      const cur = String(currentUser?.id ?? '').trim().toLowerCase();
+      const act = String(activeUser?.id ?? '').trim().toLowerCase();
+      if (!cur || !act) return;
       const isForThisChat =
         (s === cur && r === act) || (r === cur && s === act);
       if (!isForThisChat) return;
@@ -122,6 +217,7 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
         receiverId: r,
         message: data.message ?? '',
         read: false,
+        seenAt: null,
         createdAt: data.createdAt ?? new Date().toISOString(),
         updatedAt: data.updatedAt ?? new Date().toISOString(),
       };
@@ -130,6 +226,8 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
         next.set(key, msg);
         return next;
       });
+      // Auto-scroll to show new message
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
       if (onUnreadUpdate && data.sender !== currentUser.id) {
         onUnreadUpdate([{ userId: data.sender!, unreadCount: 1 }]);
       }
@@ -168,12 +266,33 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
       }
     };
 
+    // Sender receives notification that receiver has seen their messages
+    const handleMessagesSeen = (data: { by?: string; messageIds?: string[]; seenAt?: string }) => {
+      if (!data?.messageIds?.length) return;
+      const by = String(data.by ?? '').toLowerCase();
+      const act = String(activeUser.id ?? '').toLowerCase();
+      if (by !== act) return;
+      setMessages(prev => {
+        const next = new Map(prev);
+        let changed = false;
+        data.messageIds!.forEach(id => {
+          const msg = next.get(id);
+          if (msg) {
+            next.set(id, { ...msg, read: true, seenAt: data.seenAt || new Date().toISOString() });
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+    };
+
     socket.on('newMessage', handleNewMessage);
     socket.on('deleteMsg', handleDeleteMsg);
     socket.on('editMsg', handleEditMsg);
     socket.on('startTyping', handleStartTyping);
     socket.on('stopTyping', handleStopTyping);
     socket.on('userMsg', handleUserMsg);
+    socket.on('messagesSeen', handleMessagesSeen);
 
     return () => {
       socket.off('newMessage', handleNewMessage);
@@ -182,6 +301,7 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
       socket.off('startTyping', handleStartTyping);
       socket.off('stopTyping', handleStopTyping);
       socket.off('userMsg', handleUserMsg);
+      socket.off('messagesSeen', handleMessagesSeen);
     };
   }, [socket, currentUser?.id, activeUser?.id, onUnreadUpdate]);
 
@@ -198,6 +318,7 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
           receiverId: saved.receiverId ?? activeUser.id,
           message: saved.message ?? text,
           read: saved.read ?? false,
+          seenAt: saved.seenAt ?? null,
           createdAt: saved.createdAt ?? new Date().toISOString(),
           updatedAt: saved.updatedAt ?? new Date().toISOString(),
         };
@@ -318,6 +439,15 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
                   {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </Text>
                 {isMe && (
+                  <View style={styles.seenIndicator}>
+                    {item.seenAt ? (
+                      <Ionicons name="checkmark-done" size={16} color="#4FC3F7" />
+                    ) : (
+                      <Ionicons name="checkmark-done" size={16} color={COLORS.textTertiary} />
+                    )}
+                  </View>
+                )}
+                {isMe && (
                   <TouchableOpacity
                     onPress={() => setMenuMessageId(menuMessageId === key ? null : key)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -367,10 +497,10 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
     >
       {onBack && (
         <View style={styles.header}>
-          <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-            <Feather name="arrow-left" size={24} color={COLORS.textPrimary} />
+          <TouchableOpacity onPress={onBack} style={styles.headerIconBtn} activeOpacity={0.7}>
+            <Feather name="chevron-left" size={28} color={COLORS.white} />
           </TouchableOpacity>
-          <View style={styles.headerCenter}>
+          <TouchableOpacity style={styles.headerProfileRow} activeOpacity={1}>
             {(receiverProfileImage || activeUser.profileImage) ? (
               <Image
                 source={{ uri: receiverProfileImage || activeUser.profileImage || '' }}
@@ -383,27 +513,44 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
                 </Text>
               </View>
             )}
-            <Text style={styles.headerTitle} numberOfLines={1}>
-              {activeUser.userName || 'Chat'}
-            </Text>
-          </View>
-          <View style={styles.backBtn} />
+            <View style={styles.headerNameBlock}>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                {activeUser.userName || 'Chat'}
+              </Text>
+              {/* <Text style={styles.headerSubtitle} numberOfLines={1}>
+                {onlineUserIds.has(activeUser.id) ? 'online' : 'last seen recently'}
+              </Text> */}
+            </View>
+          </TouchableOpacity>
+          {/* <View style={styles.headerRightIcons}>
+            <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7}>
+              <Feather name="video" size={22} color={COLORS.white} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7}>
+              <Feather name="phone" size={20} color={COLORS.white} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7}>
+              <Feather name="more-vertical" size={22} color={COLORS.white} />
+             </TouchableOpacity>
+          </View> */}
         </View>
       )}
 
       {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
+        <ChatSkeleton />
       ) : (
         <>
           <FlatList
             ref={flatListRef}
             data={list}
+            extraData={messages.size}
             keyExtractor={(item) => messageKey(item)}
             renderItem={renderItem}
             contentContainerStyle={styles.listContent}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+            }
           />
           {typingUsers.includes(activeUser.id) && (
             <View style={styles.typingBar}>
@@ -438,43 +585,65 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING.m,
+    paddingHorizontal: SPACING.xs,
     paddingVertical: SPACING.s,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    paddingTop: Platform.OS === 'ios' ? SPACING.m : SPACING.s,
+    backgroundColor: '#0D0D0D',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
-  backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  headerCenter: {
+  headerIconBtn: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerProfileRow: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.s,
+    marginLeft: SPACING.xs,
+    minWidth: 0,
   },
   headerAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
   },
   headerAvatarPlaceholder: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.surfaceMuted,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerAvatarLetter: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
+    fontSize: TYPOGRAPHY.fontSize.xl,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: COLORS.textSecondary,
+    color: COLORS.white,
+  },
+  headerNameBlock: {
+    flex: 1,
+    marginLeft: SPACING.m,
+    minWidth: 0,
   },
   headerTitle: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
+    fontSize: TYPOGRAPHY.fontSize.md,
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: COLORS.textPrimary,
-    maxWidth: '60%',
+    color: COLORS.white,
+  },
+  headerSubtitle: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
+  headerRightIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   placeholderText: { fontSize: TYPOGRAPHY.fontSize.base, color: COLORS.textTertiary },
@@ -499,6 +668,7 @@ const styles = StyleSheet.create({
   msgText: { fontSize: TYPOGRAPHY.fontSize.base, color: COLORS.textPrimary },
   msgMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 4, gap: 6 },
   time: { fontSize: TYPOGRAPHY.fontSize.xs, color: COLORS.textTertiary },
+  seenIndicator: { marginLeft: 2 },
   editRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   editInput: { flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.s, padding: 8, fontSize: TYPOGRAPHY.fontSize.base },
   editBtn: { paddingVertical: 6, paddingHorizontal: 12, backgroundColor: COLORS.primary, borderRadius: BORDER_RADIUS.s },
@@ -536,4 +706,44 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+});
+
+const chatSkeletonStyles = StyleSheet.create({
+  list: {
+    flex: 1,
+    padding: SPACING.m,
+    paddingBottom: SPACING.l,
+  },
+  msgRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginVertical: 6,
+  },
+  msgRowMe: { justifyContent: 'flex-end' },
+  msgRowThem: { justifyContent: 'flex-start' },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E5E4EA',
+    marginRight: 8,
+  },
+  avatarSpacer: { width: 36, marginLeft: 8 },
+  bubble: {
+    maxWidth: '75%',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: BORDER_RADIUS.l,
+  },
+  bubbleMe: {
+    backgroundColor: '#E5E4EA',
+    borderTopRightRadius: 0,
+  },
+  bubbleThem: {
+    backgroundColor: '#E5E4EA',
+    borderTopLeftRadius: 0,
+  },
+  line: { backgroundColor: '#C2C2C8', borderRadius: 4, height: 10 },
+  lineShort: { width: 120, marginBottom: 6 },
+  lineLong: { width: 180 },
 });

@@ -5,6 +5,7 @@ import { View, Image, StyleSheet, Dimensions } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { WalletProvider } from '@/contexts/WalletContext';
+import { SocketProvider } from '@/contexts/SocketContext';
 import { useEffect, useRef, useState } from 'react';
 
 // Keep native splash visible until we're ready, then show welcome.jpeg as initial loading
@@ -80,10 +81,12 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <WalletProvider>
-        <RootNavigation />
-        <StatusBar style="auto" />
-      </WalletProvider>
+      <SocketProvider>
+        <WalletProvider>
+          <RootNavigation />
+          <StatusBar style="auto" />
+        </WalletProvider>
+      </SocketProvider>
     </AuthProvider>
   );
 }

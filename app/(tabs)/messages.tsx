@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
-  ActivityIndicator,
+  Animated,
   RefreshControl,
   Image,
 } from "react-native";
@@ -46,6 +46,40 @@ interface ListItem {
 }
 
 const SEARCH_DEBOUNCE_MS = 400;
+const SKELETON_COUNT = 6;
+
+function SkeletonRow({ opacity }: { opacity: Animated.Value }) {
+  return (
+    <View style={skeletonStyles.item}>
+      <Animated.View style={[skeletonStyles.avatar, { opacity }]} />
+      <View style={skeletonStyles.textContainer}>
+        <Animated.View style={[skeletonStyles.line, skeletonStyles.lineName, { opacity }]} />
+        <Animated.View style={[skeletonStyles.line, skeletonStyles.lineMessage, { opacity }]} />
+      </View>
+    </View>
+  );
+}
+
+function MessageListSkeleton() {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.8, useNativeDriver: true, duration: 600 }),
+        Animated.timing(opacity, { toValue: 0.4, useNativeDriver: true, duration: 600 }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return (
+    <View style={skeletonStyles.list}>
+      {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+        <SkeletonRow key={i} opacity={opacity} />
+      ))}
+    </View>
+  );
+}
 
 const MessagesScreen = () => {
   const router = useRouter();
@@ -259,15 +293,14 @@ const MessagesScreen = () => {
             style={styles.searchInput}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            underlineColorAndroid="transparent"
           />
         </View>
       </View>
 
       {showSearchResults ? (
         searching ? (
-          <View style={styles.centered}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-          </View>
+          <MessageListSkeleton />
         ) : (
           <FlatList
             data={searchResults}
@@ -282,9 +315,7 @@ const MessagesScreen = () => {
           />
         )
       ) : loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
+        <MessageListSkeleton />
       ) : (
         <FlatList
           data={conversations}
@@ -345,12 +376,17 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.m,
     paddingHorizontal: SPACING.m,
     height: 48,
+    borderWidth: 0,
+    borderColor: "transparent",
   },
   searchInput: {
     flex: 1,
     marginLeft: SPACING.m,
     fontSize: TYPOGRAPHY.fontSize.base,
     color: "#444751",
+    borderWidth: 0,
+    borderColor: "transparent",
+    outlineStyle: "none",
   },
   listContent: {
     paddingHorizontal: SPACING.l,
@@ -472,6 +508,35 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 48 },
   emptyText: { marginTop: SPACING.m, fontSize: TYPOGRAPHY.fontSize.base, color: COLORS.textTertiary },
   emptySubtext: { marginTop: SPACING.s, fontSize: TYPOGRAPHY.fontSize.sm, color: COLORS.textTertiary },
+});
+
+const skeletonStyles = StyleSheet.create({
+  list: {
+    flex: 1,
+    paddingHorizontal: SPACING.l,
+    paddingTop: SPACING.m,
+    paddingBottom: 100,
+  },
+  item: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: SPACING.m,
+    paddingHorizontal: SPACING.m,
+    marginBottom: SPACING.s,
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.l,
+    ...SHADOWS.small,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: BORDER_RADIUS.l,
+    backgroundColor: "#E5E4EA",
+  },
+  textContainer: { flex: 1, marginLeft: SPACING.m },
+  line: { backgroundColor: "#E5E4EA", borderRadius: 4 },
+  lineName: { height: 16, width: "65%", marginBottom: 8 },
+  lineMessage: { height: 12, width: "90%" },
 });
 
 export default MessagesScreen;

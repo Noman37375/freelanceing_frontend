@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   Modal,
-  ActivityIndicator,
+  Animated,
   RefreshControl,
   Alert,
   Platform,
@@ -20,6 +20,45 @@ import { projectService } from "@/services/projectService";
 import { Project } from "@/models/Project";
 import { useRouter } from "expo-router";
 import { TYPOGRAPHY } from "@/constants/theme";
+
+const SKELETON_CARD_COUNT = 4;
+
+function SkeletonCard({ opacity }: { opacity: Animated.Value }) {
+  return (
+    <View style={skeletonStyles.card}>
+      <Animated.View style={[skeletonStyles.line, skeletonStyles.titleLine, { opacity }]} />
+      <Animated.View style={[skeletonStyles.line, skeletonStyles.descLine, { opacity }]} />
+      <Animated.View style={[skeletonStyles.line, skeletonStyles.descLineShort, { opacity }]} />
+      <View style={skeletonStyles.footer}>
+        <Animated.View style={[skeletonStyles.line, skeletonStyles.metaLine, { opacity }]} />
+      </View>
+    </View>
+  );
+}
+
+function ProjectsListSkeleton() {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.8, useNativeDriver: true, duration: 600 }),
+        Animated.timing(opacity, { toValue: 0.4, useNativeDriver: true, duration: 600 }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return (
+    <ScrollView style={styles.listContainer} showsVerticalScrollIndicator={false}>
+      <View style={styles.resultsHeader}>
+        <Animated.View style={[skeletonStyles.line, skeletonStyles.countLine, { opacity }]} />
+      </View>
+      {Array.from({ length: SKELETON_CARD_COUNT }).map((_, i) => (
+        <SkeletonCard key={i} opacity={opacity} />
+      ))}
+    </ScrollView>
+  );
+}
 
 export default function ProjectsScreen() {
   const router = useRouter();
@@ -79,7 +118,8 @@ export default function ProjectsScreen() {
       .includes(searchQuery.toLowerCase());
     const matchesCategory =
       selectedCategory === "All" ||
-      project.category === selectedCategory ||
+      (project.category != null &&
+        project.category.toLowerCase().includes(selectedCategory.toLowerCase())) ||
       project.tags?.some((tag) =>
         tag.toLowerCase().includes(selectedCategory.toLowerCase())
       );
@@ -110,6 +150,7 @@ export default function ProjectsScreen() {
                 placeholderTextColor="#94A3B8"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
+                underlineColorAndroid="transparent"
               />
             </View>
             <TouchableOpacity style={styles.fabFilter} onPress={() => setShowFilter(true)}>
@@ -149,10 +190,7 @@ export default function ProjectsScreen() {
 
         {/* Project List */}
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#282A32" />
-            <Text style={styles.loadingText}>Fetching opportunities...</Text>
-          </View>
+          <ProjectsListSkeleton />
         ) : (
           <ScrollView
             style={styles.listContainer}
@@ -295,6 +333,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 52,
     marginRight: 12,
+    borderWidth: 0,
+    borderColor: "transparent",
   },
   searchInput: {
     flex: 1,
@@ -302,6 +342,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#1E293B",
     fontWeight: '500',
+    borderWidth: 0,
+    borderColor: "transparent",
+    outlineStyle: "none",
   },
   fabFilter: {
     width: 52,
@@ -524,4 +567,22 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 15
   },
+});
+
+const skeletonStyles = StyleSheet.create({
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    marginBottom: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  line: { backgroundColor: '#E2E8F0', borderRadius: 6 },
+  titleLine: { height: 18, width: '80%', marginBottom: 12 },
+  descLine: { height: 14, width: '100%', marginBottom: 8 },
+  descLineShort: { height: 14, width: '60%', marginBottom: 16 },
+  metaLine: { height: 12, width: 100 },
+  footer: { marginTop: 4 },
+  countLine: { height: 14, width: 120 },
 });

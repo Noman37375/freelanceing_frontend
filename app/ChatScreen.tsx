@@ -22,7 +22,9 @@ export default function ChatScreen() {
   }>();
   const { user } = useAuth();
 
-  const receiverId = params.receiverId ?? params.userId ?? '';
+  // Normalize so socket room IDs match backend (lowercase)
+  const receiverId = (params.receiverId ?? params.userId ?? '').trim();
+  const receiverIdNorm = receiverId ? String(receiverId).toLowerCase() : '';
   let displayName = params.userName ?? '';
   let initialProfileImage: string | null = null;
   if (params.client) {
@@ -52,13 +54,13 @@ export default function ChatScreen() {
   }, [receiverId, initialProfileImage, displayName]);
 
   const activeUser: ActiveUser = {
-    id: receiverId,
+    id: receiverIdNorm || receiverId,
     userName: userName || displayName || 'Chat',
     profileImage: profileImage ?? initialProfileImage,
   };
 
   const currentUser = user
-    ? { id: user.id, userName: user.userName, profileImage: user.profileImage }
+    ? { id: String(user.id ?? '').trim().toLowerCase(), userName: user.userName, profileImage: user.profileImage }
     : null;
 
   if (!receiverId) {
@@ -74,6 +76,7 @@ export default function ChatScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ChatRoom
+        key={`chat-${receiverIdNorm || receiverId}`}
         activeUser={activeUser}
         currentUser={currentUser}
         onBack={() => router.back()}

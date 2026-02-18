@@ -377,6 +377,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 12,
     borderWidth: 0,
+    borderColor: 'transparent',
   },
   searchInput: {
     flex: 1,
@@ -384,6 +385,8 @@ const styles = StyleSheet.create({
     color: '#444751',
     paddingVertical: 0,
     borderWidth: 0,
+    borderColor: 'transparent',
+    outlineStyle: 'none',
   },
 
   section: { marginBottom: 28 },

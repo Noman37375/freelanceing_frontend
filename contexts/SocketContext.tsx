@@ -46,11 +46,16 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       const token = await storageGet('accessToken');
       if (!token) return;
 
-      const userId = user?.id != null ? String(user.id).trim() : '';
+      const userId = user?.id != null ? String(user.id).trim().toLowerCase() : '';
       s = io(API_BASE_URL, {
         auth: { token },
         query: { userId },
         transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
       });
 
       s.on('connect', () => setConnected(true));

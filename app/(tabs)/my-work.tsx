@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   StatusBar,
-  ActivityIndicator,
+  Animated,
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,6 +18,48 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Project, Proposal } from "@/models/Project";
 import { useRouter } from "expo-router";
 import { SPACING, TYPOGRAPHY, BORDER_RADIUS } from "@/constants/theme";
+
+const SKELETON_CARD_COUNT = 3;
+
+function SkeletonWorkCard({ opacity }: { opacity: Animated.Value }) {
+  return (
+    <View style={skeletonStyles.card}>
+      <Animated.View style={[skeletonStyles.line, skeletonStyles.titleLine, { opacity }]} />
+      <Animated.View style={[skeletonStyles.line, skeletonStyles.metaLine, { opacity }]} />
+      <View style={skeletonStyles.cardFooter}>
+        <Animated.View style={[skeletonStyles.line, skeletonStyles.footerLine, { opacity }]} />
+      </View>
+    </View>
+  );
+}
+
+function MyWorkSkeleton() {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.8, useNativeDriver: true, duration: 600 }),
+        Animated.timing(opacity, { toValue: 0.4, useNativeDriver: true, duration: 600 }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return (
+    <View style={skeletonStyles.wrapper}>
+      <View style={[styles.statsCard, skeletonStyles.statCardSkeleton]}>
+        <View style={skeletonStyles.statLeft}>
+          <Animated.View style={[skeletonStyles.line, skeletonStyles.statLabelLine, { opacity }]} />
+          <Animated.View style={[skeletonStyles.line, skeletonStyles.statValueLine, { opacity }]} />
+        </View>
+        <Animated.View style={[skeletonStyles.statIconSkeleton, { opacity }]} />
+      </View>
+      {Array.from({ length: SKELETON_CARD_COUNT }).map((_, i) => (
+        <SkeletonWorkCard key={i} opacity={opacity} />
+      ))}
+    </View>
+  );
+}
 
 export default function MyWorkScreen() {
   const router = useRouter();
@@ -160,9 +202,7 @@ export default function MyWorkScreen() {
         }
       >
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#4F46E5" />
-          </View>
+          <MyWorkSkeleton />
         ) : displayProjects.length > 0 ? (
           displayProjects.map((project) => (
             <View key={project.id} style={styles.cardWrapper}>
@@ -329,4 +369,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+});
+
+const skeletonStyles = StyleSheet.create({
+  wrapper: { paddingBottom: 24 },
+  statCardSkeleton: {},
+  statLeft: { flex: 1 },
+  statLabelLine: { height: 12, width: 100, marginBottom: 8, borderRadius: 6 },
+  statValueLine: { height: 24, width: 120, borderRadius: 6 },
+  statIconSkeleton: {
+    width: 44,
+    height: 44,
+    borderRadius: BORDER_RADIUS.m,
+    backgroundColor: "#E2E8F0",
+  },
+  card: {
+    backgroundColor: "#FFF",
+    borderRadius: BORDER_RADIUS.l,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    padding: SPACING.m,
+    marginBottom: SPACING.m,
+  },
+  line: { backgroundColor: "#E2E8F0", borderRadius: 6 },
+  titleLine: { height: 18, width: "85%", marginBottom: 12 },
+  metaLine: { height: 14, width: "60%", marginBottom: 12 },
+  cardFooter: { marginTop: 4 },
+  footerLine: { height: 12, width: 80 },
 });

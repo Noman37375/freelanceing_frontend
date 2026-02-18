@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Platform, StatusBar } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Animated, RefreshControl, Platform, StatusBar } from 'react-native';
 import { Search, Filter, Plus, ChevronLeft, Calendar, DollarSign, Briefcase, X, TrendingUp, CheckCircle2, Clock } from 'lucide-react-native';
 import ProjectCard from '@/components/ClientProjectCard';
 import { useRouter } from 'expo-router';
@@ -7,6 +7,43 @@ import { projectService } from '@/services/projectService';
 import { Project, getProjectDisplayStatus } from '@/models/Project';
 import { useAuth } from '@/contexts/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const SKELETON_CARD_COUNT = 4;
+
+function SkeletonCard({ opacity }: { opacity: Animated.Value }) {
+  return (
+    <View style={skeletonStyles.card}>
+      <Animated.View style={[skeletonStyles.line, skeletonStyles.titleLine, { opacity }]} />
+      <Animated.View style={[skeletonStyles.line, skeletonStyles.subLine, { opacity }]} />
+      <View style={skeletonStyles.cardFooter}>
+        <Animated.View style={[skeletonStyles.line, skeletonStyles.metaLine, { opacity }]} />
+      </View>
+    </View>
+  );
+}
+
+function ProjectsListSkeleton() {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.8, useNativeDriver: true, duration: 600 }),
+        Animated.timing(opacity, { toValue: 0.4, useNativeDriver: true, duration: 600 }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return (
+    <View style={skeletonStyles.wrapper}>
+      <View style={styles.listContent}>
+        {Array.from({ length: SKELETON_CARD_COUNT }).map((_, i) => (
+          <SkeletonCard key={i} opacity={opacity} />
+        ))}
+      </View>
+    </View>
+  );
+}
 
 export default function Projects() {
   const router = useRouter();
@@ -98,6 +135,7 @@ export default function Projects() {
               placeholderTextColor="#C2C2C8"
               value={searchQuery}
               onChangeText={setSearchQuery}
+              underlineColorAndroid="transparent"
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
@@ -146,9 +184,7 @@ export default function Projects() {
 
         {/* PROJECTS LIST */}
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#444751" />
-          </View>
+          <ProjectsListSkeleton />
         ) : (
           <FlatList
             data={filteredProjects}
@@ -289,8 +325,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 16,
     height: 48,
-    borderWidth: 1,
-    borderColor: '#E5E4EA',
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
   searchInput: {
     flex: 1,
@@ -298,6 +334,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#282A32',
     fontWeight: '600',
+    borderWidth: 0,
+    borderColor: 'transparent',
+    outlineStyle: 'none',
   },
 
   // ========== STATS SECTION ==========
@@ -405,4 +444,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: 0.2,
   },
+});
+
+const skeletonStyles = StyleSheet.create({
+  wrapper: { flex: 1 },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    marginBottom: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#E5E4EA',
+  },
+  line: { backgroundColor: '#E5E4EA', borderRadius: 6 },
+  titleLine: { height: 18, width: '85%', marginBottom: 12 },
+  subLine: { height: 14, width: '55%', marginBottom: 16 },
+  cardFooter: { marginTop: 4 },
+  metaLine: { height: 12, width: 100 },
 });

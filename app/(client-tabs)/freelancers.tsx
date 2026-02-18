@@ -1,9 +1,62 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Platform, StatusBar } from 'react-native';
-import { Search, Filter, User, Star, MapPin, Briefcase, ChevronLeft, UserCheck, X, Award, TrendingUp } from 'lucide-react-native';
+import { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Platform, StatusBar, Animated } from 'react-native';
+import { Search, Filter, User, Star, MapPin, Briefcase, ChevronLeft, UserCheck, X } from 'lucide-react-native';
 import { freelancerService, Freelancer } from '@/services/freelancerService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+
+const SKELETON_COUNT = 5;
+
+function FreelancerCardSkeleton({ opacity }: { opacity: Animated.Value }) {
+  return (
+    <View style={[styles.freelancerCard, skeletonStyles.card]}>
+      <View style={styles.cardHeader}>
+        <Animated.View style={[styles.avatarBox, skeletonStyles.avatar, { opacity }]} />
+        <View style={skeletonStyles.headerText}>
+          <Animated.View style={[skeletonStyles.line, skeletonStyles.nameLine, { opacity }]} />
+          <Animated.View style={[skeletonStyles.line, skeletonStyles.titleLine, { opacity }]} />
+        </View>
+      </View>
+      <View style={styles.statsRow}>
+        <Animated.View style={[skeletonStyles.line, skeletonStyles.statLine, { opacity }]} />
+        <View style={styles.statDivider} />
+        <Animated.View style={[skeletonStyles.line, skeletonStyles.priceLine, { opacity }]} />
+      </View>
+      <View style={styles.skillsRow}>
+        <Animated.View style={[skeletonStyles.skillBadge, { opacity }]} />
+        <Animated.View style={[skeletonStyles.skillBadge, skeletonStyles.skillWide, { opacity }]} />
+        <Animated.View style={[skeletonStyles.skillBadge, { opacity }]} />
+      </View>
+      <View style={styles.cardFooter}>
+        <View style={skeletonStyles.footerLeft}>
+          <Animated.View style={[skeletonStyles.line, skeletonStyles.footerLine, { opacity }]} />
+        </View>
+        <Animated.View style={[skeletonStyles.viewBtn, { opacity }]} />
+      </View>
+    </View>
+  );
+}
+
+function FreelancersListSkeleton() {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.8, useNativeDriver: true, duration: 600 }),
+        Animated.timing(opacity, { toValue: 0.4, useNativeDriver: true, duration: 600 }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return (
+    <View style={styles.listContent}>
+      {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+        <FreelancerCardSkeleton key={i} opacity={opacity} />
+      ))}
+    </View>
+  );
+}
 
 export default function Freelancers() {
   const router = useRouter();
@@ -102,9 +155,7 @@ export default function Freelancers() {
 
         {/* FREELANCERS LIST */}
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#444751" />
-          </View>
+          <FreelancersListSkeleton />
         ) : (
           <FlatList
             data={freelancers}
@@ -525,5 +576,59 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 0.2,
+  },
+});
+
+const skeletonStyles = StyleSheet.create({
+  card: {},
+  avatar: {
+    backgroundColor: '#E5E4EA',
+  },
+  headerText: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 6,
+  },
+  line: {
+    backgroundColor: '#E5E4EA',
+    borderRadius: 6,
+  },
+  nameLine: {
+    width: '70%',
+    height: 16,
+  },
+  titleLine: {
+    width: '45%',
+    height: 13,
+  },
+  statLine: {
+    width: 80,
+    height: 14,
+  },
+  priceLine: {
+    width: 60,
+    height: 16,
+  },
+  skillBadge: {
+    width: 72,
+    height: 28,
+    borderRadius: 10,
+    backgroundColor: '#E5E4EA',
+  },
+  skillWide: {
+    width: 88,
+  },
+  footerLeft: {
+    flex: 1,
+  },
+  footerLine: {
+    width: 120,
+    height: 12,
+  },
+  viewBtn: {
+    width: 64,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#E5E4EA',
   },
 });

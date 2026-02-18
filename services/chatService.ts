@@ -60,7 +60,7 @@ export interface ChatMessage {
   message: string;
   projectId?: string | null;
   read: boolean;
-  seen?: boolean;
+  seenAt?: string | null;
   createdAt: string;
   updatedAt: string;
   sender?: { id: string; user_name: string; email?: string; role?: string } | null;

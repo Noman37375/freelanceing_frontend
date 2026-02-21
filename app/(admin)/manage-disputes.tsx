@@ -29,8 +29,8 @@ import type { Dispute, DisputeStatus } from '@/models/Dispute';
 
 export default function ManageDisputes() {
     const router = useRouter();
-    const [disputes, setDisputes] = useState<Dispute[]>([]);
-    const [filteredDisputes, setFilteredDisputes] = useState<Dispute[]>([]);
+    const [disputes, setDisputes] = useState<any[]>([]);
+    const [filteredDisputes, setFilteredDisputes] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -74,10 +74,10 @@ export default function ManageDisputes() {
         setRefreshing(false);
     }, []);
 
-    const calculateStats = (data: Dispute[]) => {
+    const calculateStats = (data: any[]) => {
         const total = data.length;
-        const open = data.filter((d) => d.status === 'open' || d.status === 'under_review').length;
-        const resolved = data.filter((d) => d.status === 'resolved').length;
+        const open = data.filter((d) => d.status === 'open' || d.status === 'under_review' || d.status === 'Pending').length;
+        const resolved = data.filter((d) => d.status === 'resolved' || d.status === 'Resolved').length;
 
         // Calculate average resolution time (mock calculation)
         const avgResolutionTime = 3.5; // days
@@ -98,9 +98,11 @@ export default function ManageDisputes() {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter(
                 (d) =>
-                    d.id.toLowerCase().includes(query) ||
-                    d.title?.toLowerCase().includes(query) ||
-                    d.description?.toLowerCase().includes(query)
+                    d.id?.toLowerCase().includes(query) ||
+                    d.project?.title?.toLowerCase().includes(query) ||
+                    d.description?.toLowerCase().includes(query) ||
+                    d.client?.user_name?.toLowerCase().includes(query) ||
+                    d.freelancer?.user_name?.toLowerCase().includes(query)
             );
         }
 
@@ -295,14 +297,14 @@ export default function ManageDisputes() {
                                 </View>
 
                                 <Text style={styles.disputeTitle} numberOfLines={1}>
-                                    {dispute.title || 'Untitled Dispute'}
+                                    {dispute.project?.title || 'Untitled Dispute'}
                                 </Text>
 
                                 <View style={styles.disputeDetails}>
                                     <View style={styles.disputeDetail}>
                                         <Text style={styles.disputeDetailLabel}>Amount:</Text>
                                         <Text style={styles.disputeDetailValue}>
-                                            {dispute.currency} {dispute.amount.toFixed(2)}
+                                            ${dispute.amount?.toFixed(2) || '0.00'}
                                         </Text>
                                     </View>
                                     <View style={styles.disputeDetail}>
@@ -313,7 +315,7 @@ export default function ManageDisputes() {
 
                                 <View style={styles.disputeParties}>
                                     <Text style={styles.partyText}>
-                                        {dispute.initiator?.name} vs {dispute.respondent?.name}
+                                        {dispute.client?.user_name || 'Client'} vs {dispute.freelancer?.user_name || 'Freelancer'}
                                     </Text>
                                 </View>
 

@@ -54,6 +54,7 @@ export default function AdminLayout() {
                 <Stack.Screen name="manage-services" options={{ headerShown: false }} />
                 <Stack.Screen name="manage-notifications" options={{ headerShown: false }} />
                 <Stack.Screen name="manage-disputes" options={{ headerShown: false }} />
+                <Stack.Screen name="dispute-detail/[id]" options={{ headerShown: false }} />
             </Stack>
             {isMobile && <AdminBottomBar onLogout={handleLogout} />}
         </View>

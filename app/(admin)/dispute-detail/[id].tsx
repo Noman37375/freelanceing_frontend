@@ -23,18 +23,43 @@ import {
 import DisputeStatusBadge from '@/components/dispute/DisputeStatusBadge';
 import DisputeMessageThread from '@/components/dispute/DisputeMessageThread';
 import EvidenceUploader from '@/components/dispute/EvidenceUploader';
-import DisputeTimeline from '@/components/dispute/DisputeTimeline';
 import { disputeService } from '@/services/disputeService';
 import { adminService } from '@/services/adminService';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Dispute, DisputeResolution } from '@/models/Dispute';
+import type { DisputeResolution } from '@/models/Dispute';
+
+interface BackendDispute {
+    id: string;
+    projectId: string;
+    clientId: string;
+    freelancerId: string;
+    reason: string;
+    description: string;
+    amount: number;
+    status: string;
+    priority: string;
+    assignedMediatorId?: string;
+    resolutionType?: string;
+    resolutionDescription?: string;
+    resolutionTerms?: string[];
+    resolvedBy?: string;
+    resolvedAt?: string;
+    createdAt: string;
+    updatedAt: string;
+    project?: { id: string; title: string; description?: string };
+    client?: { id: string; user_name: string; email: string };
+    freelancer?: { id: string; user_name: string; email: string };
+    mediator?: { id: string; user_name: string };
+}
 
 export default function AdminDisputeDetail() {
     const router = useRouter();
     const { id } = useLocalSearchParams<{ id: string }>();
     const { user } = useAuth();
 
-    const [dispute, setDispute] = useState<Dispute | null>(null);
+    const [dispute, setDispute] = useState<BackendDispute | null>(null);
+    const [messages, setMessages] = useState<any[]>([]);
+    const [evidence, setEvidence] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [resolving, setResolving] = useState(false);
 
@@ -53,6 +78,21 @@ export default function AdminDisputeDetail() {
             setLoading(true);
             const data = await disputeService.getDisputeById(id);
             setDispute(data);
+            
+            // Load messages and evidence
+            try {
+                const msgs = await disputeService.getMessages(id);
+                setMessages(msgs || []);
+            } catch (e) {
+                console.warn('Failed to load messages:', e);
+            }
+            
+            try {
+                const evd = await disputeService.getEvidence(id);
+                setEvidence(evd || []);
+            } catch (e) {
+                console.warn('Failed to load evidence:', e);
+            }
         } catch (error: any) {
             console.error('Failed to load dispute:', error);
             Alert.alert('Error', 'Failed to load dispute details');
@@ -200,26 +240,31 @@ export default function AdminDisputeDetail() {
                     <View style={styles.infoGrid}>
                         <View style={styles.infoItem}>
                             <Text style={styles.infoLabel}>PROJECT</Text>
-                            <Text style={styles.infoValue}>{dispute.title || 'N/A'}</Text>
+                            <Text style={styles.infoValue}>{dispute.project?.title || 'N/A'}</Text>
                         </View>
 
                         <View style={styles.infoItem}>
                             <Text style={styles.infoLabel}>AMOUNT</Text>
                             <Text style={styles.infoValue}>
-                                {dispute.currency} {dispute.amount.toFixed(2)}
+                                ${dispute.amount?.toFixed(2) || '0.00'}
                             </Text>
                         </View>
 
                         <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>INITIATOR</Text>
-                            <Text style={styles.infoValue}>{dispute.initiator?.name || 'N/A'}</Text>
-                            <Text style={styles.infoSubValue}>({dispute.initiator?.role})</Text>
+                            <Text style={styles.infoLabel}>CLIENT</Text>
+                            <Text style={styles.infoValue}>{dispute.client?.user_name || 'N/A'}</Text>
+                            <Text style={styles.infoSubValue}>{dispute.client?.email || ''}</Text>
                         </View>
 
                         <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>RESPONDENT</Text>
-                            <Text style={styles.infoValue}>{dispute.respondent?.name || 'N/A'}</Text>
-                            <Text style={styles.infoSubValue}>({dispute.respondent?.role})</Text>
+                            <Text style={styles.infoLabel}>FREELANCER</Text>
+                            <Text style={styles.infoValue}>{dispute.freelancer?.user_name || 'N/A'}</Text>
+                            <Text style={styles.infoSubValue}>{dispute.freelancer?.email || ''}</Text>
+                        </View>
+
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>REASON</Text>
+                            <Text style={styles.infoValue}>{dispute.reason?.replace(/_/g, ' ').toUpperCase() || 'N/A'}</Text>
                         </View>
 
                         <View style={styles.infoItem}>
@@ -229,13 +274,18 @@ export default function AdminDisputeDetail() {
 
                         <View style={styles.infoItem}>
                             <Text style={styles.infoLabel}>PRIORITY</Text>
-                            <Text style={styles.infoValue}>{dispute.priority || 'medium'}</Text>
+                            <Text style={styles.infoValue}>{(dispute.priority || 'medium').toUpperCase()}</Text>
+                        </View>
+
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>STATUS</Text>
+                            <Text style={styles.infoValue}>{(dispute.status || 'Pending').toUpperCase()}</Text>
                         </View>
                     </View>
 
                     <View style={styles.descriptionContainer}>
                         <Text style={styles.infoLabel}>DESCRIPTION</Text>
-                        <Text style={styles.descriptionText}>{dispute.description}</Text>
+                        <Text style={styles.descriptionText}>{dispute.description || 'No description provided'}</Text>
                     </View>
                 </View>
 
@@ -267,24 +317,46 @@ export default function AdminDisputeDetail() {
 
                 {/* Messages */}
                 <View style={styles.messagesCard}>
-                    <Text style={styles.sectionTitle}>Messages</Text>
+                    <Text style={styles.sectionTitle}>Messages ({messages.length})</Text>
                     <View style={styles.messagesContainer}>
-                        <DisputeMessageThread messages={dispute.messages || []} currentUserId={user?.id || ''} />
+                        {messages.length > 0 ? (
+                            <DisputeMessageThread messages={messages} currentUserId={user?.id || ''} />
+                        ) : (
+                            <Text style={styles.emptyText}>No messages yet</Text>
+                        )}
                     </View>
                 </View>
 
                 {/* Evidence */}
                 <EvidenceUploader
                     disputeId={dispute.id}
-                    existingEvidence={dispute.evidence || []}
-                    onUploadComplete={() => { }}
+                    existingEvidence={evidence}
+                    onUploadComplete={() => loadDispute()}
                 />
 
-                {/* Timeline */}
-                <DisputeTimeline events={dispute.timeline || []} />
+                {/* Resolution Info (if resolved) */}
+                {dispute.resolutionDescription && (
+                    <View style={styles.infoCard}>
+                        <Text style={styles.sectionTitle}>Resolution</Text>
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>TYPE</Text>
+                            <Text style={styles.infoValue}>{dispute.resolutionType?.replace(/_/g, ' ').toUpperCase() || 'N/A'}</Text>
+                        </View>
+                        <View style={styles.descriptionContainer}>
+                            <Text style={styles.infoLabel}>DESCRIPTION</Text>
+                            <Text style={styles.descriptionText}>{dispute.resolutionDescription}</Text>
+                        </View>
+                        {dispute.resolvedAt && (
+                            <View style={styles.infoItem}>
+                                <Text style={styles.infoLabel}>RESOLVED AT</Text>
+                                <Text style={styles.infoValue}>{formatDate(dispute.resolvedAt)}</Text>
+                            </View>
+                        )}
+                    </View>
+                )}
 
                 {/* Resolution Form */}
-                {dispute.status !== 'resolved' && dispute.status !== 'closed' && (
+                {dispute.status !== 'resolved' && dispute.status !== 'closed' && dispute.status !== 'Resolved' && dispute.status !== 'Denied' && (
                     <View style={styles.resolutionCard}>
                         <Text style={styles.sectionTitle}>Resolution Decision</Text>
 
@@ -556,7 +628,15 @@ const styles = StyleSheet.create({
         borderColor: '#F1F5F9',
     },
     messagesContainer: {
-        height: 300,
+        minHeight: 100,
+        maxHeight: 300,
+    },
+    emptyText: {
+        fontSize: 14,
+        color: '#94A3B8',
+        fontStyle: 'italic',
+        textAlign: 'center',
+        paddingVertical: 20,
     },
     resolutionCard: {
         backgroundColor: '#FFFFFF',

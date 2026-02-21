@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '@/config';
 import { storageGet } from '@/utils/storage';
-import { Project, Proposal } from '@/models/Project';
+import { Project, Proposal, Milestone } from '@/models/Project';
 
 const getAuthToken = async (): Promise<string | null> => {
   return await storageGet('accessToken');
@@ -223,6 +223,51 @@ export const proposalService = {
     await apiCall(`/api/v1/proposals/${id}`, {
       method: 'DELETE',
     });
+  },
+};
+
+export const milestoneService = {
+  getMilestones: async (projectId: string): Promise<Milestone[]> => {
+    const response = await apiCall(`/api/v1/projects/${projectId}/milestones`);
+    return response.data.milestones || [];
+  },
+
+  createMilestone: async (
+    projectId: string,
+    data: { title: string; description?: string; dueDate?: string; orderIndex?: number }
+  ): Promise<Milestone> => {
+    const response = await apiCall(`/api/v1/projects/${projectId}/milestones`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.data.milestone;
+  },
+
+  startMilestone: async (milestoneId: string): Promise<Milestone> => {
+    const response = await apiCall(`/api/v1/milestones/${milestoneId}/start`, { method: 'PATCH' });
+    return response.data.milestone;
+  },
+
+  submitMilestone: async (milestoneId: string): Promise<Milestone> => {
+    const response = await apiCall(`/api/v1/milestones/${milestoneId}/submit`, { method: 'PATCH' });
+    return response.data.milestone;
+  },
+
+  approveMilestone: async (milestoneId: string): Promise<{ milestone: Milestone; progress: number }> => {
+    const response = await apiCall(`/api/v1/milestones/${milestoneId}/approve`, { method: 'PATCH' });
+    return response.data;
+  },
+
+  requestChanges: async (milestoneId: string, message: string): Promise<Milestone> => {
+    const response = await apiCall(`/api/v1/milestones/${milestoneId}/request-changes`, {
+      method: 'PATCH',
+      body: JSON.stringify({ message }),
+    });
+    return response.data.milestone;
+  },
+
+  deleteMilestone: async (milestoneId: string): Promise<void> => {
+    await apiCall(`/api/v1/milestones/${milestoneId}`, { method: 'DELETE' });
   },
 };
 

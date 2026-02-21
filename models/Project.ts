@@ -13,6 +13,7 @@ export interface Project {
   category?: string;
   duration?: string;
   status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  progress?: number;
   updatedAt: string;
   client?: {
     id: string;
@@ -45,12 +46,14 @@ export interface Project {
 
 export interface Milestone {
   id: string;
-  name: string;
-  description: string;
-  amount: number;
-  dueDate: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'approved';
-  deliverables: string[];
+  projectId: string;
+  title: string;
+  description?: string | null;
+  dueDate?: string | null;
+  status: 'pending' | 'in_progress' | 'submitted' | 'approved';
+  orderIndex: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Attachment {

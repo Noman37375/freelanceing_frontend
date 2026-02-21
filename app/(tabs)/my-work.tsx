@@ -117,6 +117,7 @@ export default function MyWorkScreen() {
           budget: `$${p.budget.toFixed(2)}`,
           deadline: p.duration || "N/A",
           location: p.location || "Remote",
+          progress: p.progress || 0,
           status:
             p.status === "ACTIVE"
               ? "inProgress"

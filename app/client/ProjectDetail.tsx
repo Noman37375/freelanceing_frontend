@@ -156,10 +156,14 @@ export default function ProjectDetail() {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.messageButton} onPress={() => {
-            }} disabled>
+                    <TouchableOpacity style={styles.messageButton} onPress={() => {
+              router.push({
+                pathname: '/active-details' as any,
+                params: { id: project.id },
+              } as any);
+            }}>
               <MessageSquare size={18} color={COLORS.primary} strokeWidth={2} />
-              <Text style={styles.messageButtonText}>Messaging disabled</Text>
+              <Text style={styles.messageButtonText}>View Milestones & Progress</Text>
             </TouchableOpacity>
           </View>
         )}

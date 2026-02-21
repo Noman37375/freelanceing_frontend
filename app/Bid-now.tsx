@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Modal,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, MoreVertical, ChevronDown, ChevronUp, CheckCircle } from "lucide-react-native";
@@ -47,6 +48,7 @@ export default function BidNow() {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 
   const [bidType, setBidType] = useState<BidType>("milestone");
@@ -121,9 +123,7 @@ export default function BidNow() {
         coverLetter: coverLetter.trim(),
         bidAmount: total,
       });
-      Alert.alert("Success", "Your proposal has been submitted successfully!", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      setShowSuccessModal(true);
     } catch (err: any) {
       console.error("Proposal submission error", err);
       Alert.alert("Error", err.message || "Unable to submit proposal");
@@ -338,6 +338,48 @@ export default function BidNow() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Success popup – same pattern as client create project */}
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowSuccessModal(false);
+          router.replace("/(tabs)" as any);
+        }}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          style={styles.modalOverlay}
+          onPress={() => {
+            setShowSuccessModal(false);
+            router.replace("/(tabs)" as any);
+          }}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+            style={styles.modalCard}
+          >
+            <CheckCircle size={56} color="#10B981" style={styles.modalIcon} />
+            <Text style={styles.modalTitle}>Success</Text>
+            <Text style={styles.modalMessage}>
+              Your proposal has been submitted successfully.
+            </Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => {
+                setShowSuccessModal(false);
+                router.replace("/(tabs)" as any);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -484,4 +526,52 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: { opacity: 0.7 },
   sendBtnText: { color: "#FFF", fontWeight: "700", fontSize: 16 },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 28,
+    alignItems: "center",
+    minWidth: 280,
+    maxWidth: 340,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalIcon: { marginBottom: 16 },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#282A32",
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modalButton: {
+    backgroundColor: "#282A32",
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    width: "100%",
+    alignItems: "center",
+  },
+  modalButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });

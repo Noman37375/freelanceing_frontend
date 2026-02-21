@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Modal, Platform, StatusBar } from 'react-native';
-import { FileText, CheckCircle, XCircle, Clock, DollarSign, User, Calendar, AlertCircle, ChevronLeft } from 'lucide-react-native';
+import { FileText, CheckCircle, XCircle, Clock, DollarSign, User, Calendar, AlertCircle, ChevronLeft, MessageCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { proposalService } from '@/services/projectService';
@@ -120,6 +120,11 @@ export default function Proposals() {
     }
   };
 
+  const getFreelancerDisplayName = (p: Proposal) => {
+    const f = p.freelancer as { userName?: string; name?: string; user_name?: string } | undefined;
+    return f?.userName ?? f?.name ?? (f as { user_name?: string })?.user_name ?? 'Unknown Freelancer';
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -207,14 +212,39 @@ export default function Proposals() {
                   </View>
                 </View>
 
-                {/* Freelancer */}
+                {/* Freelancer + Chat */}
                 <View style={styles.freelancerRow}>
                   <View style={styles.freelancerIconBox}>
                     <User size={14} color="#444751" strokeWidth={2.5} />
                   </View>
                   <Text style={styles.freelancerName}>
-                    {proposal.freelancer?.userName || proposal.freelancer?.name || 'Unknown Freelancer'}
+                    {getFreelancerDisplayName(proposal)}
                   </Text>
+                  {proposal.freelancerId && (
+                    <TouchableOpacity
+                      style={styles.chatIconButton}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        const name = getFreelancerDisplayName(proposal);
+                        router.push({
+                          pathname: '/ChatScreen' as any,
+                          params: {
+                            receiverId: proposal.freelancerId,
+                            userName: name,
+                            client: JSON.stringify({
+                              id: proposal.freelancerId,
+                              name,
+                              avatar: (proposal.freelancer as any)?.profile_image ?? '',
+                              profileImage: (proposal.freelancer as any)?.profile_image ?? '',
+                            }),
+                          },
+                        });
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <MessageCircle size={20} color="#444751" strokeWidth={2.5} />
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 {/* Cover Letter */}
@@ -548,6 +578,19 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
+  freelancerName: {
+    fontSize: 14,
+    color: '#C2C2C8',
+    fontWeight: '600',
+    flex: 1,
+  },
+  chatIconButton: {
+    padding: 8,
+    borderRadius: 10,
+    backgroundColor: '#F4F4F8',
+    borderWidth: 1,
+    borderColor: '#E5E4EA',
+  },
   freelancerIconBox: {
     width: 24,
     height: 24,
@@ -555,11 +598,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4F4F8',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  freelancerName: {
-    fontSize: 14,
-    color: '#C2C2C8',
-    fontWeight: '600',
   },
   coverLetter: {
     fontSize: 14,

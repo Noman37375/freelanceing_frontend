@@ -125,7 +125,11 @@ export default function ProposalDetailsScreen() {
   }
 
   const title = proposal.project?.title || 'Proposal Details';
-  const freelancerName = proposal.freelancer?.userName || proposal.freelancer?.name || 'Freelancer';
+  const freelancerName =
+    proposal.freelancer?.userName ||
+    proposal.freelancer?.name ||
+    (proposal.freelancer as { user_name?: string } | undefined)?.user_name ||
+    'Freelancer';
   const statusColor =
     proposal.status === 'ACCEPTED' ? COLORS.success : proposal.status === 'REJECTED' ? COLORS.error : COLORS.accent;
   const StatusIcon = proposal.status === 'ACCEPTED' ? CheckCircle : proposal.status === 'REJECTED' ? XCircle : FileText;

@@ -219,7 +219,10 @@ export default function Freelancers() {
                       <Text style={styles.footerText}>{freelancer.completedProjects} done</Text>
                     </View>
                   </View>
-                  <TouchableOpacity style={styles.viewBtn}>
+                  <TouchableOpacity 
+                    style={styles.viewBtn}
+                    onPress={() => router.push({ pathname: '/freelancer-detail', params: { id: freelancer.id } })}
+                  >
                     <Text style={styles.viewBtnText}>View</Text>
                   </TouchableOpacity>
                 </View>

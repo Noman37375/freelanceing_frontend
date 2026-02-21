@@ -61,6 +61,11 @@ export interface Freelancer {
   skills: string[];
   completedProjects: number;
   availability: string;
+  bio?: string;
+  experience?: string;
+  education?: string;
+  languages?: string[];
+  memberSince?: string;
 }
 
 export const freelancerService = {
@@ -82,5 +87,15 @@ export const freelancerService = {
       method: 'GET',
     });
     return response.data.freelancers || [];
+  },
+
+  /**
+   * Get freelancer by ID
+   */
+  getFreelancerById: async (id: string): Promise<Freelancer> => {
+    const response = await apiCall(`/api/v1/freelancers/${id}`, {
+      method: 'GET',
+    });
+    return response.data.freelancer;
   },
 };

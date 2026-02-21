@@ -61,18 +61,22 @@ export default function CompletedDetails() {
           </View>
 
           <View style={styles.summaryGrid}>
-            <View style={styles.tag}>
-              <User size={12} color="#C7D2FE" />
-              <Text style={styles.tagText}>{project.client}</Text>
-            </View>
+            {project.client?.userName && (
+              <View style={styles.tag}>
+                <User size={12} color="#C7D2FE" />
+                <Text style={styles.tagText}>{project.client.userName}</Text>
+              </View>
+            )}
             <View style={styles.tag}>
               <DollarSign size={12} color="#C7D2FE" />
-              <Text style={styles.tagText}>{project.budget}</Text>
+              <Text style={styles.tagText}>${project.budget?.toFixed(2) || '0.00'}</Text>
             </View>
-            <View style={styles.tag}>
-              <MapPin size={12} color="#C7D2FE" />
-              <Text style={styles.tagText}>{project.location}</Text>
-            </View>
+            {project.location && (
+              <View style={styles.tag}>
+                <MapPin size={12} color="#C7D2FE" />
+                <Text style={styles.tagText}>{project.location}</Text>
+              </View>
+            )}
           </View>
         </SafeAreaView>
       </View>
@@ -86,23 +90,24 @@ export default function CompletedDetails() {
         {/* Project Overview */}
         <View style={styles.mainCard}>
           <Text style={styles.projectTitle}>{project.title}</Text>
-          <Text style={styles.description}>{project.description}</Text>
+          <Text style={styles.description}>{project.description || 'No description provided'}</Text>
           
           <View style={styles.divider} />
           
-          <View style={styles.deadlineRow}>
-            <Calendar size={16} color="#444751" />
-            <Text style={styles.deadlineText}>Final Deadline: {project.deadline}</Text>
-          </View>
+          {project.duration && (
+            <View style={styles.deadlineRow}>
+              <Calendar size={16} color="#444751" />
+              <Text style={styles.deadlineText}>Duration: {project.duration}</Text>
+            </View>
+          )}
         </View>
-
 
         {/* Completion Success Card */}
         <View style={styles.successCard}>
           <Award size={24} color="#FFF" />
           <View style={{ marginLeft: 12 }}>
-            <Text style={styles.successTitle}>Project Fully Completed</Text>
-            <Text style={styles.successDate}>Archive Date: {project.completedDate}</Text>
+            <Text style={styles.successTitle}>Project Completed</Text>
+            <Text style={styles.successDate}>Completed: {formatDate(project.updatedAt)}</Text>
           </View>
         </View>
       </ScrollView>
@@ -112,6 +117,10 @@ export default function CompletedDetails() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#282A32" },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F8FAFC", gap: 12 },
+  loadingText: { color: "#94A3B8", fontSize: 14, marginTop: 8 },
+  goBackBtn: { marginTop: 16, backgroundColor: "#282A32", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
+  goBackText: { color: "#FFF", fontWeight: "700" },
   
   // Header
   darkHeader: { paddingHorizontal: 20, paddingBottom: 20 },

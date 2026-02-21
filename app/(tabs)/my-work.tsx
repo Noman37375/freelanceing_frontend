@@ -78,14 +78,17 @@ export default function MyWorkScreen() {
       setLoading(true);
       if (activeTab === "Proposals") {
         const proposalsData = await proposalService.getMyProposals();
+        console.log("[MyWork] Proposals fetched:", proposalsData.length, proposalsData);
         setProposals(proposalsData);
         setProjects([]);
       } else {
         const status = activeTab === "Active" ? "ACTIVE" : "COMPLETED";
+        console.log("[MyWork] Fetching projects with freelancerId:", user?.id, "status:", status);
         const projectsData = await projectService.getProjects({
           freelancerId: user?.id,
           status: status as any,
         });
+        console.log("[MyWork] Projects fetched:", projectsData.length, projectsData);
         setProjects(projectsData);
         setProposals([]);
       }
@@ -101,8 +104,8 @@ export default function MyWorkScreen() {
       ? proposals.map((p) => ({
           id: p.id,
           title: p.project?.title || "Unknown Project",
-          client: p.project?.client?.userName || "Unknown Client",
-          budget: `$${p.bidAmount.toFixed(2)}`,
+          client: p.project?.client?.userName || (p.project?.client as any)?.user_name || "Unknown Client",
+          budget: `$${(p.bidAmount || 0).toFixed(2)}`,
           deadline: p.project?.duration || "N/A",
           location: p.project?.location || "Remote",
           status: p.status === "ACCEPTED" ? "inProgress" : "proposal",
@@ -113,15 +116,15 @@ export default function MyWorkScreen() {
       : projects.map((p) => ({
           id: p.id,
           title: p.title,
-          client: p.client?.userName || "Unknown Client",
-          budget: `$${p.budget.toFixed(2)}`,
+          client: p.client?.userName || (p.client as any)?.user_name || "Unknown Client",
+          budget: `$${(p.budget || 0).toFixed(2)}`,
           deadline: p.duration || "N/A",
           location: p.location || "Remote",
           progress: p.progress || 0,
           status:
-            p.status === "ACTIVE"
+            p.status?.toUpperCase() === "ACTIVE"
               ? "inProgress"
-              : p.status === "COMPLETED"
+              : p.status?.toUpperCase() === "COMPLETED"
                 ? "completed"
                 : "available",
           milestones: [],

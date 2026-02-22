@@ -48,7 +48,11 @@ export default function CreateDispute() {
             }
             try {
                 setLoadingProjects(true);
-                const data = await projectService.getProjects({ freelancerId: user.id });
+                // Fetch projects filtered by the current user's role
+                const roleFilter = user.role === 'Client'
+                    ? { clientId: user.id }
+                    : { freelancerId: user.id };
+                const data = await projectService.getProjects(roleFilter);
                 setProjects(data);
                 if (initialProjectId) {
                     const found = data.find((p) => p.id === initialProjectId);

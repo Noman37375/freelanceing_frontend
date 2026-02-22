@@ -68,7 +68,7 @@ export default function DisputeMessageThread({ messages, currentUserId }: Disput
             {messages.map((message, index) => {
                 const isCurrentUser = message.senderId === currentUserId;
                 const isInternal = message.isInternal;
-                const roleColor = getRoleColor(message.sender.role);
+                const roleColor = getRoleColor(message.sender?.role || '');
 
                 return (
                     <View
@@ -87,10 +87,12 @@ export default function DisputeMessageThread({ messages, currentUserId }: Disput
                         <View style={styles.messageContent}>
                             {!isCurrentUser && (
                                 <View style={styles.senderInfo}>
-                                    <Text style={styles.senderName}>{message.sender.name}</Text>
+                                    <Text style={styles.senderName}>
+                                        {message.sender?.user_name || message.sender?.name || message.sender?.userName || 'Unknown'}
+                                    </Text>
                                     <View style={[styles.roleBadge, { backgroundColor: `${roleColor}15` }]}>
                                         <Text style={[styles.roleText, { color: roleColor }]}>
-                                            {getRoleLabel(message.sender.role)}
+                                            {getRoleLabel(message.sender?.role || '')}
                                         </Text>
                                     </View>
                                 </View>

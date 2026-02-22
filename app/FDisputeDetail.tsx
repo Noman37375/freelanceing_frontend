@@ -11,7 +11,14 @@ export default function FDisputeDetail() {
 
   if (!parsedDispute) return <View style={styles.container}><Text>No dispute data found!</Text></View>;
 
-  const { clientName, projectTitle, reason, status, createdDate, amount } = parsedDispute;
+  const clientName = parsedDispute.client?.user_name || parsedDispute.client?.userName || 'Unknown Client';
+  const projectTitle = parsedDispute.project?.title || 'Unknown Project';
+  const reason = parsedDispute.reason;
+  const status = parsedDispute.status;
+  const createdDate = parsedDispute.createdAt
+    ? new Date(parsedDispute.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : 'N/A';
+  const amount = parsedDispute.amount;
 
   const getStatusConfig = (status: string) => {
     switch (status) {

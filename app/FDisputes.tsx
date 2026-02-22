@@ -55,8 +55,7 @@ export default function FDisputes() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      // If there's no history, redirect to the main messages or home tab
-      router.replace('./(tabs)/messages');
+      router.replace('/(tabs)/messages' as any);
     }
   };
 
@@ -154,8 +153,8 @@ export default function FDisputes() {
                   style={styles.card}
                   activeOpacity={0.8}
                   onPress={() => router.push({
-                    pathname: '/FDisputeDetail' as any,
-                    params: { dispute: JSON.stringify(dispute) },
+                    pathname: '/resolution-center' as any,
+                    params: { disputeId: dispute.id },
                   })}
                 >
                   <View style={styles.cardHeader}>
@@ -164,10 +163,14 @@ export default function FDisputes() {
                     </View>
                     <View style={styles.headerText}>
                       <Text style={styles.projectTitle} numberOfLines={1}>
-                        {dispute.title || 'Unknown Project'}
+                        {dispute.project?.title || 'Unknown Project'}
                       </Text>
                       <Text style={styles.clientName}>
-                        {dispute.respondent?.role === 'client' ? `Client: ${dispute.respondent.name}` : `Respondent: ${dispute.respondent?.name || 'Unknown'}`}
+                        {dispute.client?.user_name
+                          ? `Client: ${dispute.client.user_name}`
+                          : dispute.client?.userName
+                          ? `Client: ${dispute.client.userName}`
+                          : 'Unknown Party'}
                       </Text>
                     </View>
                     <ChevronRight size={18} color="#94A3B8" />

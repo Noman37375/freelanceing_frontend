@@ -16,7 +16,6 @@ import {
     ArrowLeft,
     CheckCircle,
     XCircle,
-    UserPlus,
     AlertTriangle,
     DollarSign,
 } from 'lucide-react-native';
@@ -41,7 +40,6 @@ interface BackendDispute {
     assignedMediatorId?: string;
     resolutionType?: string;
     resolutionDescription?: string;
-    resolutionTerms?: string[];
     resolvedBy?: string;
     resolvedAt?: string;
     createdAt: string;
@@ -49,7 +47,7 @@ interface BackendDispute {
     project?: { id: string; title: string; description?: string };
     client?: { id: string; user_name: string; email: string };
     freelancer?: { id: string; user_name: string; email: string };
-    mediator?: { id: string; user_name: string };
+    mediator?: { id: string; user_name?: string; userName?: string };
 }
 
 export default function AdminDisputeDetail() {
@@ -61,13 +59,14 @@ export default function AdminDisputeDetail() {
     const [messages, setMessages] = useState<any[]>([]);
     const [evidence, setEvidence] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [resolving, setResolving] = useState(false);
+    const [resolvingAction, setResolvingAction] = useState<'resolve' | 'deny' | null>(null);
+    const [resolveError, setResolveError] = useState('');
+    const [resolveSuccess, setResolveSuccess] = useState('');
 
     // Resolution form state
     const [resolutionType, setResolutionType] = useState<DisputeResolution['type']>('no_refund');
     const [resolutionAmount, setResolutionAmount] = useState('');
     const [resolutionDescription, setResolutionDescription] = useState('');
-    const [resolutionTerms, setResolutionTerms] = useState('');
 
     useEffect(() => {
         loadDispute();
@@ -104,55 +103,31 @@ export default function AdminDisputeDetail() {
     const handleResolve = async (decision: 'resolve' | 'deny') => {
         if (!dispute) return;
 
-        if (decision === 'resolve' && !resolutionDescription.trim()) {
-            Alert.alert('Required', 'Please provide a resolution description');
+        setResolveError('');
+        setResolveSuccess('');
+
+        if (!resolutionDescription.trim()) {
+            setResolveError('Please provide a resolution description before proceeding.');
             return;
         }
 
-        Alert.alert(
-            decision === 'resolve' ? 'Resolve Dispute' : 'Deny Dispute',
-            `Are you sure you want to ${decision} this dispute?`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: decision === 'resolve' ? 'Resolve' : 'Deny',
-                    style: decision === 'resolve' ? 'default' : 'destructive',
-                    onPress: async () => {
-                        try {
-                            setResolving(true);
-
-                            await adminService.resolveDispute(dispute.id, {
-                                type: resolutionType,
-                                amount: resolutionAmount ? parseFloat(resolutionAmount) : undefined,
-                                description: resolutionDescription,
-                                terms: resolutionTerms.split('\n').filter(t => t.trim()),
-                                decision: decision
-                            });
-
-                            Alert.alert(
-                                'Success',
-                                `Dispute ${decision === 'resolve' ? 'resolved' : 'denied'} successfully`
-                            );
-                            router.back();
-                        } catch (error) {
-                            Alert.alert('Error', `Failed to ${decision} dispute`);
-                        } finally {
-                            setResolving(false);
-                        }
-                    },
-                },
-            ]
-        );
-    };
-
-    const handleAssignMediator = async () => {
-        if (!dispute) return;
         try {
-            await adminService.assignMediator(dispute.id, user?.id || '');
-            Alert.alert('Success', 'You have been assigned as the mediator');
-            loadDispute();
-        } catch (error) {
-            Alert.alert('Error', 'Failed to assign mediator');
+            setResolvingAction(decision);
+
+            await adminService.resolveDispute(dispute.id, {
+                type: resolutionType,
+                amount: resolutionAmount ? parseFloat(resolutionAmount) : undefined,
+                description: resolutionDescription,
+                decision: decision,
+            });
+
+            setResolveSuccess(`Dispute ${decision === 'resolve' ? 'resolved' : 'denied'} successfully.`);
+            setTimeout(() => router.back(), 1500);
+        } catch (error: any) {
+            const msg = error?.message || `Failed to ${decision} dispute. Please try again.`;
+            setResolveError(msg);
+        } finally {
+            setResolvingAction(null);
         }
     };
 
@@ -356,7 +331,7 @@ export default function AdminDisputeDetail() {
                 )}
 
                 {/* Resolution Form */}
-                {dispute.status !== 'resolved' && dispute.status !== 'closed' && dispute.status !== 'Resolved' && dispute.status !== 'Denied' && (
+                {!['resolved', 'closed', 'denied', 'Resolved', 'Denied', 'Closed'].includes(dispute.status) && (
                     <View style={styles.resolutionCard}>
                         <Text style={styles.sectionTitle}>Resolution Decision</Text>
 
@@ -414,36 +389,40 @@ export default function AdminDisputeDetail() {
                             />
                         </View>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.inputLabel}>Terms (one per line)</Text>
-                            <TextInput
-                                style={styles.textArea}
-                                placeholder="Enter resolution terms..."
-                                placeholderTextColor="#94A3B8"
-                                value={resolutionTerms}
-                                onChangeText={setResolutionTerms}
-                                multiline
-                                numberOfLines={4}
-                                textAlignVertical="top"
-                            />
-                        </View>
+                        {resolveError ? (
+                            <View style={styles.inlineBannerError}>
+                                <Text style={styles.inlineBannerText}>{resolveError}</Text>
+                            </View>
+                        ) : null}
+
+                        {resolveSuccess ? (
+                            <View style={styles.inlineBannerSuccess}>
+                                <Text style={styles.inlineBannerText}>{resolveSuccess}</Text>
+                            </View>
+                        ) : null}
 
                         <View style={styles.actionButtons}>
                             <TouchableOpacity
-                                style={[styles.actionButton, styles.denyButton]}
+                                style={[styles.actionButton, styles.denyButton, resolvingAction !== null && { opacity: 0.7 }]}
                                 onPress={() => handleResolve('deny')}
-                                disabled={resolving}
+                                disabled={resolvingAction !== null}
                             >
-                                <XCircle size={20} color="#FFFFFF" />
-                                <Text style={styles.actionButtonText}>Deny Dispute</Text>
+                                {resolvingAction === 'deny' ? (
+                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                ) : (
+                                    <>
+                                        <XCircle size={20} color="#FFFFFF" />
+                                        <Text style={styles.actionButtonText}>Deny Dispute</Text>
+                                    </>
+                                )}
                             </TouchableOpacity>
 
                             <TouchableOpacity
-                                style={[styles.actionButton, styles.resolveButton]}
+                                style={[styles.actionButton, styles.resolveButton, resolvingAction !== null && { opacity: 0.7 }]}
                                 onPress={() => handleResolve('resolve')}
-                                disabled={resolving}
+                                disabled={resolvingAction !== null}
                             >
-                                {resolving ? (
+                                {resolvingAction === 'resolve' ? (
                                     <ActivityIndicator size="small" color="#FFFFFF" />
                                 ) : (
                                     <>
@@ -736,5 +715,28 @@ const styles = StyleSheet.create({
     },
     bottomSpacer: {
         height: 20,
+    },
+    inlineBannerError: {
+        backgroundColor: '#FEE2E2',
+        borderRadius: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#FECACA',
+    },
+    inlineBannerSuccess: {
+        backgroundColor: '#D1FAE5',
+        borderRadius: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#A7F3D0',
+    },
+    inlineBannerText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#1E293B',
     },
 });

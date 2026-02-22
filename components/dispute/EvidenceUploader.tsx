@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, Platform, ActivityIndicator } from 'react-native';
 import { File, Image as ImageIcon, Video, X, Check } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
+import { disputeService } from '@/services/disputeService';
 import type { DisputeEvidence } from '@/models/Dispute';
 
 interface EvidenceUploaderProps {
@@ -77,20 +78,39 @@ export default function EvidenceUploader({
 
     const uploadFile = async () => {
         if (!selectedFile) return;
-
-        setUploading(true);
-        try {
-            // Simulation: In real apps, upload to backend or Supabase storage
-            await new Promise((resolve) => setTimeout(resolve, 1500));
-
-            const newEvidence: DisputeEvidence = {
+        // Skip real upload when creating a new dispute (no ID yet)
+        if (disputeId === 'new') {
+            const staged: DisputeEvidence = {
                 id: Date.now().toString(),
                 type: selectedFile.type,
                 name: selectedFile.name,
                 url: selectedFile.uri,
                 description: '',
-                uploadedBy: 'current-user-id',
+                uploadedBy: 'pending',
                 uploadedAt: new Date().toISOString(),
+            };
+            onUploadComplete(staged);
+            setSelectedFile(null);
+            return;
+        }
+
+        setUploading(true);
+        try {
+            const uploaded = await disputeService.uploadEvidence(disputeId, {
+                fileName: selectedFile.name,
+                fileType: selectedFile.mimeType || selectedFile.type,
+                fileUrl: selectedFile.uri,
+                description: '',
+            });
+
+            const newEvidence: DisputeEvidence = {
+                id: uploaded?.id || Date.now().toString(),
+                type: selectedFile.type,
+                name: uploaded?.fileName || selectedFile.name,
+                url: uploaded?.fileUrl || selectedFile.uri,
+                description: uploaded?.description || '',
+                uploadedBy: uploaded?.uploadedBy || '',
+                uploadedAt: uploaded?.createdAt || new Date().toISOString(),
             };
 
             onUploadComplete(newEvidence);
@@ -98,7 +118,7 @@ export default function EvidenceUploader({
             Alert.alert('Success', 'Evidence uploaded successfully');
         } catch (error) {
             console.error('Error uploading file:', error);
-            Alert.alert('Error', 'Failed to upload evidence');
+            Alert.alert('Error', 'Failed to upload evidence. Please try again.');
         } finally {
             setUploading(false);
         }
@@ -158,7 +178,7 @@ export default function EvidenceUploader({
                         disabled={uploading}
                     >
                         {uploading ? (
-                            <Text style={styles.confirmButtonText}>Uploading...</Text>
+                            <ActivityIndicator size="small" color="#FFFFFF" />
                         ) : (
                             <>
                                 <Check size={18} color="#FFFFFF" />

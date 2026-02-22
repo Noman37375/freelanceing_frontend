@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Clock, CheckCircle2, XCircle, AlertCircle, ShieldAlert, Eye } from 'lucide-react-native';
+
 import type { DisputeStatus } from '@/models/Dispute';
 
 interface DisputeStatusBadgeProps {
@@ -10,63 +11,29 @@ interface DisputeStatusBadgeProps {
 
 export default function DisputeStatusBadge({ status, size = 'medium' }: DisputeStatusBadgeProps) {
   const getStatusConfig = (status: DisputeStatus) => {
-    switch (status) {
+    // Normalize to lowercase snake_case to handle legacy PascalCase values from DB
+    const normalized = (status || '').toLowerCase().replace(/ /g, '_');
+
+    switch (normalized) {
       case 'open':
-        return {
-          color: '#F59E0B',
-          bg: '#FFFBEB',
-          icon: Clock,
-          label: 'Open',
-        };
+      case 'pending':
+        return { color: '#F59E0B', bg: '#FFFBEB', icon: Clock, label: 'Open' };
       case 'under_review':
-        return {
-          color: '#282A32',
-          bg: '#EFF6FF',
-          icon: Eye,
-          label: 'Under Review',
-        };
+        return { color: '#282A32', bg: '#EFF6FF', icon: Eye, label: 'Under Review' };
       case 'awaiting_response':
-        return {
-          color: '#444751',
-          bg: '#F5F3FF',
-          icon: AlertCircle,
-          label: 'Awaiting Response',
-        };
+        return { color: '#444751', bg: '#F5F3FF', icon: AlertCircle, label: 'Awaiting Response' };
       case 'mediation':
-        return {
-          color: '#EC4899',
-          bg: '#FDF2F8',
-          icon: ShieldAlert,
-          label: 'In Mediation',
-        };
+        return { color: '#EC4899', bg: '#FDF2F8', icon: ShieldAlert, label: 'In Mediation' };
       case 'resolved':
-        return {
-          color: '#10B981',
-          bg: '#ECFDF5',
-          icon: CheckCircle2,
-          label: 'Resolved',
-        };
+        return { color: '#10B981', bg: '#ECFDF5', icon: CheckCircle2, label: 'Resolved' };
       case 'closed':
-        return {
-          color: '#64748B',
-          bg: '#F1F5F9',
-          icon: CheckCircle2,
-          label: 'Closed',
-        };
+        return { color: '#64748B', bg: '#F1F5F9', icon: CheckCircle2, label: 'Closed' };
+      case 'denied':
+        return { color: '#EF4444', bg: '#FEF2F2', icon: XCircle, label: 'Denied' };
       case 'escalated':
-        return {
-          color: '#EF4444',
-          bg: '#FEF2F2',
-          icon: ShieldAlert,
-          label: 'Escalated',
-        };
+        return { color: '#EF4444', bg: '#FEF2F2', icon: ShieldAlert, label: 'Escalated' };
       default:
-        return {
-          color: '#64748B',
-          bg: '#F1F5F9',
-          icon: Clock,
-          label: 'Unknown',
-        };
+        return { color: '#64748B', bg: '#F1F5F9', icon: Clock, label: status || 'Unknown' };
     }
   };
 

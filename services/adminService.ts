@@ -2,7 +2,6 @@ import { User, FreelancerProfile, ClientProfile } from '@/models/User';
 import { Project } from '@/models/Project';
 import { API_BASE_URL } from '@/config';
 import { storageGet } from '@/utils/storage';
-import { CloudCog } from 'lucide-react-native';
 
 const getAuthToken = async (): Promise<string | null> => {
     return await storageGet('accessToken');
@@ -87,6 +86,13 @@ export const adminService = {
     },
 
     // Disputes
+    getDisputeStats: async (): Promise<any> => {
+        const response = await apiCall('/api/v1/admin/disputes/statistics', {
+            method: 'GET',
+        });
+        return response?.data?.stats || {};
+    },
+
     getAllDisputes: async (filters: any = {}): Promise<any[]> => {
         const params = new URLSearchParams();
         if (filters.status) params.append('status', filters.status);
@@ -102,14 +108,6 @@ export const adminService = {
         const response = await apiCall(`/api/v1/admin/disputes/${disputeId}/resolve`, {
             method: 'PUT',
             body: JSON.stringify(resolutionData),
-        });
-        return response?.data?.dispute;
-    },
-
-    assignMediator: async (disputeId: string, mediatorId: string): Promise<any> => {
-        const response = await apiCall(`/api/v1/admin/disputes/${disputeId}/assign`, {
-            method: 'PUT',
-            body: JSON.stringify({ mediatorId }),
         });
         return response?.data?.dispute;
     },

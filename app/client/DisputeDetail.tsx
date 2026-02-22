@@ -56,21 +56,25 @@ export default function DisputeDetail() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Project Information</Text>
           <View style={styles.infoCard}>
-            <Text style={styles.projectTitleText}>{dispute.projectTitle}</Text>
+            <Text style={styles.projectTitleText}>{dispute.project?.title || 'Unknown Project'}</Text>
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
                 <User size={16} color="#6B7280" />
-                <Text style={styles.infoText}>{dispute.clientName}</Text>
+                <Text style={styles.infoText}>
+                  {dispute.freelancer?.user_name || dispute.freelancer?.userName || 'Unknown Freelancer'}
+                </Text>
               </View>
               <View style={styles.infoItem}>
                 <DollarSign size={16} color="#6B7280" />
-                <Text style={styles.infoText}>{dispute.amount}</Text>
+                <Text style={styles.infoText}>${dispute.amount?.toFixed(2) || '0.00'}</Text>
               </View>
             </View>
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
                 <Calendar size={16} color="#6B7280" />
-                <Text style={styles.infoText}>{dispute.createdDate}</Text>
+                <Text style={styles.infoText}>
+                  {dispute.createdAt ? new Date(dispute.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                </Text>
               </View>
             </View>
           </View>
@@ -87,12 +91,14 @@ export default function DisputeDetail() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Admin Review</Text>
           <View style={styles.reviewCard}>
-            {dispute.status === 'Pending' ? (
-              <Text style={styles.reviewMessage}>Under review. Expected resolution: 24-48 hours.</Text>
-            ) : dispute.status === 'Resolved' ? (
-              <Text style={styles.reviewMessage}>Decision: Favor of user. Funds returned to wallet.</Text>
+            {dispute.resolutionDescription ? (
+              <Text style={styles.reviewMessage}>{dispute.resolutionDescription}</Text>
+            ) : (['resolved', 'Resolved'].includes(dispute.status)) ? (
+              <Text style={styles.reviewMessage}>This dispute has been resolved by admin.</Text>
+            ) : (['closed', 'Denied', 'denied'].includes(dispute.status)) ? (
+              <Text style={styles.reviewMessage}>This dispute has been closed by admin.</Text>
             ) : (
-              <Text style={styles.reviewMessage}>Decision: Dispute denied based on project evidence.</Text>
+              <Text style={styles.reviewMessage}>Your dispute is under review. Our team will respond within 24-48 hours.</Text>
             )}
           </View>
         </View>

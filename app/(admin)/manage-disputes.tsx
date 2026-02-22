@@ -56,11 +56,22 @@ export default function ManageDisputes() {
         try {
             if (showLoading) setLoading(true);
 
-            const data = await adminService.getAllDisputes();
+            const [data, statsData] = await Promise.all([
+                adminService.getAllDisputes(),
+                adminService.getDisputeStats().catch(() => null),
+            ]);
             setDisputes(data);
 
-            // Calculate stats
-            calculateStats(data);
+            if (statsData) {
+                setStats({
+                    total: statsData.total ?? data.length,
+                    open: statsData.open ?? 0,
+                    resolved: statsData.resolved ?? 0,
+                    avgResolutionTime: statsData.avgResolutionDays ?? 0,
+                });
+            } else {
+                calculateStats(data);
+            }
         } catch (error: any) {
             console.error('Failed to load disputes:', error);
         } finally {
@@ -75,22 +86,45 @@ export default function ManageDisputes() {
     }, []);
 
     const calculateStats = (data: any[]) => {
-        const total = data.length;
-        const open = data.filter((d) => d.status === 'open' || d.status === 'under_review' || d.status === 'Pending').length;
-        const resolved = data.filter((d) => d.status === 'resolved' || d.status === 'Resolved').length;
+        const openStatuses = ['open', 'under_review', 'awaiting_response', 'mediation', 'escalated', 'Pending', 'Under Review'];
+        const resolvedStatuses = ['resolved', 'Resolved'];
 
-        // Calculate average resolution time (mock calculation)
-        const avgResolutionTime = 3.5; // days
+        const total = data.length;
+        const open = data.filter((d) => openStatuses.includes(d.status)).length;
+        const resolved = data.filter((d) => resolvedStatuses.includes(d.status)).length;
+
+        const resolvedWithDates = data.filter(
+            (d) => resolvedStatuses.includes(d.status) && d.resolvedAt && d.createdAt
+        );
+        const avgMs =
+            resolvedWithDates.length > 0
+                ? resolvedWithDates.reduce((sum: number, d: any) => {
+                      return sum + (new Date(d.resolvedAt).getTime() - new Date(d.createdAt).getTime());
+                  }, 0) / resolvedWithDates.length
+                : 0;
+        const avgResolutionTime = parseFloat((avgMs / (1000 * 60 * 60 * 24)).toFixed(1));
 
         setStats({ total, open, resolved, avgResolutionTime });
+    };
+
+    // Map DB statuses (both legacy PascalCase and new snake_case) to filter values
+    const normalizeStatus = (status: string): string => {
+        const map: Record<string, string> = {
+            Pending: 'open',
+            'Under Review': 'under_review',
+            Resolved: 'resolved',
+            Denied: 'closed',
+            Closed: 'closed',
+        };
+        return map[status] || status;
     };
 
     const filterDisputes = () => {
         let filtered = [...disputes];
 
-        // Filter by status
+        // Filter by status using normalized comparison
         if (statusFilter !== 'all') {
-            filtered = filtered.filter((d) => d.status === statusFilter);
+            filtered = filtered.filter((d) => normalizeStatus(d.status) === statusFilter);
         }
 
         // Filter by search query

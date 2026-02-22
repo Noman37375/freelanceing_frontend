@@ -44,14 +44,21 @@ export type DisputeReason =
   | 'intellectual_property'
   | 'other';
 
-export type DisputeStatus = 
+export type DisputeStatus =
   | 'open'
   | 'under_review'
   | 'awaiting_response'
   | 'mediation'
   | 'resolved'
   | 'closed'
-  | 'escalated';
+  | 'escalated'
+  | 'denied'
+  // Legacy PascalCase values from DB (backwards compatibility)
+  | 'Pending'
+  | 'Resolved'
+  | 'Denied'
+  | 'Under Review'
+  | string;
 
 export interface DisputeEvidence {
   id: string;
@@ -81,7 +88,6 @@ export interface DisputeResolution {
   type: 'full_refund' | 'partial_refund' | 'no_refund' | 'additional_work' | 'payment_release' | 'custom';
   amount?: number;
   description: string;
-  terms: string[];
   agreedByInitiator: boolean;
   agreedByRespondent: boolean;
   enforcedByMediator: boolean;

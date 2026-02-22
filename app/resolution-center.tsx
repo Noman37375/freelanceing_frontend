@@ -197,7 +197,7 @@ export default function ResolutionCenter() {
                             </View>
                             <View style={styles.infoContent}>
                                 <Text style={styles.infoLabel}>PROJECT</Text>
-                                <Text style={styles.infoValue}>{dispute.title || 'N/A'}</Text>
+                                <Text style={styles.infoValue}>{dispute.project?.title || dispute.title || 'N/A'}</Text>
                             </View>
                         </View>
 
@@ -208,7 +208,7 @@ export default function ResolutionCenter() {
                             <View style={styles.infoContent}>
                                 <Text style={styles.infoLabel}>DISPUTED AMOUNT</Text>
                                 <Text style={styles.infoValue}>
-                                    {dispute.currency} {dispute.amount.toFixed(2)}
+                                    ${dispute.amount?.toFixed(2) || '0.00'}
                                 </Text>
                             </View>
                         </View>

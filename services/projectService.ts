@@ -55,11 +55,12 @@ export const projectService = {
    * Get all projects with optional filters
    */
   getProjects: async (filters?: {
-    status?: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+    status?: 'ACTIVE' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
     category?: string;
     search?: string;
     clientId?: string;
     freelancerId?: string;
+    available?: boolean;
   }): Promise<Project[]> => {
     const params = new URLSearchParams();
     if (filters?.status) params.append('status', filters.status);
@@ -67,6 +68,7 @@ export const projectService = {
     if (filters?.search) params.append('search', filters.search);
     if (filters?.clientId) params.append('clientId', filters.clientId);
     if (filters?.freelancerId) params.append('freelancerId', filters.freelancerId);
+    if (filters?.available === true) params.append('available', 'true');
 
     const response = await apiCall(`/api/v1/projects?${params.toString()}`, {
       method: 'GET',

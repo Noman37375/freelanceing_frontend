@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Platform, StatusBar, Image } from 'react-native';
 import { Briefcase, DollarSign, MessageSquare, AlertCircle, Plus, Search, ArrowRight, Wallet, UserCheck, TrendingUp, Clock, CheckCircle2, Sparkles } from 'lucide-react-native';
-import StatsCard from '@/components/ClientStatsCard';
 import ProjectCard from '@/components/ClientProjectCard';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,7 +18,9 @@ export default function ClientHome() {
   const [stats, setStats] = useState({
     total: 0,
     totalSpent: 0,
-    messages: 0,
+    active: 0,
+    inProgress: 0,
+    completed: 0,
     disputes: 0,
   });
 
@@ -42,11 +43,16 @@ export default function ClientHome() {
       const totalSpent = fetchedProjects
         .filter(p => p.status === 'COMPLETED')
         .reduce((sum, p) => sum + (p.budget || 0), 0);
+      const active = fetchedProjects.filter(p => p.status === 'ACTIVE').length;
+      const inProgress = fetchedProjects.filter(p => p.status === 'IN_PROGRESS').length;
+      const completed = fetchedProjects.filter(p => p.status === 'COMPLETED').length;
 
       setStats({
         total,
         totalSpent,
-        messages: 0,
+        active,
+        inProgress,
+        completed,
         disputes: disputes.length,
       });
     } catch (error: any) {
@@ -143,7 +149,7 @@ export default function ClientHome() {
                 <View style={styles.statIconBox}>
                   <TrendingUp size={20} color="#444751" strokeWidth={2.5} />
                 </View>
-                <Text style={styles.statValue}>{Math.round(stats.total * 0.8)}</Text>
+                <Text style={styles.statValue}>{stats.inProgress}</Text>
                 <Text style={styles.statLabel}>Active</Text>
               </TouchableOpacity>
 
@@ -154,7 +160,7 @@ export default function ClientHome() {
                 <View style={styles.statIconBox}>
                   <CheckCircle2 size={20} color="#444751" strokeWidth={2.5} />
                 </View>
-                <Text style={styles.statValue}>{Math.round(stats.total * 0.2)}</Text>
+                <Text style={styles.statValue}>{stats.completed}</Text>
                 <Text style={styles.statLabel}>Done</Text>
               </TouchableOpacity>
             </View>

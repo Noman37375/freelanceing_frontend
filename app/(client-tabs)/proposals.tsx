@@ -17,7 +17,7 @@ export default function Proposals() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'ACCEPTED' | 'REJECTED'>('ALL');
-  const [updatingProposalId, setUpdatingProposalId] = useState<string | null>(null);
+  const [updatingAction, setUpdatingAction] = useState<{ id: string; action: 'accept' | 'reject' } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resultModal, setResultModal] = useState<ResultModal>(null);
   const [confirmModal, setConfirmModal] = useState<ConfirmModal>(null);
@@ -59,10 +59,10 @@ export default function Proposals() {
   };
 
   const handleAccept = async (proposalId: string) => {
-    if (updatingProposalId) return;
+    if (updatingAction) return;
     setConfirmModal(null);
     try {
-      setUpdatingProposalId(proposalId);
+      setUpdatingAction({ id: proposalId, action: 'accept' });
       await proposalService.updateProposalStatus(proposalId, 'ACCEPTED');
       await fetchProposals();
       setActiveFilter('ACCEPTED');
@@ -70,15 +70,15 @@ export default function Proposals() {
     } catch (err: any) {
       setResultModal({ type: 'error', action: 'accept', message: err?.message || 'Failed to accept proposal.' });
     } finally {
-      setUpdatingProposalId(null);
+      setUpdatingAction(null);
     }
   };
 
   const handleReject = async (proposalId: string) => {
-    if (updatingProposalId) return;
+    if (updatingAction) return;
     setConfirmModal(null);
     try {
-      setUpdatingProposalId(proposalId);
+      setUpdatingAction({ id: proposalId, action: 'reject' });
       await proposalService.updateProposalStatus(proposalId, 'REJECTED');
       await fetchProposals();
       setActiveFilter('REJECTED');
@@ -86,7 +86,7 @@ export default function Proposals() {
     } catch (err: any) {
       setResultModal({ type: 'error', action: 'reject', message: err?.message || 'Failed to reject proposal.' });
     } finally {
-      setUpdatingProposalId(null);
+      setUpdatingAction(null);
     }
   };
 
@@ -265,15 +265,15 @@ export default function Proposals() {
                         style={[
                           styles.actionButton,
                           styles.rejectButton,
-                          updatingProposalId === proposal.id && styles.disabledButton
+                          updatingAction?.id === proposal.id && styles.disabledButton
                         ]}
                         onPress={(e) => {
                           e.stopPropagation();
-                          if (updatingProposalId !== proposal.id) openConfirm('reject', proposal);
+                          if (!updatingAction) openConfirm('reject', proposal);
                         }}
-                        disabled={updatingProposalId === proposal.id}
+                        disabled={!!updatingAction?.id && updatingAction.id === proposal.id}
                       >
-                        {updatingProposalId === proposal.id ? (
+                        {updatingAction?.id === proposal.id && updatingAction.action === 'reject' ? (
                           <ActivityIndicator size="small" color="#C2C2C8" />
                         ) : (
                           <>
@@ -286,15 +286,15 @@ export default function Proposals() {
                         style={[
                           styles.actionButton,
                           styles.acceptButton,
-                          updatingProposalId === proposal.id && styles.disabledButton
+                          updatingAction?.id === proposal.id && styles.disabledButton
                         ]}
                         onPress={(e) => {
                           e.stopPropagation();
-                          if (updatingProposalId !== proposal.id) openConfirm('accept', proposal);
+                          if (!updatingAction) openConfirm('accept', proposal);
                         }}
-                        disabled={updatingProposalId === proposal.id}
+                        disabled={!!updatingAction?.id && updatingAction.id === proposal.id}
                       >
-                        {updatingProposalId === proposal.id ? (
+                        {updatingAction?.id === proposal.id && updatingAction.action === 'accept' ? (
                           <ActivityIndicator size="small" color="#FFFFFF" />
                         ) : (
                           <>

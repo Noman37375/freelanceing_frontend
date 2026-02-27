@@ -39,7 +39,7 @@ export default function FindProjectsScreen() {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const filters: any = { status: 'ACTIVE' };
+      const filters: any = { status: 'ACTIVE', available: true };
       if (filterType !== 'All') {
         filters.category = filterType;
       }

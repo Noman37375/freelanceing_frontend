@@ -67,7 +67,7 @@ export default function HomeScreen() {
       setLoading(true);
       const [servicesResult, projectsResult] = await Promise.allSettled([
         adminService.getServiceCategories(),
-        projectService.getProjects({ status: 'ACTIVE' }),
+        projectService.getProjects({ status: 'ACTIVE', available: true }),
       ]);
       setCategories(servicesResult.status === 'fulfilled' ? (servicesResult.value || []) : []);
       setRecentProjects(projectsResult.status === 'fulfilled' ? (projectsResult.value || []) : []);

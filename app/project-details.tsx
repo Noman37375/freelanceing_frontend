@@ -89,7 +89,7 @@ export default function ProjectDetails() {
   }
 
   const isFreelancer = user?.role === 'Freelancer';
-  const showBidButton = isFreelancer && project.status === 'ACTIVE' && !project.freelancerId;
+  const showBidButton = isFreelancer && project.status === 'ACTIVE';
 
   return (
     <View style={styles.container}>

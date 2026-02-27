@@ -82,7 +82,7 @@ export default function MyWorkScreen() {
         setProposals(proposalsData);
         setProjects([]);
       } else {
-        const status = activeTab === "Active" ? "ACTIVE" : "COMPLETED";
+        const status = activeTab === "Active" ? "IN_PROGRESS" : "COMPLETED";
         console.log("[MyWork] Fetching projects with freelancerId:", user?.id, "status:", status);
         const projectsData = await projectService.getProjects({
           freelancerId: user?.id,
@@ -122,7 +122,7 @@ export default function MyWorkScreen() {
           location: p.location || "Remote",
           progress: p.progress || 0,
           status:
-            p.status?.toUpperCase() === "ACTIVE"
+            p.status?.toUpperCase() === "IN_PROGRESS"
               ? "inProgress"
               : p.status?.toUpperCase() === "COMPLETED"
                 ? "completed"

@@ -14,7 +14,7 @@ export default function ManageProjects() {
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [editTitle, setEditTitle] = useState('');
     const [editBudget, setEditBudget] = useState('');
-    const [editStatus, setEditStatus] = useState<'ACTIVE' | 'COMPLETED' | 'CANCELLED'>('ACTIVE');
+    const [editStatus, setEditStatus] = useState<'ACTIVE' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'>('ACTIVE');
     const [isActionLoading, setIsLoadingAction] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -104,10 +104,11 @@ export default function ManageProjects() {
 
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'ACTIVE': return { bg: '#ECFDF5', text: '#10B981' };
-            case 'COMPLETED': return { bg: '#E5E4EA', text: '#282A32' };
-            case 'CANCELLED': return { bg: '#FEF2F2', text: '#EF4444' };
-            default: return { bg: '#F8FAFC', text: '#64748B' };
+            case 'ACTIVE':      return { bg: '#ECFDF5', text: '#10B981' };
+            case 'IN_PROGRESS': return { bg: '#EEF2FF', text: '#4F46E5' };
+            case 'COMPLETED':   return { bg: '#E5E4EA', text: '#282A32' };
+            case 'CANCELLED':   return { bg: '#FEF2F2', text: '#EF4444' };
+            default:            return { bg: '#F8FAFC', text: '#64748B' };
         }
     };
 
@@ -253,7 +254,7 @@ export default function ManageProjects() {
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Status</Text>
                             <View style={styles.statusOptions}>
-                                {['ACTIVE', 'COMPLETED', 'CANCELLED'].map((status) => {
+                                {['ACTIVE', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].map((status) => {
                                     const style = getStatusStyle(status);
                                     return (
                                         <TouchableOpacity

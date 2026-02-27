@@ -78,7 +78,7 @@ export default function ProjectsScreen() {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const filters: any = { status: 'ACTIVE' };
+      const filters: any = { status: 'ACTIVE', available: true };
       if (selectedCategory !== 'All') {
         filters.category = selectedCategory;
       }

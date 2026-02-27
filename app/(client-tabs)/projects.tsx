@@ -94,7 +94,7 @@ export default function Projects() {
 
   const stats = {
     total: projects.length,
-    active: projects.filter(p => p.status === 'ACTIVE' && !p.freelancerId).length,
+    active: projects.filter(p => p.status === 'ACTIVE').length,
     completed: projects.filter(p => p.status === 'COMPLETED').length,
     cancelled: projects.filter(p => p.status === 'CANCELLED').length,
   };

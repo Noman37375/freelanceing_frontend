@@ -12,7 +12,7 @@ export interface Project {
   tags: string[];
   category?: string;
   duration?: string;
-  status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  status: 'ACTIVE' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   progress?: number;
   updatedAt: string;
   client?: {
@@ -120,29 +120,14 @@ export interface ProjectContract {
 }
 
 /**
- * Get display status for a project
- * If freelancerId exists, it means proposal is accepted and project is "Assigned/In Progress"
- * Otherwise, show the actual database status
+ * Get display status for a project from its DB status.
  */
 export function getProjectDisplayStatus(project: Project): 'Active' | 'Completed' | 'In Progress' | 'Cancelled' {
-  // If project has a freelancer assigned, it means proposal was accepted
-  if (project.freelancerId) {
-    // If status is COMPLETED or CANCELLED, use that
-    if (project.status === 'COMPLETED') return 'Completed';
-    if (project.status === 'CANCELLED') return 'Cancelled';
-    // Otherwise, show as "In Progress" (proposal accepted, work started/ready to start)
-    return 'In Progress';
-  }
-  
-  // No freelancer assigned - show actual status
   switch (project.status) {
-    case 'ACTIVE':
-      return 'Active';
-    case 'COMPLETED':
-      return 'Completed';
-    case 'CANCELLED':
-      return 'Cancelled';
-    default:
-      return 'Active';
+    case 'ACTIVE':      return 'Active';
+    case 'IN_PROGRESS': return 'In Progress';
+    case 'COMPLETED':   return 'Completed';
+    case 'CANCELLED':   return 'Cancelled';
+    default:            return 'Active';
   }
 }

@@ -229,6 +229,12 @@ export const proposalService = {
 };
 
 export const milestoneService = {
+
+  getMilestonesByProjectId: async (projectId: string): Promise<Milestone[]> => {
+    const response = await apiCall(`/api/v1/projects/${projectId}/milestones`);
+    return response.data.milestones || [];
+  },
+
   getMilestones: async (projectId: string): Promise<Milestone[]> => {
     const response = await apiCall(`/api/v1/projects/${projectId}/milestones`);
     return response.data.milestones || [];

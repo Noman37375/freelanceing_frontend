@@ -23,10 +23,11 @@ import {
   Calendar,
   Layers
 } from "lucide-react-native";
-import { projectService } from "@/services/projectService";
-import { Project, getProjectDisplayStatus } from "@/models/Project";
+import { projectService, milestoneService } from "@/services/projectService";
+import { Milestone, Project, getProjectDisplayStatus } from "@/models/Project";
 import { useAuth } from "@/contexts/AuthContext";
 import SectionCard from "@/components/SectionCard";
+
 
 export default function ProjectDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,6 +35,8 @@ export default function ProjectDetails() {
   const { user } = useAuth();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [milestonesLoading, setMilestonesLoading] = useState(true);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -53,6 +56,34 @@ export default function ProjectDetails() {
       }
     };
     fetchProject();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchMilestones = async () => {
+      console.log("Milestone effect running, id =", id);
+
+      if (!id) {
+        console.log("No project id — skipping milestones fetch");
+        return;
+      }
+
+      try {
+        setMilestonesLoading(true);
+
+        const fetchedMilestones =
+          await milestoneService.getMilestonesByProjectId(id);
+
+        console.log("Fetched milestones:", fetchedMilestones);
+
+        setMilestones(fetchedMilestones || []);
+      } catch (error) {
+        console.error("Failed to fetch milestones:", error);
+      } finally {
+        setMilestonesLoading(false);
+      }
+    };
+
+    fetchMilestones();
   }, [id]);
 
   if (loading) {
@@ -166,6 +197,46 @@ export default function ProjectDetails() {
           <Text style={styles.sectionHeading}>Job Description</Text>
           <Text style={styles.descriptionText}>{project.description}</Text>
 
+          {/* Improved Milestones Section */}
+          <Text style={styles.sectionHeading}>Project Milestones</Text>
+          {milestonesLoading ? (
+            <ActivityIndicator size="small" color="#282A32" />
+          ) : milestones.length === 0 ? (
+            <Text style={{ color: '#64748B', fontStyle: 'italic' }}>No milestones added yet.</Text>
+          ) : (
+            <View style={styles.milestoneTimelineContainer}>
+              {milestones.map((m, index) => (
+                <View key={m.id} style={styles.milestoneTimelineItem}>
+                  {/* Left Column: Timeline line and dot */}
+                  <View style={styles.timelineConnector}>
+                    <View style={styles.timelineDot} />
+                    {index !== milestones.length - 1 && <View style={styles.timelineLine} />}
+                  </View>
+                  
+                  {/* Right Column: Content Card */}
+                  <View style={styles.milestoneCardHighlight}>
+                    <View style={styles.milestoneCardHeader}>
+                      <Text style={styles.milestoneTitleHighlight}>{m.title}</Text>
+                      {/* Using DollarSign to indicate dynamic budget per milestone if available */}
+                      {/*<View style={styles.milestonePriceTag}>
+                        <Text style={styles.milestonePriceText}>Price</Text>
+                      </View>*/}
+                    </View>
+                    
+                    {m.description && <Text style={styles.milestoneDescHighlight}>{m.description}</Text>}
+                    
+                    {m.dueDate && (
+                      <View style={styles.milestoneFooter}>
+                        <Calendar size={12} color="#94A3B8" />
+                        <Text style={styles.milestoneDueDateHighlight}>Due: {m.dueDate}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
           {/* Skills */}
           {project.tags && project.tags.length > 0 && (
             <View style={styles.skillsSection}>
@@ -259,18 +330,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
     ...Platform.select({
-      ios: {
-        shadowColor: '#282A32',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 8,
-      },
-      web: {
-        boxShadow: '0px 8px 16px rgba(79, 70, 229, 0.3)',
-      },
+      ios: { shadowColor: '#282A32', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16 },
+      android: { elevation: 8 },
+      web: { boxShadow: '0px 8px 16px rgba(79, 70, 229, 0.3)' },
     }),
   },
   budgetContent: {},
@@ -312,6 +374,94 @@ const styles = StyleSheet.create({
   },
   skillText: { color: '#475569', fontSize: 14, fontWeight: '600' },
 
+  /* --- Milestone Timeline GUI Styles --- */
+  milestoneTimelineContainer: {
+    marginTop: 8,
+    paddingLeft: 4,
+  },
+  milestoneTimelineItem: {
+    flexDirection: 'row',
+    minHeight: 80,
+  },
+  timelineConnector: {
+    width: 20,
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  timelineDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#282A32',
+    marginTop: 6,
+    zIndex: 2,
+  },
+  timelineLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: '#E2E8F0',
+    marginTop: -4,
+  },
+  milestoneCardHighlight: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 },
+      android: { elevation: 2 },
+    }),
+  },
+  milestoneCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 6,
+  },
+  milestoneTitleHighlight: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
+    flex: 1,
+    marginRight: 8,
+  },
+  milestonePriceTag: {
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  milestonePriceText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+  },
+  milestoneDescHighlight: {
+    fontSize: 14,
+    color: '#64748B',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  milestoneFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  milestoneDueDateHighlight: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  /* ------------------------------------ */
+
+  /* --- Commented Client Section Styles --- */
+  /*
   clientSection: { marginBottom: 32 },
   clientCard: {
     flexDirection: 'row',
@@ -334,6 +484,7 @@ const styles = StyleSheet.create({
   clientInfo: {},
   clientName: { fontSize: 16, fontWeight: '700', color: '#444751' },
   clientMeta: { fontSize: 13, color: '#64748B', marginTop: 2 },
+  */
 
   bottomBar: {
     position: 'absolute',

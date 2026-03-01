@@ -97,7 +97,10 @@ export default function CreateProjectScreen() {
         tags: tagsArray.length > 0 ? tagsArray : undefined,
       };
 
-      await projectService.createProject(projectData);
+      const newProject = await projectService.createProject(projectData);
+
+// Navigate to Add Milestones screen immediately
+      router.push(`/add-milestones?projectId=${newProject.id}`);
       setShowSuccessModal(true);
     } catch (error: any) {
       console.error("Failed to create project:", error);

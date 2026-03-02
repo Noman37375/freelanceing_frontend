@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,9 +18,11 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import ProjectCard from '@/components/ProjectCard';
 import { projectService } from '@/services/projectService';
 import { Project } from '@/models/Project';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function FindProjectsScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { search: paramSearch, category: paramCategory } = useLocalSearchParams<{ search?: string; category?: string }>();
   const [projects, setProjects] = useState<Project[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
@@ -28,6 +30,8 @@ export default function FindProjectsScreen() {
   const [filterType, setFilterType] = useState((paramCategory as string) ?? 'All');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   // Sync from URL params when they change (e.g. navigate with new search)
   useEffect(() => {
@@ -63,9 +67,51 @@ export default function FindProjectsScreen() {
     fetchProjects();
   }, [searchText, filterType]);
 
+  // Fetch saved project IDs when user is logged in
+  const fetchSavedIds = useCallback(async () => {
+    if (!user) return;
+    try {
+      const ids = await projectService.getSavedProjectIds();
+      setSavedIds(new Set(ids));
+    } catch {
+      setSavedIds(new Set());
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchSavedIds();
+  }, [fetchSavedIds]);
+
+  const handleSavePress = useCallback(async (projectId: string) => {
+    if (!user) {
+      Alert.alert('Sign in required', 'Please sign in to save projects.');
+      return;
+    }
+    const isCurrentlySaved = savedIds.has(projectId);
+    setSavingId(projectId);
+    try {
+      if (isCurrentlySaved) {
+        await projectService.unsaveProject(projectId);
+        setSavedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(projectId);
+          return next;
+        });
+      } else {
+        await projectService.saveProject(projectId);
+        setSavedIds((prev) => new Set(prev).add(projectId));
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to update save');
+    } finally {
+      setSavingId(null);
+    }
+  }, [user, savedIds]);
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchProjects();
+    fetchSavedIds();
   };
 
   return (
@@ -147,7 +193,11 @@ export default function FindProjectsScreen() {
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
-                <ProjectCard project={item} />
+                <ProjectCard
+                  project={item}
+                  isSaved={savedIds.has(item.id)}
+                  onSavePress={handleSavePress}
+                />
               </View>
             )}
             contentContainerStyle={styles.listContent}

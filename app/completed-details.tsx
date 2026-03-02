@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router"; // 🔹 Added for back navigation
 import { ArrowLeft, CheckCircle2, Clock4, FileText, User, DollarSign, Calendar, MapPin, Award } from "lucide-react-native";
+import { formatCurrency } from "@/utils/helpers";
 
 type Milestone = {
   title: string;
@@ -69,7 +70,7 @@ export default function CompletedDetails() {
             )}
             <View style={styles.tag}>
               <DollarSign size={12} color="#C7D2FE" />
-              <Text style={styles.tagText}>${project.budget?.toFixed(2) || '0.00'}</Text>
+              <Text style={styles.tagText}>{typeof (project as any).budget === 'number' ? formatCurrency((project as any).budget, (project as any).currency || 'USD') : ((project as any).budget ?? '0.00')}</Text>
             </View>
             {project.location && (
               <View style={styles.tag}>

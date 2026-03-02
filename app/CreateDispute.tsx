@@ -22,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import EvidenceUploader from '@/components/dispute/EvidenceUploader';
 import type { DisputeEvidence, DisputeReason } from '@/models/Dispute';
 import type { Project } from '@/models/Project';
+import { formatCurrency } from '@/utils/helpers';
 
 export default function CreateDispute() {
     const router = useRouter();
@@ -271,7 +272,7 @@ export default function CreateDispute() {
                                         <View style={styles.projectItemContent}>
                                             <Text style={styles.projectItemTitle} numberOfLines={1}>{item.title}</Text>
                                             <Text style={styles.projectItemMeta}>
-                                                ${item.budget?.toFixed(2) || '0.00'} • {item.status}
+                                                {item.budget != null ? formatCurrency(item.budget, (item as Project).currency || 'USD') : '0.00'} • {item.status}
                                             </Text>
                                         </View>
                                         {selectedProject?.id === item.id && (

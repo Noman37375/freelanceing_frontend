@@ -53,9 +53,13 @@ export interface User {
   id: string;
   userName: string;
   email: string;
+  role?: 'Admin' | 'Client' | 'Freelancer';
   isVerified: boolean;
   createdAt?: string;
   updatedAt?: string;
+  hourlyRate?: number;
+  currency?: string;
+  phone?: string;
 }
 
 export interface AuthResponse {
@@ -162,6 +166,21 @@ export const authService = {
       accessToken: responseData.accessToken,
       refreshToken: responseData.refreshToken,
     };
+  },
+
+  /**
+   * Check if username is available (for signup real-time validation)
+   * GET /api/v1/auth/check-username?username=xxx
+   */
+  checkUsernameAvailable: async (username: string): Promise<boolean> => {
+    const trimmed = (username || '').trim();
+    if (trimmed.length < 3) return true;
+    const response = await apiCall(
+      `/api/v1/auth/check-username?username=${encodeURIComponent(trimmed)}`,
+      { method: 'GET' }
+    );
+    const data = response.data ?? response;
+    return data?.available === true;
   },
 
   /**

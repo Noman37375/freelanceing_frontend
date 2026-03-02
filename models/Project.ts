@@ -6,6 +6,7 @@ export interface Project {
   clientId: string;
   freelancerId?: string | null;
   budget: number; // Main budget field (from database)
+  currency?: string; // e.g. USD, PKR (default USD if omitted)
   createdAt: string;
   location?: string;
   bidsCount: number;

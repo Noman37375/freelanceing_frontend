@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndi
 import { Trash2, Edit2, X, Check, ChevronLeft, Calendar, DollarSign } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
 import { Project } from '@/models/Project';
+import { formatCurrency } from '@/utils/helpers';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -124,7 +125,7 @@ export default function ManageProjects() {
                     <View style={{ flex: 1 }}>
                         <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
                         <View style={styles.budgetRow}>
-                            <Text style={styles.budgetAmount}>${item.budget}</Text>
+                            <Text style={styles.budgetAmount}>{formatCurrency(item.budget, item.currency || 'USD')}</Text>
                             <Text style={styles.budgetLabel}>Budget</Text>
                         </View>
                     </View>

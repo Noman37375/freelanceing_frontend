@@ -49,6 +49,8 @@ import {
   CheckCircle2,
   Sparkles,
   BarChart3,
+  DollarSign,
+  Phone,
 } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from 'expo-image-picker';
@@ -57,6 +59,16 @@ import SkillTag from "@/components/SkillTag";
 import SectionCard from "@/components/SectionCard";
 import { useWallet } from "@/contexts/WalletContext";
 import { notificationService } from "@/services/notificationService";
+import {
+  fetchCurrencies,
+  filterCurrencies,
+  type CurrencyItem,
+} from "@/services/currencyService";
+import {
+  fetchCountryCodes,
+  filterCountryCodes,
+  type CountryCodeItem,
+} from "@/services/countryCodeService";
 
 const { width } = Dimensions.get('window');
 
@@ -101,21 +113,93 @@ export default function ProfileScreen() {
   // Form states
   const [editedUserName, setEditedUserName] = useState("");
   const [editedBio, setEditedBio] = useState("");
-  const [editedPhone, setEditedPhone] = useState("");
+  const [editedPhoneNumber, setEditedPhoneNumber] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState<CountryCodeItem | null>(null);
   const [editedHourlyRate, setEditedHourlyRate] = useState("");
+  const [editedCurrency, setEditedCurrency] = useState("USD");
   const [editedSkills, setEditedSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState("");
+
+  const [currencies, setCurrencies] = useState<CurrencyItem[]>([]);
+  const [currencySearch, setCurrencySearch] = useState("");
+  const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
+  const [currenciesLoading, setCurrenciesLoading] = useState(true);
+
+  const [countryCodes, setCountryCodes] = useState<CountryCodeItem[]>([]);
+  const [countrySearch, setCountrySearch] = useState("");
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [countriesLoading, setCountriesLoading] = useState(true);
 
   // Initialize form when modal opens
   useEffect(() => {
     if (editModalVisible && user) {
       setEditedUserName(user.userName || "");
       setEditedBio(user.bio || "");
-      setEditedPhone(user.phone || "");
       setEditedHourlyRate(user.hourlyRate?.toString() || "");
+      setEditedCurrency(user.currency || "USD");
       setEditedSkills(user.skills || []);
+      setEditedPhoneNumber("");
+      setSelectedCountry(null);
     }
   }, [editModalVisible, user]);
+
+  // Parse user.phone into country + number when modal opens and countryCodes loaded
+  useEffect(() => {
+    if (!editModalVisible || countryCodes.length === 0) return;
+    if (!user?.phone?.trim()) {
+      const pk = countryCodes.find((c) => c.code === "PK" && c.dialCode === "+92") ?? countryCodes[0];
+      setSelectedCountry(pk);
+      return;
+    }
+    const raw = user.phone.trim();
+    const digitsOnly = raw.replace(/\D/g, "");
+    let best: { country: CountryCodeItem; rest: string } | null = null;
+    for (const c of countryCodes) {
+      const codeDigits = c.dialCode.replace(/\D/g, "");
+      if (!codeDigits || !digitsOnly.startsWith(codeDigits)) continue;
+      const rest = digitsOnly.slice(codeDigits.length);
+      if (!best || codeDigits.length > best.country.dialCode.replace(/\D/g, "").length) {
+        best = { country: c, rest };
+      }
+    }
+    if (best) {
+      setSelectedCountry(best.country);
+      setEditedPhoneNumber(best.rest);
+    } else {
+      setEditedPhoneNumber(raw);
+    }
+  }, [editModalVisible, user?.phone, countryCodes]);
+
+  // Load currencies and country codes on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await fetchCurrencies();
+        if (!cancelled) setCurrencies(list);
+      } catch {
+        if (!cancelled) setCurrencies([]);
+      } finally {
+        if (!cancelled) setCurrenciesLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await fetchCountryCodes();
+        if (!cancelled) setCountryCodes(list);
+      } catch {
+        if (!cancelled) setCountryCodes([]);
+      } finally {
+        if (!cancelled) setCountriesLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const defaultAvatar = user?.profileImage ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.userName || "User")}&background=444751&color=fff&size=200`;
@@ -169,11 +253,16 @@ export default function ProfileScreen() {
 
     setIsSaving(true);
     try {
+      const fullPhone =
+        selectedCountry?.dialCode && editedPhoneNumber.trim()
+          ? selectedCountry.dialCode + " " + editedPhoneNumber.replace(/\D/g, "")
+          : undefined;
       const profileData: any = {
         userName: editedUserName.trim(),
         bio: editedBio.trim() || undefined,
-        phone: editedPhone.trim() || undefined,
+        phone: fullPhone,
         hourlyRate: editedHourlyRate ? parseFloat(editedHourlyRate) : undefined,
+        currency: editedCurrency || "USD",
         skills: editedSkills.length > 0 ? editedSkills : undefined,
       };
 
@@ -469,15 +558,142 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Hourly Rate (USD)</Text>
+                <Text style={styles.inputLabel}>Hourly Rate</Text>
+                <TouchableOpacity
+                  style={styles.dropdownTrigger}
+                  onPress={() => {
+                    setShowCurrencyDropdown((v) => !v);
+                    setShowCountryDropdown(false);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  {currenciesLoading ? (
+                    <ActivityIndicator size="small" color="#444751" />
+                  ) : (
+                    <Text style={styles.dropdownTriggerText} numberOfLines={1}>
+                      {currencies.find((c) => c.code === editedCurrency)?.displayLabel ?? editedCurrency}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+                {showCurrencyDropdown && (
+                  <View style={styles.dropdownBox}>
+                    <TextInput
+                      style={styles.dropdownSearch}
+                      placeholder="Search currency (e.g. USD, PKR)"
+                      placeholderTextColor="#C2C2C8"
+                      value={currencySearch}
+                      onChangeText={setCurrencySearch}
+                      autoFocus
+                    />
+                    <ScrollView style={styles.dropdownList} keyboardShouldPersistTaps="handled">
+                      {filterCurrencies(currencies, currencySearch).length === 0 ? (
+                        <View style={styles.dropdownItem}>
+                          <Text style={styles.dropdownEmpty}>No currencies found</Text>
+                        </View>
+                      ) : (
+                        filterCurrencies(currencies, currencySearch).map((c) => (
+                          <TouchableOpacity
+                            key={c.code}
+                            style={[
+                              styles.dropdownItem,
+                              editedCurrency === c.code && styles.dropdownItemActive,
+                            ]}
+                            onPress={() => {
+                              setEditedCurrency(c.code);
+                              setCurrencySearch("");
+                              setShowCurrencyDropdown(false);
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={styles.dropdownItemText} numberOfLines={1}>
+                              {c.displayLabel}
+                            </Text>
+                          </TouchableOpacity>
+                        ))
+                      )}
+                    </ScrollView>
+                  </View>
+                )}
                 <TextInput
                   style={styles.inputField}
                   value={editedHourlyRate}
                   onChangeText={setEditedHourlyRate}
-                  keyboardType="numeric"
+                  keyboardType="decimal-pad"
                   placeholder="0.00"
                   placeholderTextColor="#C2C2C8"
                 />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Phone Number</Text>
+                <TouchableOpacity
+                  style={styles.dropdownTrigger}
+                  onPress={() => {
+                    setShowCountryDropdown((v) => !v);
+                    setShowCurrencyDropdown(false);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  {countriesLoading ? (
+                    <ActivityIndicator size="small" color="#444751" />
+                  ) : (
+                    <Text style={styles.dropdownTriggerText} numberOfLines={1}>
+                      {selectedCountry ? selectedCountry.displayLabel : "Select country"}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+                {showCountryDropdown && (
+                  <View style={styles.dropdownBox}>
+                    <TextInput
+                      style={styles.dropdownSearch}
+                      placeholder="Search country or code"
+                      placeholderTextColor="#C2C2C8"
+                      value={countrySearch}
+                      onChangeText={setCountrySearch}
+                      autoFocus
+                    />
+                    <ScrollView style={styles.dropdownList} keyboardShouldPersistTaps="handled">
+                      {filterCountryCodes(countryCodes, countrySearch).length === 0 ? (
+                        <View style={styles.dropdownItem}>
+                          <Text style={styles.dropdownEmpty}>No countries found</Text>
+                        </View>
+                      ) : (
+                        filterCountryCodes(countryCodes, countrySearch).map((c) => (
+                          <TouchableOpacity
+                            key={`${c.code}-${c.dialCode}`}
+                            style={[
+                              styles.dropdownItem,
+                              selectedCountry?.code === c.code &&
+                                selectedCountry?.dialCode === c.dialCode &&
+                                styles.dropdownItemActive,
+                            ]}
+                            onPress={() => {
+                              setSelectedCountry(c);
+                              setCountrySearch("");
+                              setShowCountryDropdown(false);
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={styles.dropdownItemText} numberOfLines={1}>
+                              {c.displayLabel}
+                            </Text>
+                          </TouchableOpacity>
+                        ))
+                      )}
+                    </ScrollView>
+                  </View>
+                )}
+                <View style={styles.phoneInputRow}>
+                  <Phone size={18} color="#C2C2C8" style={{ marginRight: 8 }} />
+                  <TextInput
+                    style={[styles.inputField, { flex: 1, marginBottom: 0 }]}
+                    value={editedPhoneNumber}
+                    onChangeText={setEditedPhoneNumber}
+                    keyboardType="phone-pad"
+                    placeholder="300 1234567"
+                    placeholderTextColor="#C2C2C8"
+                  />
+                </View>
               </View>
 
               <View style={styles.inputGroup}>
@@ -1144,6 +1360,67 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#282A32',
+    borderWidth: 2,
+    borderColor: '#E5E4EA',
+  },
+  dropdownTrigger: {
+    backgroundColor: '#F4F4F8',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 2,
+    borderColor: '#E5E4EA',
+    marginBottom: 8,
+    minHeight: 48,
+    justifyContent: 'center',
+  },
+  dropdownTriggerText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#282A32',
+  },
+  dropdownBox: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#E5E4EA',
+    borderRadius: 14,
+    marginBottom: 8,
+    maxHeight: 200,
+    overflow: 'hidden',
+  },
+  dropdownSearch: {
+    padding: 12,
+    fontSize: 15,
+    color: '#282A32',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E4EA',
+  },
+  dropdownList: {
+    maxHeight: 160,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  dropdownItemActive: {
+    backgroundColor: '#E5E4EA',
+  },
+  dropdownItemText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#282A32',
+  },
+  dropdownEmpty: {
+    fontSize: 14,
+    color: '#C2C2C8',
+    padding: 12,
+  },
+  phoneInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F4F4F8',
+    borderRadius: 14,
+    paddingHorizontal: 16,
     borderWidth: 2,
     borderColor: '#E5E4EA',
   },

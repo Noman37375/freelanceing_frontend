@@ -1,5 +1,6 @@
 // app/(tabs)/_layout.tsx
 
+import React from 'react'
 import { Tabs } from 'expo-router'
 import { View, StyleSheet, Platform } from 'react-native'
 import {
@@ -9,10 +10,14 @@ import {
   User,
   PanelsTopLeft,
 } from 'lucide-react-native'
+import ProfileCompletionBar from '@/components/ProfileCompletionBar'
 
 export default function TabLayout() {
   return (
-    <Tabs
+    <View style={styles.root}>
+      <ProfileCompletionBar />
+      <View style={styles.tabsWrap}>
+        <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#282A32',
@@ -119,17 +124,16 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </View>
+  </View>
   )
 }
 
 /** Reusable icon wrapper */
-function IconWrapper({
-  children,
-  focused,
-}: {
-  children: React.ReactNode
-  focused: boolean
-}) {
+function IconWrapper(
+  props: { children: React.ReactNode; focused: boolean }
+) {
+  const { children, focused } = props
   return (
     <View
       style={[
@@ -142,6 +146,12 @@ function IconWrapper({
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  tabsWrap: {
+    flex: 1,
+  },
   iconContainer: {
     width: 40,
     height: 32,

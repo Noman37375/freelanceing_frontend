@@ -13,6 +13,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { projectService } from '@/services/projectService';
 import { Project, getProjectDisplayStatus } from '@/models/Project';
+import { formatCurrency } from '@/utils/helpers';
 import { COLORS } from '@/utils/constants';
 
 export default function ProjectDetail() {
@@ -95,7 +96,7 @@ export default function ProjectDetail() {
               <DollarSign size={18} color="#6B7280" strokeWidth={2} />
               <View>
                 <Text style={styles.infoLabel}>Budget</Text>
-                <Text style={styles.infoValue}>${project.budget}</Text>
+                <Text style={styles.infoValue}>{formatCurrency(project.budget, project.currency || 'USD')}</Text>
               </View>
             </View>
 

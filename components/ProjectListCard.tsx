@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MapPin } from 'lucide-react-native';
 import { Project } from '@/models/Project';
+import { formatCurrency } from '@/utils/helpers';
 
 const timeAgo = (timestamp?: string) => {
   if (!timestamp) return 'Not specified';
@@ -27,7 +28,7 @@ interface ProjectListCardProps {
 
 export default function ProjectListCard({ project, onPress, noHorizontalMargin }: ProjectListCardProps) {
   const location = project.location || 'Remote';
-  const budget = project.budget != null ? `$${project.budget}` : 'Fixed-price';
+  const budget = project.budget != null ? formatCurrency(project.budget, project.currency || 'USD') : 'Fixed-price';
   const duration = project.duration || project.projectDuration || 'Not specified';
   const proposals = project.bidsCount ?? project.proposals ?? 0;
 

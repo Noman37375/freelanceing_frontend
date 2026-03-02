@@ -5,6 +5,7 @@ import ProjectCard from '@/components/ClientProjectCard';
 import { useRouter } from 'expo-router';
 import { projectService } from '@/services/projectService';
 import { Project, getProjectDisplayStatus } from '@/models/Project';
+import { formatCurrency } from '@/utils/helpers';
 import { useAuth } from '@/contexts/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -192,7 +193,7 @@ export default function Projects() {
             renderItem={({ item }) => (
               <ProjectCard
                 title={item.title}
-                budget={`$${item.budget}`}
+                budget={typeof item.budget === 'number' ? formatCurrency(item.budget, item.currency || 'USD') : `${item.budget}`}
                 status={getProjectDisplayStatus(item)}
                 freelancer={item.freelancer?.userName}
                 deadline={item.duration || 'Not specified'}

@@ -27,6 +27,7 @@ import { projectService } from "@/services/projectService";
 import { Project, getProjectDisplayStatus } from "@/models/Project";
 import { useAuth } from "@/contexts/AuthContext";
 import SectionCard from "@/components/SectionCard";
+import { formatCurrency } from "@/utils/helpers";
 
 export default function ProjectDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -137,7 +138,7 @@ export default function ProjectDetails() {
           <View style={styles.budgetCard}>
             <View style={styles.budgetContent}>
               <Text style={styles.budgetLabel}>Fixed Price</Text>
-              <Text style={styles.budgetAmount}>${project.budget}</Text>
+              <Text style={styles.budgetAmount}>{formatCurrency(project.budget, project.currency || 'USD')}</Text>
             </View>
             <View style={styles.budgetIconWrapper}>
               <DollarSign size={24} color="#fff" />

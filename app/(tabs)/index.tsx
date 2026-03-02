@@ -22,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { projectService } from '@/services/projectService';
 import { adminService } from '@/services/adminService';
 import { Project } from '@/models/Project';
+import { formatCurrency } from '@/utils/helpers';
 
 const timeAgo = (timestamp?: string) => {
   if (!timestamp) return '';
@@ -293,7 +294,7 @@ export default function HomeScreen() {
                 <Text style={styles.jobPosted}>{timeAgo(project.createdAt)}</Text>
                 <View style={styles.jobMetricsRow}>
                   <View style={styles.jobMetricBox}>
-                    <Text style={styles.jobMetricValue}>${project.budget ?? '—'}</Text>
+                    <Text style={styles.jobMetricValue}>{project.budget != null ? formatCurrency(project.budget, project.currency || 'USD') : '—'}</Text>
                     <Text style={styles.jobMetricLabel}>Fixed-price</Text>
                   </View>
                   <View style={styles.jobMetricBox}>

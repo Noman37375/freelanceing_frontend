@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { Eye, EyeOff, User, Mail, Lock, Briefcase, UserCircle, CheckCircle2 } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
+import { authService } from "@/services/authService";
 import { COLORS, TYPOGRAPHY, BORDER_RADIUS, SPACING, SHADOWS } from "@/constants/theme";
 
 export default function Signup() {
@@ -25,6 +26,10 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const usernameCheckRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userNameRef = useRef<string>(userName);
   const [isLoading, setIsLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [passwordCriteria, setPasswordCriteria] = useState({
@@ -35,6 +40,34 @@ export default function Signup() {
 
   const router = useRouter();
   const { signup } = useAuth();
+
+  // Real-time username availability check (debounced)
+  useEffect(() => {
+    const value = userName.trim();
+    if (value.length < 3) {
+      setUsernameError("");
+      return;
+    }
+    if (usernameCheckRef.current) clearTimeout(usernameCheckRef.current);
+    usernameCheckRef.current = setTimeout(async () => {
+      usernameCheckRef.current = null;
+      const valueToCheck = userName.trim();
+      setCheckingUsername(true);
+      setUsernameError("");
+      try {
+        const available = await authService.checkUsernameAvailable(valueToCheck);
+        if (userNameRef.current.trim() !== valueToCheck) return;
+        if (!available) setUsernameError("User already exists.");
+      } catch {
+        if (userNameRef.current.trim() !== valueToCheck) return;
+      } finally {
+        setCheckingUsername(false);
+      }
+    }, 450);
+    return () => {
+      if (usernameCheckRef.current) clearTimeout(usernameCheckRef.current);
+    };
+  }, [userName]);
 
   const handlePasswordChange = (text: string) => {
     setPassword(text);
@@ -61,6 +94,11 @@ export default function Signup() {
       return;
     }
 
+    if (usernameError) {
+      setErrorMessage("Please choose a different username.");
+      return;
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setErrorMessage("Please enter a valid email address.");
@@ -84,17 +122,10 @@ export default function Signup() {
       const response = await signup(userName, email, password, role);
       console.log('[Signup] Signup successful:', response);
 
-      if (role === 'Freelancer') {
-        router.replace({
-          pathname: "/complete-profile",
-          params: { email: email, userId: response.user.id },
-        } as any);
-      } else {
-        router.push({
-          pathname: "/verify-email",
-          params: { email: email, userId: response.user.id },
-        } as any);
-      }
+      router.push({
+        pathname: "/verify-email",
+        params: { email: email, userId: response.user.id, role: role || 'Freelancer' },
+      } as any);
     } catch (error: any) {
       console.error('[Signup] Error:', error);
       let errorMsg = error.message || "Signup failed. Please try again.";
@@ -146,7 +177,8 @@ export default function Signup() {
               <Text style={styles.inputLabel}>Username</Text>
               <View style={[
                 styles.inputWrapper,
-                focusedInput === 'userName' && styles.inputWrapperFocused
+                focusedInput === 'userName' && styles.inputWrapperFocused,
+                usernameError ? styles.inputWrapperError : undefined
               ]}>
                 <User size={20} color={focusedInput === 'userName' ? COLORS.primary : COLORS.textTertiary} />
                 <TextInput
@@ -156,6 +188,7 @@ export default function Signup() {
                   value={userName}
                   onChangeText={(text) => {
                     setUserName(text);
+                    userNameRef.current = text;
                     setErrorMessage("");
                   }}
                   autoCapitalize="none"
@@ -163,7 +196,13 @@ export default function Signup() {
                   onBlur={() => setFocusedInput(null)}
                   editable={!isLoading}
                 />
+                {checkingUsername && (
+                  <ActivityIndicator size="small" color={COLORS.primary} style={{ marginLeft: 8 }} />
+                )}
               </View>
+              {usernameError ? (
+                <Text style={styles.usernameErrorText}>{usernameError}</Text>
+              ) : null}
             </View>
 
             {/* Email */}
@@ -402,6 +441,16 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
     borderWidth: 1,
     ...SHADOWS.glow,
+  },
+  inputWrapperError: {
+    borderColor: COLORS.error,
+    borderWidth: 1,
+  },
+  usernameErrorText: {
+    marginTop: 6,
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: COLORS.error,
+    fontWeight: '600',
   },
   input: {
     flex: 1,

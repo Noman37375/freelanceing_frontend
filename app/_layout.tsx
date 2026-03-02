@@ -6,6 +6,8 @@ import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { WalletProvider } from '@/contexts/WalletContext';
 import { SocketProvider } from '@/contexts/SocketContext';
+import { CallProvider } from '@/contexts/CallContext';
+import { CallModal } from '@/components/CallModal';
 import { useEffect, useRef, useState } from 'react';
 
 // Keep native splash visible until we're ready, then show welcome.jpeg as initial loading
@@ -82,10 +84,13 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <SocketProvider>
-        <WalletProvider>
-          <RootNavigation />
-          <StatusBar style="auto" />
-        </WalletProvider>
+        <CallProvider>
+          <WalletProvider>
+            <RootNavigation />
+            <CallModal />
+            <StatusBar style="auto" />
+          </WalletProvider>
+        </CallProvider>
       </SocketProvider>
     </AuthProvider>
   );

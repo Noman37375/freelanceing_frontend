@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -16,8 +16,18 @@ import { CheckCircle2 } from "lucide-react-native";
 import ScreenHeader from "@/components/ScreenHeader";
 import { useRouter } from "expo-router";
 import { projectService } from "@/services/projectService";
+import { adminService } from "@/services/adminService";
 import { useAuth } from "@/contexts/AuthContext";
-import { COLORS, PROJECT_CATEGORIES } from "@/utils/constants";
+import { COLORS } from "@/utils/constants";
+import {
+  searchLocationsDebounced,
+  type LocationSuggestion,
+} from "@/services/locationService";
+import {
+  fetchCurrencies,
+  filterCurrencies,
+  type CurrencyItem,
+} from "@/services/currencyService";
 
 export default function CreateProjectScreen() {
   const router = useRouter();
@@ -36,13 +46,55 @@ export default function CreateProjectScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [budget, setBudget] = useState("");
+  const [currency, setCurrency] = useState<string>("USD");
+  const [currencySearch, setCurrencySearch] = useState("");
+  const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
+  const [currencies, setCurrencies] = useState<CurrencyItem[]>([]);
+  const [currenciesLoading, setCurrenciesLoading] = useState(true);
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState("");
   const [duration, setDuration] = useState("");
   const [tags, setTags] = useState("");
   const [tagsArray, setTagsArray] = useState<string[]>([]);
 
-  const categories = PROJECT_CATEGORIES;
+  // Location autocomplete (LinkedIn-style)
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [locationSuggestionsLoading, setLocationSuggestionsLoading] = useState(false);
+
+  // Categories from backend (service_categories)
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await adminService.getServiceCategories();
+        if (!cancelled) setCategories(Array.isArray(list) ? list : []);
+      } catch {
+        if (!cancelled) setCategories([]);
+      } finally {
+        if (!cancelled) setCategoriesLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await fetchCurrencies();
+        if (!cancelled) setCurrencies(list);
+      } catch {
+        if (!cancelled) setCurrencies([]);
+      } finally {
+        if (!cancelled) setCurrenciesLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const budgetValue = useMemo(() => parseFloat(budget), [budget]);
   const isBudgetValid = Number.isFinite(budgetValue) && budgetValue > 0;
@@ -63,6 +115,49 @@ export default function CreateProjectScreen() {
     // Keep only digits and '.' (simple, mobile-friendly)
     const sanitized = text.replace(/[^0-9.]/g, "");
     setBudget(sanitized);
+  };
+
+  const handleLocationChange = (text: string) => {
+    setLocation(text);
+    if (text.trim().length < 2) {
+      setLocationSuggestions([]);
+      setShowLocationSuggestions(false);
+      return;
+    }
+    setLocationSuggestionsLoading(true);
+    setShowLocationSuggestions(true);
+    searchLocationsDebounced(
+      text,
+      (suggestions) => {
+        setLocationSuggestionsLoading(false);
+        setLocationSuggestions(suggestions);
+      },
+      () => setLocationSuggestionsLoading(false)
+    );
+  };
+
+  const handleSelectLocation = (suggestion: LocationSuggestion) => {
+    setLocation(suggestion.displayName);
+    setLocationSuggestions([]);
+    setShowLocationSuggestions(false);
+  };
+
+  const filteredCurrencies = filterCurrencies(currencies, currencySearch);
+  const selectedCurrencyLabel = (() => {
+    const found = currencies.find((c) => c.code === currency);
+    if (found) return found.displayLabel;
+    try {
+      const name = new Intl.DisplayNames(["en"], { type: "currency" }).of(currency);
+      return `${currency} – ${name ?? currency}`;
+    } catch {
+      return currency;
+    }
+  })();
+
+  const handleSelectCurrency = (item: CurrencyItem) => {
+    setCurrency(item.code);
+    setCurrencySearch("");
+    setShowCurrencyDropdown(false);
   };
 
   const handleSubmit = async () => {
@@ -91,6 +186,7 @@ export default function CreateProjectScreen() {
         title: title.trim(),
         description: description.trim(),
         budget: budgetValue,
+        currency: currency || "USD",
         location: location.trim() || undefined,
         category: category || undefined,
         duration: duration.trim() || undefined,
@@ -152,9 +248,56 @@ export default function CreateProjectScreen() {
             )}
           </View>
 
-          {/* Budget */}
+          {/* Budget + Currency (searchable dropdown from API) */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Budget (USD) *</Text>
+            <Text style={styles.label}>Budget *</Text>
+            <TouchableOpacity
+              style={styles.currencyTrigger}
+              onPress={() => setShowCurrencyDropdown((v) => !v)}
+              activeOpacity={0.8}
+            >
+              {currenciesLoading ? (
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              ) : (
+                <Text style={styles.currencyTriggerText} numberOfLines={1}>
+                  {selectedCurrencyLabel}
+                </Text>
+              )}
+            </TouchableOpacity>
+            {showCurrencyDropdown && (
+              <View style={styles.currencyDropdown}>
+                <TextInput
+                  style={styles.currencySearchInput}
+                  placeholder="Search currency (e.g. USD, PKR)"
+                  placeholderTextColor={COLORS.gray500}
+                  value={currencySearch}
+                  onChangeText={setCurrencySearch}
+                  autoFocus
+                />
+                <ScrollView style={styles.currencyList} keyboardShouldPersistTaps="handled">
+                  {filteredCurrencies.length === 0 ? (
+                    <View style={styles.suggestionItem}>
+                      <Text style={styles.suggestionEmptyText}>
+                        {currenciesLoading ? "Loading…" : "No currencies found"}
+                      </Text>
+                    </View>
+                  ) : (
+                    filteredCurrencies.map((c) => (
+                      <TouchableOpacity
+                        key={c.code}
+                        style={[styles.suggestionItem, currency === c.code && styles.currencyItemActive]}
+                        onPress={() => handleSelectCurrency(c)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.suggestionText} numberOfLines={1}>
+                          {c.displayLabel}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  )}
+                </ScrollView>
+              </View>
+            )}
             <TextInput
               ref={budgetRef}
               style={styles.input}
@@ -173,50 +316,102 @@ export default function CreateProjectScreen() {
           {/* Category */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Category</Text>
-            <View style={styles.categoryContainer}>
-              {categories.map((cat) => (
-                <TouchableOpacity
-                  key={cat}
-                  style={[
-                    styles.categoryButton,
-                    category === cat && styles.categoryButtonActive,
-                  ]}
-                  onPress={() => setCategory(cat)}
-                >
-                  <Text
+            {categoriesLoading ? (
+              <View style={styles.categoryLoading}>
+                <ActivityIndicator size="small" color={COLORS.primary} />
+                <Text style={styles.categoryLoadingText}>Loading categories…</Text>
+              </View>
+            ) : categories.length === 0 ? (
+              <Text style={styles.helperInfo}>No categories available. Add them in Admin → Manage Service Categories.</Text>
+            ) : (
+              <View style={styles.categoryContainer}>
+                {categories.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.id}
                     style={[
-                      styles.categoryText,
-                      category === cat && styles.categoryTextActive,
+                      styles.categoryButton,
+                      category === cat.name && styles.categoryButtonActive,
                     ]}
+                    onPress={() => setCategory(cat.name)}
                   >
-                    {cat}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                    <Text
+                      style={[
+                        styles.categoryText,
+                        category === cat.name && styles.categoryTextActive,
+                      ]}
+                    >
+                      {cat.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
-          {/* Location */}
+          {/* Location (LinkedIn-style autocomplete) */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Location</Text>
             <TextInput
               ref={locationRef}
               style={styles.input}
-              placeholder="e.g. Remote, Karachi, Lahore"
+              placeholder="e.g. Karachi, Lahore, Islamabad"
               value={location}
-              onChangeText={setLocation}
+              onChangeText={handleLocationChange}
+              onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 200)}
+              onFocus={() => location.trim().length >= 2 && setShowLocationSuggestions(true)}
               returnKeyType="next"
               onSubmitEditing={() => durationRef.current?.focus()}
             />
+            {showLocationSuggestions && (
+              <View style={styles.suggestionsContainer}>
+                {locationSuggestionsLoading ? (
+                  <View style={styles.suggestionItem}>
+                    <ActivityIndicator size="small" color={COLORS.primary} />
+                    <Text style={styles.suggestionLoadingText}>Searching...</Text>
+                  </View>
+                ) : locationSuggestions.length > 0 ? (
+                  locationSuggestions.map((s) => (
+                    <TouchableOpacity
+                      key={s.id}
+                      style={styles.suggestionItem}
+                      onPress={() => handleSelectLocation(s)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.suggestionText} numberOfLines={1}>
+                        {s.displayName}
+                      </Text>
+                    </TouchableOpacity>
+                  ))
+                ) : location.trim().length >= 2 ? (
+                  <View style={styles.suggestionItem}>
+                    <Text style={styles.suggestionEmptyText}>No locations found</Text>
+                  </View>
+                ) : null}
+              </View>
+            )}
           </View>
 
-          {/* Duration */}
+          {/* Estimated Duration (preset options like Location) */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Estimated Duration</Text>
+            <View style={styles.durationChipsRow}>
+              {["1 week", "2 weeks", "1 month", "2 months", "3 months", "6 months", "1 year"].map((d) => (
+                <TouchableOpacity
+                  key={d}
+                  style={[styles.durationChip, duration === d && styles.durationChipActive]}
+                  onPress={() => setDuration(duration === d ? "" : d)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.durationChipText, duration === d && styles.durationChipTextActive]}>
+                    {d}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
             <TextInput
               ref={durationRef}
-              style={styles.input}
-              placeholder="e.g. 2 weeks, 1 month"
+              style={[styles.input, styles.durationInput]}
+              placeholder="Or type custom (e.g. 3 weeks)"
               value={duration}
               onChangeText={setDuration}
               returnKeyType="next"
@@ -345,6 +540,47 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.gray900,
   },
+  currencyTrigger: {
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    minHeight: 48,
+    justifyContent: "center",
+  },
+  currencyTriggerText: {
+    fontSize: 16,
+    color: COLORS.gray900,
+  },
+  currencyDropdown: {
+    marginBottom: 10,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+    borderRadius: 12,
+    maxHeight: 280,
+    overflow: "hidden",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  currencySearchInput: {
+    padding: 12,
+    fontSize: 16,
+    color: COLORS.gray900,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray200,
+  },
+  currencyList: {
+    maxHeight: 220,
+  },
+  currencyItemActive: {
+    backgroundColor: COLORS.gray100,
+  },
   helperError: {
     marginTop: 6,
     color: COLORS.error,
@@ -367,6 +603,16 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 10,
   },
+  categoryLoading: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 8,
+  },
+  categoryLoadingText: {
+    fontSize: 14,
+    color: COLORS.gray600,
+  },
   categoryButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -387,6 +633,35 @@ const styles = StyleSheet.create({
   categoryTextActive: {
     color: COLORS.white,
   },
+  durationChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 10,
+  },
+  durationChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: COLORS.gray100,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+  },
+  durationChipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  durationChipText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: COLORS.gray700,
+  },
+  durationChipTextActive: {
+    color: COLORS.white,
+  },
+  durationInput: {
+    marginTop: 0,
+  },
   tagsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -403,6 +678,43 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.primaryDark,
     fontWeight: "500",
+  },
+  suggestionsContainer: {
+    marginTop: 4,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+    borderRadius: 12,
+    maxHeight: 220,
+    overflow: "hidden",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  suggestionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray100,
+    gap: 8,
+  },
+  suggestionText: {
+    fontSize: 15,
+    color: COLORS.gray900,
+    flex: 1,
+  },
+  suggestionLoadingText: {
+    fontSize: 14,
+    color: COLORS.gray500,
+  },
+  suggestionEmptyText: {
+    fontSize: 14,
+    color: COLORS.gray500,
+    fontStyle: "italic",
   },
   submitButton: {
     backgroundColor: COLORS.primary,

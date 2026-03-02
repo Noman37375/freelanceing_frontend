@@ -1,5 +1,5 @@
 /**
- * ChatRoom - Shared chat UI with socket: message list, input, send/delete/edit, typing.
+ * ChatRoom - WhatsApp-style chat UI: message list, input, send/delete/edit, typing.
  * Use in ChatScreen and client/chat.
  */
 
@@ -16,9 +16,12 @@ import {
   Platform,
   Animated,
   RefreshControl,
+  Linking,
+  Alert,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useSocket } from '@/contexts/SocketContext';
+import { useCall } from '@/contexts/CallContext';
 import { chatService, type ChatMessage } from '@/services/chatService';
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '@/constants/theme';
 
@@ -68,6 +71,7 @@ export interface ActiveUser {
   id: string;
   userName?: string;
   profileImage?: string | null;
+  phone?: string | null;
 }
 
 export interface CurrentUser {
@@ -90,6 +94,7 @@ interface ChatRoomProps {
 
 export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, projectId }: ChatRoomProps) {
   const { socket, connected, onlineUserIds } = useSocket();
+  const { startCall, isWebRTCAvailable } = useCall();
   const [messages, setMessages] = useState<Map<string, ChatMessage>>(new Map());
   const [loading, setLoading] = useState(true);
   const [messageInput, setMessageInput] = useState('');
@@ -98,6 +103,7 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
   const [editedText, setEditedText] = useState('');
   const [menuMessageId, setMenuMessageId] = useState<string | null>(null);
   const [receiverProfileImage, setReceiverProfileImage] = useState<string | null>(activeUser?.profileImage ?? null);
+  const [partnerPhone, setPartnerPhone] = useState<string | null>(activeUser?.phone ?? null);
   const [refreshing, setRefreshing] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -132,6 +138,21 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
   useEffect(() => {
     setReceiverProfileImage(activeUser?.profileImage ?? null);
   }, [activeUser?.id, activeUser?.profileImage]);
+
+  useEffect(() => {
+    setPartnerPhone(activeUser?.phone ?? null);
+  }, [activeUser?.id, activeUser?.phone]);
+
+  useEffect(() => {
+    if (!activeUser?.id) return;
+    if (activeUser.phone != null && activeUser.phone !== '') return;
+    let cancelled = false;
+    chatService.getUserProfile(activeUser.id).then((profile) => {
+      if (cancelled || !profile?.phone) return;
+      setPartnerPhone(profile.phone);
+    });
+    return () => { cancelled = true; };
+  }, [activeUser?.id, activeUser?.phone]);
 
   useEffect(() => {
     loadMessages();
@@ -186,6 +207,45 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
     await loadMessages(true);
     setRefreshing(false);
   }, [activeUser?.id, loadMessages]);
+
+  const normalizePhoneForTel = (raw: string | null | undefined): string | null => {
+    if (!raw || typeof raw !== 'string') return null;
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    const digitsAndPlus = trimmed.replace(/\s/g, '').replace(/[^\d+]/g, '');
+    return digitsAndPlus.length > 0 ? digitsAndPlus : null;
+  };
+
+  const handleVoiceCall = useCallback(() => {
+    if (!activeUser?.id) return;
+    if (isWebRTCAvailable) {
+      startCall(activeUser.id, 'audio', activeUser.userName);
+    } else {
+      const telNumber = normalizePhoneForTel(partnerPhone);
+      if (telNumber) {
+        Linking.openURL(`tel:${telNumber}`).catch(() => {
+          Alert.alert('Cannot place call', 'Your device could not open the dialer.');
+        });
+      } else {
+        Alert.alert(
+          'Calls on web',
+          'Real-time audio and video calls work in the web app. Open this app in a browser, or share your phone number for a regular call.'
+        );
+      }
+    }
+  }, [activeUser?.id, activeUser?.userName, isWebRTCAvailable, startCall, partnerPhone]);
+
+  const handleVideoCall = useCallback(() => {
+    if (!activeUser?.id) return;
+    if (isWebRTCAvailable) {
+      startCall(activeUser.id, 'video', activeUser.userName);
+    } else {
+      Alert.alert(
+        'Calls on web',
+        'Real-time video calls work in the web app. Open this app in a browser to use in-app video calling.'
+      );
+    }
+  }, [activeUser?.id, activeUser?.userName, isWebRTCAvailable, startCall]);
 
   useEffect(() => {
     if (!socket || !currentUser?.id) return;
@@ -394,7 +454,38 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
 
-  const renderItem = ({ item }: { item: ChatMessage }) => {
+  function getDateLabel(iso: string) {
+    const d = new Date(iso);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return 'Today';
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: d.getFullYear() !== today.getFullYear() ? 'numeric' : undefined });
+  }
+
+  const listWithDates: { type: 'date'; label: string } | { type: 'msg'; item: ChatMessage }[] = [];
+  let lastDate = '';
+  list.forEach((item) => {
+    const dateLabel = getDateLabel(item.createdAt);
+    if (dateLabel !== lastDate) {
+      lastDate = dateLabel;
+      listWithDates.push({ type: 'date', label: dateLabel });
+    }
+    listWithDates.push({ type: 'msg', item });
+  });
+
+  const renderItem = ({ item: row }: { item: { type: 'date'; label: string } | { type: 'msg'; item: ChatMessage } }) => {
+    if (row.type === 'date') {
+      return (
+        <View style={styles.dateSeparator}>
+          <View style={styles.datePill}>
+            <Text style={styles.datePillText}>{row.label}</Text>
+          </View>
+        </View>
+      );
+    }
+    const item = row.item;
     const isMe = item.senderId === currentUser?.id;
     const key = messageKey(item);
     const isEditing = editingMessageId === key;
@@ -441,9 +532,9 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
                 {isMe && (
                   <View style={styles.seenIndicator}>
                     {item.seenAt ? (
-                      <Ionicons name="checkmark-done" size={16} color="#4FC3F7" />
+                      <Ionicons name="checkmark-done" size={16} color={COLORS.primaryLight} />
                     ) : (
-                      <Ionicons name="checkmark-done" size={16} color={COLORS.textTertiary} />
+                      <Ionicons name="checkmark-done" size={16} color="rgba(0,0,0,0.45)" />
                     )}
                   </View>
                 )}
@@ -452,7 +543,7 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
                     onPress={() => setMenuMessageId(menuMessageId === key ? null : key)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Feather name="more-vertical" size={14} color={COLORS.textTertiary} />
+                    <Feather name="more-vertical" size={14} color="rgba(0,0,0,0.45)" />
                   </TouchableOpacity>
                 )}
               </View>
@@ -498,7 +589,7 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
       {onBack && (
         <View style={styles.header}>
           <TouchableOpacity onPress={onBack} style={styles.headerIconBtn} activeOpacity={0.7}>
-            <Feather name="chevron-left" size={28} color={COLORS.white} />
+            <Feather name="chevron-left" size={26} color={COLORS.white} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerProfileRow} activeOpacity={1}>
             {(receiverProfileImage || activeUser.profileImage) ? (
@@ -517,22 +608,22 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
               <Text style={styles.headerTitle} numberOfLines={1}>
                 {activeUser.userName || 'Chat'}
               </Text>
-              {/* <Text style={styles.headerSubtitle} numberOfLines={1}>
+              <Text style={styles.headerSubtitle} numberOfLines={1}>
                 {onlineUserIds.has(activeUser.id) ? 'online' : 'last seen recently'}
-              </Text> */}
+              </Text>
             </View>
           </TouchableOpacity>
-          {/* <View style={styles.headerRightIcons}>
-            <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7}>
+          <View style={styles.headerRightIcons}>
+            <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7} onPress={handleVideoCall}>
               <Feather name="video" size={22} color={COLORS.white} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7} onPress={handleVoiceCall}>
               <Feather name="phone" size={20} color={COLORS.white} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7}>
               <Feather name="more-vertical" size={22} color={COLORS.white} />
-             </TouchableOpacity>
-          </View> */}
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -542,9 +633,9 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
         <>
           <FlatList
             ref={flatListRef}
-            data={list}
+            data={listWithDates}
             extraData={messages.size}
-            keyExtractor={(item) => messageKey(item)}
+            keyExtractor={(entry, idx) => entry.type === 'date' ? `date-${entry.label}-${idx}` : messageKey(entry.item)}
             renderItem={renderItem}
             contentContainerStyle={styles.listContent}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
@@ -558,20 +649,26 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
             </View>
           )}
           <View style={styles.inputRow}>
-            <TextInput
-              value={messageInput}
-              onChangeText={(t) => {
-                setMessageInput(t);
-                handleTyping();
-              }}
-              placeholder="Type a message"
-              style={styles.input}
-              placeholderTextColor={COLORS.textTertiary}
-              multiline
-              maxLength={2000}
-            />
-            <TouchableOpacity onPress={handleSendMessage} style={styles.sendBtn} disabled={!messageInput.trim()}>
-              <Feather name="send" size={20} color={COLORS.white} />
+            <View style={styles.inputWrap}>
+              <TextInput
+                value={messageInput}
+                onChangeText={(t) => {
+                  setMessageInput(t);
+                  handleTyping();
+                }}
+                placeholder="Message"
+                style={styles.input}
+                placeholderTextColor="#667781"
+                multiline
+                maxLength={2000}
+              />
+            </View>
+            <TouchableOpacity
+              onPress={handleSendMessage}
+              style={[styles.sendBtn, !messageInput.trim() && styles.sendBtnDisabled]}
+              disabled={!messageInput.trim()}
+            >
+                <Feather name="send" size={20} color={COLORS.white} />
             </TouchableOpacity>
           </View>
         </>
@@ -587,8 +684,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: SPACING.xs,
     paddingVertical: SPACING.s,
-    paddingTop: Platform.OS === 'ios' ? SPACING.m : SPACING.s,
-    backgroundColor: '#0D0D0D',
+    paddingTop: Platform.OS === 'ios' ? SPACING.m + 24 : SPACING.s + 8,
+    backgroundColor: COLORS.primary,
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -617,7 +714,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: COLORS.secondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -638,7 +735,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: TYPOGRAPHY.fontSize.xs,
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.85)',
     marginTop: 2,
   },
   headerRightIcons: {
@@ -647,56 +744,130 @@ const styles = StyleSheet.create({
   },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   placeholderText: { fontSize: TYPOGRAPHY.fontSize.base, color: COLORS.textTertiary },
-  listContent: { padding: SPACING.m, paddingBottom: SPACING.l },
-  msgRow: { flexDirection: 'row', alignItems: 'flex-end', marginVertical: 4 },
+  listContent: { paddingHorizontal: SPACING.m, paddingVertical: SPACING.s, paddingBottom: SPACING.l },
+  dateSeparator: {
+    alignItems: 'center',
+    marginVertical: SPACING.m,
+  },
+  datePill: {
+    backgroundColor: 'rgba(0,0,0,0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  datePillText: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: 'rgba(0,0,0,0.7)',
+    fontWeight: TYPOGRAPHY.fontWeight.medium,
+  },
+  msgRow: { flexDirection: 'row', alignItems: 'flex-end', marginVertical: 2 },
   msgRowMe: { justifyContent: 'flex-end' },
   msgRowThem: { justifyContent: 'flex-start' },
-  avatarWrap: { width: 36, marginHorizontal: 4 },
-  avatar: { width: 36, height: 36, borderRadius: 18 },
+  avatarWrap: { width: 32, marginHorizontal: 4 },
+  avatar: { width: 32, height: 32, borderRadius: 16 },
   avatarPlaceholder: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.surfaceMuted,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.08)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarLetter: { fontSize: TYPOGRAPHY.fontSize.md, fontWeight: TYPOGRAPHY.fontWeight.bold, color: COLORS.textSecondary },
-  bubble: { maxWidth: '75%', paddingVertical: 8, paddingHorizontal: 12, borderRadius: BORDER_RADIUS.l },
-  bubbleMe: { backgroundColor: '#DCF8C6', borderTopRightRadius: 0 },
-  bubbleThem: { backgroundColor: COLORS.white, borderTopLeftRadius: 0, borderWidth: 1, borderColor: COLORS.border },
-  msgText: { fontSize: TYPOGRAPHY.fontSize.base, color: COLORS.textPrimary },
-  msgMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 4, gap: 6 },
-  time: { fontSize: TYPOGRAPHY.fontSize.xs, color: COLORS.textTertiary },
+  avatarLetter: {
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: 'rgba(0,0,0,0.6)',
+  },
+  bubble: {
+    maxWidth: '78%',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 2 },
+      android: { elevation: 1 },
+    }),
+  },
+  bubbleMe: {
+    backgroundColor: COLORS.surfaceMuted,
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
+    borderBottomLeftRadius: 18,
+    borderTopLeftRadius: 18,
+  },
+  bubbleThem: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 4,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 18,
+    borderTopRightRadius: 18,
+  },
+  msgText: { fontSize: 15, color: COLORS.textPrimary, lineHeight: 20 },
+  msgMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 4,
+    gap: 4,
+  },
+  time: { fontSize: 11, color: 'rgba(0,0,0,0.45)' },
   seenIndicator: { marginLeft: 2 },
   editRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  editInput: { flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.s, padding: 8, fontSize: TYPOGRAPHY.fontSize.base },
-  editBtn: { paddingVertical: 6, paddingHorizontal: 12, backgroundColor: COLORS.primary, borderRadius: BORDER_RADIUS.s },
+  editInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.s,
+    padding: 8,
+    fontSize: TYPOGRAPHY.fontSize.base,
+  },
+  editBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.s,
+  },
   editBtnText: { color: COLORS.white, fontWeight: TYPOGRAPHY.fontWeight.semibold },
-  menu: { marginTop: 4, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 4 },
+  menu: { marginTop: 4, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.08)', paddingTop: 4 },
   menuItem: { paddingVertical: 6 },
   menuItemText: { fontSize: TYPOGRAPHY.fontSize.sm, color: COLORS.textSecondary },
-  typingBar: { paddingHorizontal: SPACING.m, paddingVertical: 4, backgroundColor: COLORS.surfaceMuted },
-  typingText: { fontSize: TYPOGRAPHY.fontSize.sm, color: COLORS.textTertiary, fontStyle: 'italic' },
+  typingBar: {
+    paddingHorizontal: SPACING.m,
+    paddingVertical: 6,
+    backgroundColor: COLORS.backgroundLight,
+  },
+  typingText: {
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: 'rgba(0,0,0,0.5)',
+    fontStyle: 'italic',
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: SPACING.s,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    paddingVertical: SPACING.s,
+    paddingHorizontal: SPACING.m,
+    backgroundColor: COLORS.surfaceMuted,
+    gap: 8,
+  },
+  inputWrap: {
+    flex: 1,
+    minHeight: 42,
+    maxHeight: 100,
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   input: {
     flex: 1,
-    minHeight: 40,
-    maxHeight: 100,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: COLORS.surfaceMuted,
-    marginRight: 8,
-    fontSize: TYPOGRAPHY.fontSize.base,
+    minHeight: 26,
+    fontSize: 16,
     color: COLORS.textPrimary,
+    paddingVertical: 0,
+    ...(Platform.OS === 'web' ? { outlineStyle: 'none' as any } : {}),
   },
   sendBtn: {
     width: 44,
@@ -706,6 +877,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  sendBtnDisabled: {
+    backgroundColor: COLORS.textTertiary,
+    opacity: 0.9,
+  },
 });
 
 const chatSkeletonStyles = StyleSheet.create({
@@ -713,37 +888,44 @@ const chatSkeletonStyles = StyleSheet.create({
     flex: 1,
     padding: SPACING.m,
     paddingBottom: SPACING.l,
+    backgroundColor: COLORS.backgroundLight,
   },
   msgRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    marginVertical: 6,
+    marginVertical: 4,
   },
   msgRowMe: { justifyContent: 'flex-end' },
   msgRowThem: { justifyContent: 'flex-start' },
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E5E4EA',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.08)',
     marginRight: 8,
   },
-  avatarSpacer: { width: 36, marginLeft: 8 },
+  avatarSpacer: { width: 32, marginLeft: 8 },
   bubble: {
-    maxWidth: '75%',
+    maxWidth: '78%',
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: BORDER_RADIUS.l,
+    borderRadius: 18,
   },
   bubbleMe: {
-    backgroundColor: '#E5E4EA',
-    borderTopRightRadius: 0,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
+    borderBottomLeftRadius: 18,
+    borderTopLeftRadius: 18,
   },
   bubbleThem: {
-    backgroundColor: '#E5E4EA',
-    borderTopLeftRadius: 0,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    borderTopLeftRadius: 4,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 18,
+    borderTopRightRadius: 18,
   },
-  line: { backgroundColor: '#C2C2C8', borderRadius: 4, height: 10 },
+  line: { backgroundColor: 'rgba(0,0,0,0.12)', borderRadius: 4, height: 10 },
   lineShort: { width: 120, marginBottom: 6 },
   lineLong: { width: 180 },
 });

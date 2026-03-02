@@ -37,18 +37,17 @@ export default function ChatScreen() {
 
   const [profileImage, setProfileImage] = useState<string | null>(initialProfileImage);
   const [userName, setUserName] = useState(displayName || 'Chat');
+  const [profilePhone, setProfilePhone] = useState<string | null>(null);
 
   useEffect(() => {
     if (!receiverId) return;
-    if (initialProfileImage) {
-      setProfileImage(initialProfileImage);
-      return;
-    }
+    if (initialProfileImage) setProfileImage(initialProfileImage);
     let cancelled = false;
     chatService.getUserProfile(receiverId).then((profile) => {
       if (cancelled || !profile) return;
-      if (profile.profile_image) setProfileImage(profile.profile_image);
+      if (profile.profile_image && !initialProfileImage) setProfileImage(profile.profile_image);
       if (profile.user_name && !displayName) setUserName(profile.user_name);
+      if (profile.phone != null) setProfilePhone(profile.phone);
     });
     return () => { cancelled = true; };
   }, [receiverId, initialProfileImage, displayName]);
@@ -57,6 +56,7 @@ export default function ChatScreen() {
     id: receiverIdNorm || receiverId,
     userName: userName || displayName || 'Chat',
     profileImage: profileImage ?? initialProfileImage,
+    phone: profilePhone,
   };
 
   const currentUser = user

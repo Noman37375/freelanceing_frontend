@@ -28,6 +28,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { adminService, DashboardStats } from '@/services/adminService';
 import { Project } from '@/models/Project';
+import { formatCurrency } from '@/utils/helpers';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import newly created components
@@ -102,7 +103,7 @@ export default function AdminDashboard() {
             id: p.id,
             clientName,
             projectName: p.title,
-            price: `$${typeof p.budget === 'number' ? p.budget.toLocaleString() : p.budget ?? '0'}`,
+            price: typeof p.budget === 'number' ? formatCurrency(p.budget, p.currency || 'USD') : (p.budget ?? '0'),
             deliveredIn: p.duration ?? p.deadline ?? '—',
             progress: p.status === 'COMPLETED' ? 100 : p.freelancerId ? 50 : 0,
         };

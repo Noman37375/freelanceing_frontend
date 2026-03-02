@@ -43,6 +43,7 @@ interface User {
   bio?: string;
   skills?: string[];
   hourlyRate?: number;
+  currency?: string;
   phone?: string;
   languages?: Language[];
   education?: Education[];
@@ -61,7 +62,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<User | undefined>;
   signup: (userName: string, email: string, password: string, role?: 'Admin' | 'Client' | 'Freelancer') => Promise<{ user: User; accessToken: string; refreshToken: string }>;
   logout: () => Promise<void>;
-  verifyEmail: (otp: string) => Promise<void>;
+  verifyEmail: (otp: string) => Promise<User | null>;
   resendOTP: (email: string, userId: string) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   changePassword: (token: string, newPassword: string, confirmPassword?: string) => Promise<void>;
@@ -159,13 +160,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // 🔥 VERIFY EMAIL
-  const verifyEmail = async (otp: string) => {
+  const verifyEmail = async (otp: string): Promise<User | null> => {
     setIsLoading(true);
     try {
-      const response = await authService.verifyEmail({ otp });
+      await authService.verifyEmail({ otp });
 
       // Refresh user data after verification
       await refreshUser();
+      const updatedUser = await authService.getCurrentUser();
+      return updatedUser || null;
     } catch (error: any) {
       throw new Error(error.message || "Email verification failed");
     } finally {

@@ -13,6 +13,7 @@ import {
   TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { formatCurrency } from "@/utils/helpers";
 import {
   ArrowLeft,
   CheckCircle,
@@ -251,7 +252,7 @@ export default function ActiveDetailsScreen() {
             )}
             <View style={styles.summaryItem}>
               <DollarSign size={12} color="#C7D2FE" />
-              <Text style={styles.summaryText}>${project.budget}</Text>
+              <Text style={styles.summaryText}>{formatCurrency(project.budget, project.currency || 'USD')}</Text>
             </View>
             {project.location ? (
               <View style={styles.summaryItem}>

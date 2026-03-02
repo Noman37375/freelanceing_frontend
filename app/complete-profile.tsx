@@ -18,6 +18,16 @@ import * as ImagePicker from 'expo-image-picker';
 import { Camera, Plus, X, Link, DollarSign, Phone } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { COLORS, TYPOGRAPHY, BORDER_RADIUS, SPACING, SHADOWS } from '@/constants/theme';
+import {
+  fetchCurrencies,
+  filterCurrencies,
+  type CurrencyItem,
+} from '@/services/currencyService';
+import {
+  fetchCountryCodes,
+  filterCountryCodes,
+  type CountryCodeItem,
+} from '@/services/countryCodeService';
 
 export default function CompleteProfile() {
   const router = useRouter();
@@ -44,7 +54,19 @@ export default function CompleteProfile() {
   const [hourlyRate, setHourlyRate] = useState(
     user?.hourlyRate != null ? String(user.hourlyRate) : ''
   );
-  const [phone, setPhone] = useState(user?.phone || '');
+  const [currency, setCurrency] = useState(user?.currency || 'USD');
+  const [currencySearch, setCurrencySearch] = useState('');
+  const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
+  const [currencies, setCurrencies] = useState<CurrencyItem[]>([]);
+  const [currenciesLoading, setCurrenciesLoading] = useState(true);
+
+  const [countryCodes, setCountryCodes] = useState<CountryCodeItem[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<CountryCodeItem | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [countrySearch, setCountrySearch] = useState('');
+  const [countriesLoading, setCountriesLoading] = useState(true);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -53,6 +75,63 @@ export default function CompleteProfile() {
       router.replace('/login' as any);
     }
   }, [authLoading, user, params.email, router]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await fetchCurrencies();
+        if (!cancelled) setCurrencies(list);
+      } catch {
+        if (!cancelled) setCurrencies([]);
+      } finally {
+        if (!cancelled) setCurrenciesLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await fetchCountryCodes();
+        if (!cancelled) setCountryCodes(list);
+      } catch {
+        if (!cancelled) setCountryCodes([]);
+      } finally {
+        if (!cancelled) setCountriesLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (countryCodes.length === 0 || !user?.phone?.trim()) {
+      if (countryCodes.length > 0 && !selectedCountry) {
+        const pk = countryCodes.find((c) => c.code === 'PK' && c.dialCode === '+92') ?? countryCodes[0];
+        setSelectedCountry(pk);
+      }
+      return;
+    }
+    const raw = user.phone.trim();
+    const digitsOnly = raw.replace(/\D/g, '');
+    let best: { country: CountryCodeItem; rest: string } | null = null;
+    for (const c of countryCodes) {
+      const codeDigits = c.dialCode.replace(/\D/g, '');
+      if (!codeDigits || !digitsOnly.startsWith(codeDigits)) continue;
+      const rest = digitsOnly.slice(codeDigits.length).replace(/(\d{3})(?=\d)/g, '$1 ').trim();
+      if (!best || codeDigits.length > best.country.dialCode.replace(/\D/g, '').length) {
+        best = { country: c, rest };
+      }
+    }
+    if (best) {
+      setSelectedCountry(best.country);
+      setPhoneNumber(best.rest);
+    } else {
+      setPhoneNumber(raw);
+    }
+  }, [countryCodes, user?.phone]);
 
   const addSkill = () => {
     const trimmed = skillInput.trim();
@@ -120,7 +199,12 @@ export default function CompleteProfile() {
       setErrorMessage('Please enter a valid hourly rate.');
       return;
     }
-    if (!phone.trim()) {
+    const fullPhone = (selectedCountry?.dialCode ?? '').replace(/\D/g, '') + phoneNumber.replace(/\D/g, '');
+    if (!selectedCountry) {
+      setErrorMessage('Please select your country code.');
+      return;
+    }
+    if (!fullPhone.trim()) {
       setErrorMessage('Please enter your phone number.');
       return;
     }
@@ -134,19 +218,11 @@ export default function CompleteProfile() {
         languages: languages.length ? languages : undefined,
         portfolio: portfolioLink.trim() || undefined,
         hourlyRate: rate,
-        phone: phone.trim(),
+        currency: currency || 'USD',
+        phone: (selectedCountry?.dialCode ?? '') + ' ' + phoneNumber.trim().replace(/\D/g, ''),
       } as any);
 
-      const email = params.email || user?.email;
-      const userId = params.userId || user?.id;
-      if (email && userId) {
-        router.replace({
-          pathname: '/verify-email',
-          params: { email, userId },
-        } as any);
-      } else {
-        router.replace('/(tabs)' as any);
-      }
+      router.replace('/(tabs)' as any);
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to save profile.');
     } finally {
@@ -306,7 +382,50 @@ export default function CompleteProfile() {
         {/* Hourly rate & Phone - same row on small screens stacked */}
         <View style={styles.row}>
           <View style={styles.halfSection}>
-            <Text style={styles.label}>Hourly rate ($)</Text>
+            <Text style={styles.label}>Hourly rate</Text>
+            <TouchableOpacity
+              style={styles.currencyTrigger}
+              onPress={() => { setShowCurrencyDropdown((v) => !v); setShowCountryDropdown(false); }}
+              activeOpacity={0.8}
+            >
+              {currenciesLoading ? (
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              ) : (
+                <Text style={styles.currencyTriggerText} numberOfLines={1}>
+                  {currencies.find((c) => c.code === currency)?.displayLabel ?? `${currency} – ${currency}`}
+                </Text>
+              )}
+            </TouchableOpacity>
+            {showCurrencyDropdown && (
+              <View style={styles.currencyDropdown}>
+                <TextInput
+                  style={styles.currencySearchInput}
+                  placeholder="Search currency (e.g. USD, PKR)"
+                  placeholderTextColor={COLORS.textTertiary}
+                  value={currencySearch}
+                  onChangeText={setCurrencySearch}
+                  autoFocus
+                />
+                <ScrollView style={styles.currencyList} keyboardShouldPersistTaps="handled">
+                  {filterCurrencies(currencies, currencySearch).length === 0 ? (
+                    <View style={styles.dropdownItem}>
+                      <Text style={styles.dropdownEmpty}>{currenciesLoading ? 'Loading…' : 'No currencies found'}</Text>
+                    </View>
+                  ) : (
+                    filterCurrencies(currencies, currencySearch).map((c) => (
+                      <TouchableOpacity
+                        key={c.code}
+                        style={[styles.dropdownItem, currency === c.code && styles.dropdownItemActive]}
+                        onPress={() => { setCurrency(c.code); setCurrencySearch(''); setShowCurrencyDropdown(false); }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.dropdownItemText} numberOfLines={1}>{c.displayLabel}</Text>
+                      </TouchableOpacity>
+                    ))
+                  )}
+                </ScrollView>
+              </View>
+            )}
             <View style={styles.inputWithIcon}>
               <DollarSign size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
               <TextInput
@@ -321,14 +440,57 @@ export default function CompleteProfile() {
           </View>
           <View style={styles.halfSection}>
             <Text style={styles.label}>Phone number *</Text>
+            <TouchableOpacity
+              style={styles.currencyTrigger}
+              onPress={() => { setShowCountryDropdown((v) => !v); setShowCurrencyDropdown(false); }}
+              activeOpacity={0.8}
+            >
+              {countriesLoading ? (
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              ) : (
+                <Text style={styles.currencyTriggerText} numberOfLines={1}>
+                  {selectedCountry ? selectedCountry.displayLabel : 'Select country'}
+                </Text>
+              )}
+            </TouchableOpacity>
+            {showCountryDropdown && (
+              <View style={styles.currencyDropdown}>
+                <TextInput
+                  style={styles.currencySearchInput}
+                  placeholder="Search country or code"
+                  placeholderTextColor={COLORS.textTertiary}
+                  value={countrySearch}
+                  onChangeText={setCountrySearch}
+                  autoFocus
+                />
+                <ScrollView style={styles.currencyList} keyboardShouldPersistTaps="handled">
+                  {filterCountryCodes(countryCodes, countrySearch).length === 0 ? (
+                    <View style={styles.dropdownItem}>
+                      <Text style={styles.dropdownEmpty}>{countriesLoading ? 'Loading…' : 'No countries found'}</Text>
+                    </View>
+                  ) : (
+                    filterCountryCodes(countryCodes, countrySearch).map((c) => (
+                      <TouchableOpacity
+                        key={`${c.code}-${c.dialCode}`}
+                        style={[styles.dropdownItem, selectedCountry?.code === c.code && selectedCountry?.dialCode === c.dialCode && styles.dropdownItemActive]}
+                        onPress={() => { setSelectedCountry(c); setCountrySearch(''); setShowCountryDropdown(false); }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.dropdownItemText} numberOfLines={1}>{c.displayLabel}</Text>
+                      </TouchableOpacity>
+                    ))
+                  )}
+                </ScrollView>
+              </View>
+            )}
             <View style={styles.inputWithIcon}>
               <Phone size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
               <TextInput
                 style={styles.inputFlex}
-                placeholder="+92 300 1234567"
+                placeholder="300 1234567"
                 placeholderTextColor={COLORS.textTertiary}
-                value={phone}
-                onChangeText={setPhone}
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
                 keyboardType="phone-pad"
               />
             </View>
@@ -552,6 +714,57 @@ const styles = StyleSheet.create({
   halfSection: {
     flex: 1,
     minWidth: 0,
+  },
+  currencyTrigger: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.l,
+    paddingHorizontal: SPACING.m,
+    paddingVertical: SPACING.m,
+    minHeight: 48,
+    justifyContent: 'center',
+    marginBottom: SPACING.s,
+    backgroundColor: COLORS.white,
+  },
+  currencyTriggerText: {
+    fontSize: TYPOGRAPHY.fontSize.md,
+    color: COLORS.textPrimary,
+  },
+  currencyDropdown: {
+    marginBottom: SPACING.s,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.l,
+    maxHeight: 220,
+    overflow: 'hidden',
+    ...SHADOWS.medium,
+  },
+  currencySearchInput: {
+    padding: SPACING.m,
+    fontSize: TYPOGRAPHY.fontSize.md,
+    color: COLORS.textPrimary,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  currencyList: {
+    maxHeight: 180,
+  },
+  dropdownItem: {
+    paddingVertical: SPACING.m,
+    paddingHorizontal: SPACING.m,
+  },
+  dropdownItemActive: {
+    backgroundColor: COLORS.surfaceMuted,
+  },
+  dropdownItemText: {
+    fontSize: TYPOGRAPHY.fontSize.md,
+    color: COLORS.textPrimary,
+  },
+  dropdownEmpty: {
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: COLORS.textTertiary,
+    padding: SPACING.m,
   },
   submitBtn: {
     backgroundColor: COLORS.primary,

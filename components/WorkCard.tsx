@@ -37,10 +37,22 @@ export default function WorkCard({ project, type }: { project: any, type: string
     statusText = "Completed";
     statusGradient = ['#DCFCE7', '#BBF7D0'];
   } else if (type === 'proposals') {
-    statusColor = "#EA580C";
-    statusBg = "#FFEDD5";
-    statusText = project.proposalStatus ? project.proposalStatus.replace('_', ' ') : "Pending";
-    statusGradient = ['#FFEDD5', '#FED7AA'];
+    if (project.proposalStatus === 'Accepted') {
+      statusColor = "#16A34A";
+      statusBg = "#DCFCE7";
+      statusText = "Accepted";
+      statusGradient = ['#DCFCE7', '#BBF7D0'];
+    } else if (project.proposalStatus === 'Rejected') {
+      statusColor = "#DC2626";
+      statusBg = "#FEE2E2";
+      statusText = "Rejected";
+      statusGradient = ['#FEE2E2', '#FECACA'];
+    } else {
+      statusColor = "#EA580C";
+      statusBg = "#FFEDD5";
+      statusText = "Pending";
+      statusGradient = ['#FFEDD5', '#FED7AA'];
+    }
   }
 
   return (

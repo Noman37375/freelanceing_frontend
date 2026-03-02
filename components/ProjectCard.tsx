@@ -4,6 +4,7 @@ import { Clock, DollarSign, User, Zap, Bookmark } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Project, getProjectDisplayStatus } from '@/models/Project';
+import { formatCurrency } from '@/utils/helpers';
 import { COLORS, SHADOWS, BORDER_RADIUS, SPACING, TYPOGRAPHY, GRADIENTS } from '@/constants/theme';
 
 const timeAgo = (timestamp?: string) => {
@@ -23,10 +24,17 @@ const timeAgo = (timestamp?: string) => {
 
 interface ProjectCardProps {
   project: Project;
+  isSaved?: boolean;
+  onSavePress?: (projectId: string) => void;
 }
 
-export default function ProjectCard({ project }: ProjectCardProps) {
+export default function ProjectCard({ project, isSaved = false, onSavePress }: ProjectCardProps) {
   const router = useRouter();
+
+  const handleSavePress = (e: any) => {
+    e.stopPropagation();
+    onSavePress?.(project.id);
+  };
 
   const statusDisplay = getProjectDisplayStatus(project);
   const isActive = statusDisplay === 'Active';
@@ -81,7 +89,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           <View style={[styles.infoBadge, { backgroundColor: '#ECFDF5' }]}>
             <DollarSign size={14} color={COLORS.success} />
             <Text style={[styles.infoText, { color: COLORS.success }]}>
-              ${project.budget || 'Not specified'}
+              {project.budget != null ? formatCurrency(project.budget, project.currency || 'USD') : 'Not specified'}
             </Text>
           </View>
         </View>
@@ -134,11 +142,15 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.saveButton}
-          onPress={(e) => e.stopPropagation()}
+          style={[styles.saveButton, isSaved && styles.saveButtonActive]}
+          onPress={handleSavePress}
           activeOpacity={0.7}
         >
-          <Bookmark size={16} color="#64748B" />
+          <Bookmark
+            size={16}
+            color={isSaved ? COLORS.primary : '#64748B'}
+            fill={isSaved ? COLORS.primary : 'transparent'}
+          />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -288,5 +300,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FAFAFA',
+  },
+  saveButtonActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: '#F1F5F9',
   },
 });

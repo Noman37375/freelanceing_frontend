@@ -50,17 +50,23 @@ export default function VerifyEmail() {
 
     try {
       console.log('[VerifyEmail] Verifying OTP:', otp);
-      await verifyEmail(otp);
+      const updatedUser = await verifyEmail(otp);
       console.log('[VerifyEmail] Verification successful!');
-      
-      // Show success message
-      setSuccessMessage("Email verified successfully! Redirecting to login...");
-      
-      // Automatically redirect to login after 1.5 seconds
-      setTimeout(() => {
-        router.replace("/login" as any);
-      }, 1500);
-      
+
+      if (updatedUser?.role === 'Freelancer') {
+        setSuccessMessage("Email verified successfully! Redirecting to complete your profile...");
+        setTimeout(() => {
+          router.replace({
+            pathname: "/complete-profile",
+            params: { email: updatedUser.email, userId: updatedUser.id },
+          } as any);
+        }, 1500);
+      } else {
+        setSuccessMessage("Email verified successfully! Redirecting to login...");
+        setTimeout(() => {
+          router.replace("/login" as any);
+        }, 1500);
+      }
     } catch (error: any) {
       console.error('[VerifyEmail] Verification error:', error);
       setErrorMessage(error.message || "Invalid or expired OTP. Please try again.");

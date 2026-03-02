@@ -65,6 +65,7 @@ export default function MyWorkScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"Active" | "Completed" | "Proposals">("Active");
+  const [proposalFilter, setProposalFilter] = useState<"All" | "Accepted" | "Rejected" | "Pending">("All");
   const [projects, setProjects] = useState<Project[]>([]);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,18 +102,22 @@ export default function MyWorkScreen() {
 
   const displayProjects =
     activeTab === "Proposals"
-      ? proposals.map((p) => ({
-          id: p.id,
-          title: p.project?.title || "Unknown Project",
-          client: p.project?.client?.userName || (p.project?.client as any)?.user_name || "Unknown Client",
-          budget: `$${(p.bidAmount || 0).toFixed(2)}`,
-          deadline: p.project?.duration || "N/A",
-          location: p.project?.location || "Remote",
-          status: p.status === "ACCEPTED" ? "inProgress" : "proposal",
-          proposalStatus:
-            p.status === "ACCEPTED" ? "shortlisted" : p.status === "PENDING" ? "submitted" : "rejected",
-          milestones: [],
-        }))
+      ? proposals
+          .filter((p) => {
+            if (proposalFilter === "All") return true;
+            return p.status === proposalFilter.toUpperCase();
+          })
+          .map((p) => ({
+            id: p.id,
+            title: p.project?.title || "Unknown Project",
+            client: p.project?.client?.userName || (p.project?.client as any)?.user_name || "Unknown Client",
+            budget: `$${(p.bidAmount || 0).toFixed(2)}`,
+            deadline: p.project?.duration || "N/A",
+            location: p.project?.location || "Remote",
+            status: p.status === "ACCEPTED" ? "inProgress" : "proposal",
+            proposalStatus: p.status === "ACCEPTED" ? "Accepted" : p.status === "REJECTED" ? "Rejected" : "Pending",
+            milestones: [],
+          }))
       : projects.map((p) => ({
           id: p.id,
           title: p.title,
@@ -139,8 +144,14 @@ export default function MyWorkScreen() {
       const total = projects.reduce((sum, p) => sum + Number(p.budget || 0), 0);
       return { label: "Lifetime Earnings", value: `$${total.toLocaleString()}`, color: "#10B981" };
     }
-    const shortlisted = proposals.filter((p) => p.status === "ACCEPTED").length;
-    return { label: "Shortlisted Bids", value: shortlisted.toString(), color: "#F59E0B" };
+    const accepted = proposals.filter((p) => p.status === "ACCEPTED").length;
+    const rejected = proposals.filter((p) => p.status === "REJECTED").length;
+    const pending = proposals.filter((p) => p.status === "PENDING").length;
+    if (proposalFilter !== "All") {
+      const count = proposalFilter === "Accepted" ? accepted : proposalFilter === "Rejected" ? rejected : pending;
+      return { label: `${proposalFilter} Proposals`, value: count.toString(), color: "#F59E0B" };
+    }
+    return { label: "All Proposals", value: proposals.length.toString(), color: "#F59E0B" };
   };
 
   const stats = getStats();
@@ -160,8 +171,8 @@ export default function MyWorkScreen() {
         </View>
         <View style={styles.statRight}>
           <Text style={styles.statCount}>
-            {activeTab === "Proposals" ? proposals.length : projects.length}{" "}
-            {activeTab === "Proposals" ? "Proposals" : "Projects"}
+            {activeTab === "Proposals" ? displayProjects.length : projects.length}{" "}
+            {activeTab === "Proposals" ? (proposalFilter === "All" ? "Proposals" : proposalFilter) : "Projects"}
           </Text>
           <View style={[styles.statIconBg, { backgroundColor: stats.color + "20" }]}>
             <LayoutDashboard size={20} color={stats.color} />
@@ -196,6 +207,36 @@ export default function MyWorkScreen() {
           })}
         </View>
       </View>
+
+      {activeTab === "Proposals" && (
+        <View style={[styles.tabBarWrapper, styles.proposalFilterRow]}>
+          <View style={styles.tabBar}>
+            {(["All", "Accepted", "Rejected", "Pending"] as const).map((key) => {
+              const isActive = proposalFilter === key;
+              return (
+                <TouchableOpacity
+                  key={key}
+                  activeOpacity={0.8}
+                  style={[
+                    styles.proposalFilterChip,
+                    isActive && styles.proposalFilterChipActive,
+                  ]}
+                  onPress={() => setProposalFilter(key)}
+                >
+                  <Text
+                    style={[
+                      styles.proposalFilterChipText,
+                      isActive && styles.proposalFilterChipTextActive,
+                    ]}
+                  >
+                    {key}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      )}
 
       <ScrollView
         style={styles.contentBody}
@@ -330,6 +371,27 @@ const styles = StyleSheet.create({
     color: "#64748B",
   },
   tabChipTextActive: {
+    color: "#FFFFFF",
+  },
+  proposalFilterRow: { marginTop: 0, marginBottom: 8 },
+  proposalFilterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+  },
+  proposalFilterChipActive: {
+    backgroundColor: "#F59E0B",
+    borderColor: "#F59E0B",
+  },
+  proposalFilterChipText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#64748B",
+  },
+  proposalFilterChipTextActive: {
     color: "#FFFFFF",
   },
 

@@ -93,6 +93,7 @@ export const projectService = {
     title: string;
     description: string;
     budget: number;
+    currency?: string;
     location?: string;
     tags?: string[];
     category?: string;
@@ -123,6 +124,28 @@ export const projectService = {
     await apiCall(`/api/v1/projects/${id}`, {
       method: 'DELETE',
     });
+  },
+
+  /**
+   * Get current user's saved project IDs (for bookmark state)
+   */
+  getSavedProjectIds: async (): Promise<string[]> => {
+    const response = await apiCall('/api/v1/projects/saved/ids', { method: 'GET' });
+    return response?.data?.projectIds ?? [];
+  },
+
+  /**
+   * Save (bookmark) a project
+   */
+  saveProject: async (projectId: string): Promise<void> => {
+    await apiCall(`/api/v1/projects/${projectId}/save`, { method: 'POST' });
+  },
+
+  /**
+   * Unsave (remove bookmark) a project
+   */
+  unsaveProject: async (projectId: string): Promise<void> => {
+    await apiCall(`/api/v1/projects/${projectId}/save`, { method: 'DELETE' });
   },
 };
 

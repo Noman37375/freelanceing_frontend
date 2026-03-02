@@ -88,13 +88,14 @@ export interface ChatListItem {
   unreadCount?: number;
 }
 
-/** User from GET /chats/users (for search) */
+/** User from GET /chats/users (for search) and GET /chats/profile/:userId */
 export interface ChatUserItem {
   id: string;
   user_name: string;
   email?: string;
   role: string;
   profile_image?: string | null;
+  phone?: string | null;
 }
 
 export const chatService = {

@@ -16,12 +16,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Search, MessageSquare, Check } from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { Search, MessageSquare } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/contexts/SocketContext";
 import { chatService, type ConversationItem, type ChatUserItem } from "@/services/chatService";
-import { COLORS, SHADOWS, BORDER_RADIUS, SPACING, TYPOGRAPHY, GRADIENTS } from "@/constants/theme";
+import { COLORS, SPACING, TYPOGRAPHY } from "@/constants/theme";
 
 function formatTime(iso: string) {
   try {
@@ -181,7 +180,7 @@ const MessagesScreen = () => {
       <TouchableOpacity
         style={[styles.item, item.unread && styles.unreadItem]}
         onPress={() => handlePressConversation(item)}
-        activeOpacity={0.9}
+        activeOpacity={0.7}
       >
         <View style={styles.avatarWrapper}>
           {item.profileImage ? (
@@ -190,15 +189,10 @@ const MessagesScreen = () => {
               {online && <View style={styles.onlineDot} />}
             </View>
           ) : (
-            <LinearGradient
-              colors={GRADIENTS.primary as [string, string]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.placeholderAvatar}
-            >
+            <View style={styles.placeholderAvatar}>
               <Text style={styles.avatarLetter}>{item.name.charAt(0).toUpperCase()}</Text>
               {online && <View style={styles.onlineDot} />}
-            </LinearGradient>
+            </View>
           )}
           {item.unread && (
             <View style={styles.unreadBadge}>
@@ -208,11 +202,8 @@ const MessagesScreen = () => {
         </View>
         <View style={styles.textContainer}>
           <View style={styles.nameRow}>
-            <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
-            <View style={styles.timeContainer}>
-              {!item.unread && <Check size={12} color="#10B981" />}
-              <Text style={[styles.time, item.unread && styles.unreadTime]}>{item.updatedAt}</Text>
-            </View>
+            <Text style={[styles.name, item.unread && styles.nameUnread]} numberOfLines={1}>{item.name}</Text>
+            <Text style={[styles.time, item.unread && styles.unreadTime]}>{item.updatedAt}</Text>
           </View>
           <Text style={[styles.message, item.unread && styles.unreadMessage]} numberOfLines={1}>
             {item.lastMessage || "No messages yet"}
@@ -230,7 +221,7 @@ const MessagesScreen = () => {
       <TouchableOpacity
         style={styles.item}
         onPress={() => handlePressUser(item)}
-        activeOpacity={0.9}
+        activeOpacity={0.7}
       >
         <View style={styles.avatarWrapper}>
           {item.profile_image ? (
@@ -239,15 +230,10 @@ const MessagesScreen = () => {
               {online && <View style={styles.onlineDot} />}
             </View>
           ) : (
-            <LinearGradient
-              colors={GRADIENTS.primary as [string, string]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.placeholderAvatar}
-            >
+            <View style={styles.placeholderAvatar}>
               <Text style={styles.avatarLetter}>{name.charAt(0).toUpperCase()}</Text>
               {online && <View style={styles.onlineDot} />}
-            </LinearGradient>
+            </View>
           )}
         </View>
         <View style={styles.textContainer}>
@@ -276,20 +262,17 @@ const MessagesScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerSubtitle}>Inbox</Text>
-          <Text style={styles.headerTitle}>Messages</Text>
-        </View>
+        <Text style={styles.headerTitle}>Messages</Text>
       </View>
 
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
-          <Search size={18} color="#94A3B8" />
+          <Search size={20} color={COLORS.white} />
           <TextInput
-            placeholder="Search conversations or find users..."
-            placeholderTextColor="#94A3B8"
+            placeholder="Search or start new chat"
+            placeholderTextColor="rgba(255,255,255,0.8)"
             style={styles.searchInput}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -341,118 +324,102 @@ const MessagesScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  container: { flex: 1, backgroundColor: COLORS.white },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     paddingHorizontal: SPACING.l,
-    paddingVertical: SPACING.m,
-    backgroundColor: COLORS.white,
-  },
-  headerSubtitle: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: "#94A3B8",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 2,
+    paddingTop: SPACING.s,
+    paddingBottom: SPACING.m,
+    backgroundColor: COLORS.primary,
   },
   headerTitle: {
-    fontSize: TYPOGRAPHY.fontSize["3xl"],
-    fontWeight: TYPOGRAPHY.fontWeight.extrabold,
-    color: "#444751",
+    fontSize: 22,
+    fontWeight: "600",
+    color: COLORS.white,
   },
   searchContainer: {
-    paddingHorizontal: SPACING.l,
-    paddingVertical: SPACING.m,
-    backgroundColor: COLORS.white,
+    paddingHorizontal: SPACING.m,
+    paddingVertical: SPACING.s,
+    backgroundColor: COLORS.primary,
   },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F1F5F9",
-    borderRadius: BORDER_RADIUS.m,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 8,
     paddingHorizontal: SPACING.m,
-    height: 48,
-    borderWidth: 0,
-    borderColor: "transparent",
+    height: 40,
   },
   searchInput: {
     flex: 1,
     marginLeft: SPACING.m,
-    fontSize: TYPOGRAPHY.fontSize.base,
-    color: "#444751",
+    fontSize: 16,
+    color: COLORS.white,
     borderWidth: 0,
     borderColor: "transparent",
     outlineStyle: "none",
   },
   listContent: {
-    paddingHorizontal: SPACING.l,
+    paddingHorizontal: 0,
     paddingBottom: 100,
-    paddingTop: SPACING.m,
+    paddingTop: 0,
   },
   item: {
     flexDirection: "row",
-    paddingVertical: SPACING.m,
+    paddingVertical: 12,
+    paddingHorizontal: SPACING.l,
     alignItems: "center",
     backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.l,
-    paddingHorizontal: SPACING.m,
-    marginBottom: SPACING.s,
-    ...SHADOWS.small,
   },
   unreadItem: {
-    backgroundColor: "#E5E4EA",
-    borderWidth: 1,
-    borderColor: "#C7D2FE",
+    backgroundColor: COLORS.backgroundLight,
   },
   avatarWrapper: { position: "relative" },
   avatarImageWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: BORDER_RADIUS.l,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     position: "relative",
     overflow: "hidden",
   },
   avatarImage: {
-    width: 56,
-    height: 56,
-    borderRadius: BORDER_RADIUS.l,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
   },
   placeholderAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: BORDER_RADIUS.l,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: COLORS.secondary,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
   },
   avatarLetter: {
     color: COLORS.white,
-    fontWeight: TYPOGRAPHY.fontWeight.extrabold,
-    fontSize: TYPOGRAPHY.fontSize["2xl"],
+    fontWeight: "600",
+    fontSize: 20,
   },
   onlineDot: {
     position: "absolute",
     bottom: 2,
     right: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: COLORS.success,
     borderWidth: 2,
     borderColor: COLORS.white,
   },
   unreadBadge: {
     position: "absolute",
-    top: -4,
-    right: -4,
+    top: -2,
+    right: -2,
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: COLORS.error,
+    backgroundColor: COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
@@ -460,81 +427,82 @@ const styles = StyleSheet.create({
   },
   unreadCount: {
     color: COLORS.white,
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    fontSize: 11,
+    fontWeight: "700",
   },
-  textContainer: { flex: 1, marginLeft: SPACING.m },
+  textContainer: { flex: 1, marginLeft: SPACING.m, minWidth: 0 },
   nameRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   name: {
     flex: 1,
-    fontWeight: TYPOGRAPHY.fontWeight.extrabold,
-    fontSize: TYPOGRAPHY.fontSize.md,
-    color: "#444751",
+    fontWeight: "500",
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    marginRight: 8,
+  },
+  nameUnread: {
+    fontWeight: "700",
   },
   roleBadge: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: BORDER_RADIUS.s,
+    borderRadius: 4,
   },
-  roleBadgeClient: { backgroundColor: "#DBEAFE" },
-  roleBadgeFreelancer: { backgroundColor: "#D1FAE5" },
+  roleBadgeClient: { backgroundColor: COLORS.surfaceMuted },
+  roleBadgeFreelancer: { backgroundColor: "rgba(16, 185, 129, 0.2)" },
   roleBadgeText: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: "#444751",
+    fontSize: 11,
+    fontWeight: "600",
+    color: COLORS.textSecondary,
   },
-  timeContainer: { flexDirection: "row", alignItems: "center", gap: 4 },
   time: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    color: "#94A3B8",
-    fontWeight: TYPOGRAPHY.fontWeight.medium,
+    fontSize: 12,
+    color: COLORS.textTertiary,
+    fontWeight: "400",
   },
-  unreadTime: { color: COLORS.primary, fontWeight: TYPOGRAPHY.fontWeight.bold },
+  unreadTime: { color: COLORS.textPrimary, fontWeight: "500" },
   message: {
-    color: "#64748B",
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.regular,
+    color: COLORS.textTertiary,
+    fontSize: 14,
+    fontWeight: "400",
   },
   unreadMessage: {
-    color: "#444751",
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
+    color: COLORS.textPrimary,
+    fontWeight: "500",
   },
-  separator: { height: 1, backgroundColor: "transparent" },
+  separator: { height: 1, backgroundColor: COLORS.border, marginLeft: 52 + SPACING.l },
   empty: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 48 },
-  emptyText: { marginTop: SPACING.m, fontSize: TYPOGRAPHY.fontSize.base, color: COLORS.textTertiary },
-  emptySubtext: { marginTop: SPACING.s, fontSize: TYPOGRAPHY.fontSize.sm, color: COLORS.textTertiary },
+  emptyText: { marginTop: SPACING.m, fontSize: 16, color: COLORS.textTertiary },
+  emptySubtext: { marginTop: SPACING.s, fontSize: 14, color: COLORS.textTertiary },
 });
 
 const skeletonStyles = StyleSheet.create({
   list: {
     flex: 1,
-    paddingHorizontal: SPACING.l,
-    paddingTop: SPACING.m,
+    paddingHorizontal: 0,
+    paddingTop: 0,
     paddingBottom: 100,
+    backgroundColor: COLORS.white,
   },
   item: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: SPACING.m,
-    paddingHorizontal: SPACING.m,
-    marginBottom: SPACING.s,
+    paddingVertical: 12,
+    paddingHorizontal: SPACING.l,
     backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.l,
-    ...SHADOWS.small,
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: BORDER_RADIUS.l,
-    backgroundColor: "#E5E4EA",
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: COLORS.surfaceMuted,
   },
   textContainer: { flex: 1, marginLeft: SPACING.m },
-  line: { backgroundColor: "#E5E4EA", borderRadius: 4 },
+  line: { backgroundColor: COLORS.surfaceMuted, borderRadius: 4 },
   lineName: { height: 16, width: "65%", marginBottom: 8 },
   lineMessage: { height: 12, width: "90%" },
 });

@@ -20,6 +20,7 @@ import {
 import { projectService, proposalService } from "@/services/projectService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Project } from "@/models/Project";
+import { formatCurrency } from "@/utils/helpers";
 import { MapPin, DollarSign } from "lucide-react-native";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -150,8 +151,6 @@ function DateField({ value, onChange, placeholder = "Due date" }: DateFieldProps
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type BidType = "milestone" | "project";
-
 interface MilestoneRow {
   id: string;
   description: string;
@@ -184,8 +183,6 @@ export default function BidNow() {
   const [showSuccessModal, setShowSuccess]  = useState(false);
   const [showDetails, setShowDetails]       = useState(false);
 
-  const [bidType, setBidType]               = useState<BidType>("milestone");
-  const [projectAmount, setProjectAmount]   = useState<string>("");
   const [milestones, setMilestones]         = useState<MilestoneRow[]>([
     { id: "1", description: "Down Payment", dueDate: "", amount: "" },
   ]);
@@ -254,16 +251,11 @@ export default function BidNow() {
 
   // ── Total ──────────────────────────────────────────────────────────────────
 
-  const getTotalAmount = (): number => {
-    if (bidType === "project") {
-      const n = parseFloat(projectAmount);
-      return isNaN(n) ? 0 : n;
-    }
-    return milestones.reduce((sum, m) => {
+  const getTotalAmount = (): number =>
+    milestones.reduce((sum, m) => {
       const n = parseFloat(m.amount);
       return sum + (isNaN(n) ? 0 : n);
     }, 0);
-  };
 
   // ── Submit ─────────────────────────────────────────────────────────────────
 
@@ -352,7 +344,7 @@ export default function BidNow() {
                   <View style={styles.detailsGridItem}>
                     <DollarSign size={18} color="#282A32" />
                     <Text style={styles.detailsGridLabel}>Budget</Text>
-                    <Text style={styles.detailsGridValue}>${project.budget}</Text>
+                    <Text style={styles.detailsGridValue}>{formatCurrency(project.budget, project.currency || 'USD')}</Text>
                   </View>
                 )}
                 {!!project.duration && (
@@ -386,30 +378,17 @@ export default function BidNow() {
           )}
         </View>
 
-        {/* Bid type */}
+        {/* Bid type: milestone only */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Project Bid</Text>
-          <View style={styles.radioGroupRow}>
-            {(["milestone", "project"] as const).map(type => (
-              <TouchableOpacity key={type} style={styles.radioRow} onPress={() => setBidType(type)}>
-                <View style={[styles.radioOuter, bidType === type && styles.radioOuterSelected]}>
-                  <View style={[styles.radioInner, bidType === type && styles.radioInnerSelected]} />
-                </View>
-                <Text style={[styles.radioLabel, bidType !== type && styles.radioLabelMuted]}>
-                  {type === "milestone" ? "By milestone" : "By project"}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
           <Text style={styles.bidDesc}>
             Divide the project into smaller segments, called milestones. You'll be paid for each
             milestone as it is completed and approved.
           </Text>
         </View>
 
-        {/* ─── Milestone mode ───────────────────────────────────────────── */}
-        {bidType === "milestone" ? (
-          <View style={styles.section}>
+        {/* Project Milestones */}
+        <View style={styles.section}>
 
             {/* Section header + Split Equally */}
             <View style={styles.milestoneSectionHeader}>
@@ -426,11 +405,11 @@ export default function BidNow() {
               <View style={styles.budgetHint}>
                 <DollarSign size={13} color="#4F46E5" />
                 <Text style={styles.budgetHintText}>
-                  Project budget: <Text style={styles.budgetHintBold}>${project!.budget}</Text>
+                  Project budget: <Text style={styles.budgetHintBold}>{formatCurrency(project!.budget, project!.currency || 'USD')}</Text>
                   {"  ·  "}
                   {milestones.length} milestone{milestones.length !== 1 ? "s" : ""}
                   {"  ·  "}
-                  <Text style={styles.budgetHintBold}>${(project!.budget / milestones.length).toFixed(2)}</Text> each
+                  <Text style={styles.budgetHintBold}>{formatCurrency(project!.budget / milestones.length, project!.currency || 'USD')}</Text> each
                 </Text>
               </View>
             )}
@@ -515,28 +494,6 @@ export default function BidNow() {
             </View>
 
           </View>
-
-        ) : (
-
-          /* ─── Project mode ─────────────────────────────────────────────── */
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Bid Amount (USD)</Text>
-            {hasBudget && (
-              <Text style={styles.budgetRef}>Project budget: ${project!.budget}</Text>
-            )}
-            <View style={styles.amountInputWrapper}>
-              <Text style={styles.amountPrefix}>$</Text>
-              <TextInput
-                style={[styles.amountInput, { flex: 1 }]}
-                placeholder="0.00"
-                placeholderTextColor="#94A3B8"
-                keyboardType="numeric"
-                value={projectAmount}
-                onChangeText={setProjectAmount}
-              />
-            </View>
-          </View>
-        )}
 
         {/* Cover Letter */}
         <View style={styles.section}>

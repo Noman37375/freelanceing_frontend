@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import {
   ArrowLeft,
   User,
@@ -15,12 +15,15 @@ import { projectService } from '@/services/projectService';
 import { Project, getProjectDisplayStatus } from '@/models/Project';
 import { formatCurrency } from '@/utils/helpers';
 import { COLORS } from '@/utils/constants';
+import { milestoneService } from '@/services/projectService';
 
 export default function ProjectDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [milestones, setMilestones] = useState<any[]>([]);
+  const [milestonesLoading, setMilestonesLoading] = useState(false);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -37,6 +40,26 @@ export default function ProjectDetail() {
       }
     };
     fetchProject();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchMilestones = async () => {
+      if (!id) return;
+      try {
+        setMilestonesLoading(true);
+        const fetchedMilestones = await milestoneService.getMilestonesByProjectId(id);
+        
+        console.log('Fetched milestones:', fetchedMilestones);
+
+        setMilestones(fetchedMilestones || []);
+      } catch (err) {
+        console.error('Failed to fetch milestones:', err);
+      } finally {
+        setMilestonesLoading(false);
+      }
+    };
+
+    fetchMilestones();
   }, [id]);
 
   if (loading) {
@@ -67,7 +90,6 @@ export default function ProjectDetail() {
       </View>
     );
   }
-
 
   return (
     <View style={styles.container}>
@@ -122,6 +144,49 @@ export default function ProjectDetail() {
           </View>
         </View>
 
+        {/* IMPROVED TIMELINE MILESTONES */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Project Milestones</Text>
+          {milestonesLoading ? (
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          ) : milestones.length === 0 ? (
+            <Text style={{ color: COLORS.gray500, fontStyle: 'italic' }}>No milestones added yet.</Text>
+          ) : (
+            <View style={styles.timelineContainer}>
+              {milestones.map((m, index) => (
+                <View key={m.id || index} style={styles.timelineItem}>
+                  {/* Timeline Visuals */}
+                  <View style={styles.timelineLeftColumn}>
+                    <View style={[styles.timelineDot, { backgroundColor: COLORS.primary }]} />
+                    {index !== milestones.length - 1 && <View style={styles.timelineConnector} />}
+                  </View>
+                  
+                  {/* Milestone Content Card */}
+                  <View style={styles.milestoneDisplayCard}>
+                    <View style={styles.milestoneHeaderRow}>
+                      <Text style={styles.milestoneTitleText}>{m.title}</Text>
+                      {m.amount && (
+                        <View style={styles.amountBadge}>
+                          <Text style={styles.amountBadgeText}>${m.amount}</Text>
+                        </View>
+                      )}
+                    </View>
+                    
+                    {m.description && <Text style={styles.milestoneDescriptionText}>{m.description}</Text>}
+                    
+                    {m.dueDate && (
+                      <View style={styles.dateRow}>
+                        <Calendar size={12} color={COLORS.gray400} />
+                        <Text style={styles.dateText}>Due: {m.dueDate}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
         {/* STATUS INFO */}
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
@@ -157,7 +222,7 @@ export default function ProjectDetail() {
               </View>
             </View>
 
-                    <TouchableOpacity style={styles.messageButton} onPress={() => {
+            <TouchableOpacity style={styles.messageButton} onPress={() => {
               router.push({
                 pathname: '/active-details' as any,
                 params: { id: project.id },
@@ -201,7 +266,6 @@ export default function ProjectDetail() {
   );
 }
 
-/* ================= STYLES (same as before) ================= */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.gray100 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60, backgroundColor: COLORS.white, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, elevation: 3 },
@@ -210,26 +274,50 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   titleCard: { margin: 20, padding: 20, backgroundColor: COLORS.white, borderRadius: 16, elevation: 3 },
   projectTitle: { fontSize: 22, fontWeight: '700', color: COLORS.gray800 },
-  statusBadge: { marginTop: 12, padding: 6, borderRadius: 8 },
-  statusText: { color: '#FFF', fontWeight: '600' },
+  statusBadge: { marginTop: 12, padding: 6, borderRadius: 8, alignSelf: 'flex-start' },
+  statusText: { color: '#FFF', fontWeight: '600', fontSize: 12 },
   infoCard: { marginHorizontal: 20, marginBottom: 20, padding: 20, backgroundColor: COLORS.white, borderRadius: 16 },
-  infoRow: { flexDirection: 'row', gap: 24 },
-  infoItem: { flexDirection: 'row', gap: 12 },
+  infoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 24 },
+  infoItem: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   infoLabel: { fontSize: 12, color: COLORS.gray500 },
   infoValue: { fontSize: 16, fontWeight: '700' },
+  
+  /* Timeline Specific Styles */
+  timelineContainer: { marginTop: 5, paddingLeft: 5 },
+  timelineItem: { flexDirection: 'row', minHeight: 70 },
+  timelineLeftColumn: { alignItems: 'center', width: 20, marginRight: 15 },
+  timelineDot: { width: 12, height: 12, borderRadius: 6, marginTop: 6, zIndex: 2 },
+  timelineConnector: { width: 2, flex: 1, backgroundColor: COLORS.gray300, marginTop: -2 },
+  milestoneDisplayCard: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+  },
+  milestoneHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
+  milestoneTitleText: { fontSize: 16, fontWeight: '700', color: COLORS.gray800, flex: 1, marginRight: 8 },
+  amountBadge: { backgroundColor: COLORS.gray100, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  amountBadgeText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
+  milestoneDescriptionText: { fontSize: 14, color: COLORS.gray500, lineHeight: 20, marginBottom: 10 },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dateText: { fontSize: 12, color: COLORS.gray400, fontWeight: '500' },
+  
   freelancerCard: { marginHorizontal: 20, marginBottom: 20, padding: 20, backgroundColor: COLORS.white, borderRadius: 16 },
   freelancerHeader: { flexDirection: 'row', marginBottom: 16 },
   avatarContainer: { width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.gray100, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   freelancerInfo: { flex: 1 },
   freelancerName: { fontSize: 18, fontWeight: '700' },
   freelancerStats: { color: COLORS.gray500 },
-  messageButton: { flexDirection: 'row', justifyContent: 'center', gap: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.primary, opacity: 0.6 },
+  messageButton: { flexDirection: 'row', justifyContent: 'center', gap: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.primary },
   messageButtonText: { color: COLORS.primary, fontWeight: '600' },
   section: { marginHorizontal: 20, marginBottom: 20 },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
-  description: { backgroundColor: COLORS.white, padding: 16, borderRadius: 12, color: COLORS.gray500 },
+  description: { backgroundColor: COLORS.white, padding: 16, borderRadius: 12, color: COLORS.gray600, lineHeight: 22 },
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tag: { backgroundColor: COLORS.gray100, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
+  tag: { backgroundColor: COLORS.gray200, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
   tagText: { fontSize: 12, color: COLORS.primaryDark, fontWeight: '500' },
   categoryText: { backgroundColor: COLORS.white, padding: 16, borderRadius: 12, color: COLORS.gray700, fontSize: 16, fontWeight: '500' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.gray100 },

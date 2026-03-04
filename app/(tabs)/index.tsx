@@ -47,7 +47,6 @@ export default function HomeScreen() {
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCount, setActiveCount] = useState<number | null>(null);
   const [inProgressCount, setInProgressCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -79,7 +78,6 @@ export default function HomeScreen() {
       setCategories(servicesResult.status === 'fulfilled' ? (servicesResult.value || []) : []);
       const activeProjects = projectsResult.status === 'fulfilled' ? (projectsResult.value || []) : [];
       setRecentProjects(activeProjects);
-      setActiveCount(activeProjects.length);
       setInProgressCount(inProgressResult.status === 'fulfilled' ? (inProgressResult.value?.length ?? 0) : 0);
     } catch (error: any) {
       console.error('Failed to fetch data:', error);
@@ -240,15 +238,9 @@ export default function HomeScreen() {
 
         {/* Overview Cards */}
         <View style={styles.overviewRow}>
-          <View style={[styles.overviewCard, styles.overviewCardActive]}>
-            <Text style={styles.overviewCardLabel}>Active Projects</Text>
-            <Text style={[styles.overviewCardCount, { color: '#10B981' }]}>
-              {activeCount === null ? '—' : activeCount}
-            </Text>
-          </View>
-          <View style={[styles.overviewCard, styles.overviewCardInProgress]}>
-            <Text style={styles.overviewCardLabel}>In Progress</Text>
-            <Text style={[styles.overviewCardCount, { color: '#4F46E5' }]}>
+          <View style={styles.inProgressChip}>
+            <Text style={styles.inProgressChipLabel}>In Progress</Text>
+            <Text style={styles.inProgressChipCount}>
               {inProgressCount === null ? '—' : inProgressCount}
             </Text>
           </View>
@@ -450,7 +442,6 @@ const styles = StyleSheet.create({
 
   overviewRow: {
     flexDirection: 'row',
-    gap: 12,
     marginBottom: 20,
   },
   overviewCard: {
@@ -486,6 +477,31 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '800',
     color: '#1E293B',
+  },
+
+  inProgressChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  inProgressChipLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  inProgressChipCount: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#282A32',
   },
 
   allServiceSection: {

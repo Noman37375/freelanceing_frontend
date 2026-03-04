@@ -12,6 +12,7 @@ const paths = {
   // This script will generate all required sizes from it.
   iconSource: path.join(projectRoot, "assets", "images", "icon-source.png"),
   icon: path.join(projectRoot, "assets", "images", "icon.png"),
+  faviconSvg: path.join(projectRoot, "assets", "images", "favicon.svg"),
   favicon: path.join(projectRoot, "assets", "images", "favicon.png"),
   pwaDir: path.join(projectRoot, "assets", "images", "pwa"),
 };
@@ -81,9 +82,18 @@ async function main() {
   await resizeContainSquare(sourceBuffer, 1024, paths.icon);
   log(`Wrote: ${path.relative(projectRoot, paths.icon)} (1024x1024)`);
 
-  // Favicon (browser tab) — use 192px so it scales down sharply to 16/32px in the tab
-  await resizeContainSquare(sourceBuffer, 192, paths.favicon);
-  log(`Wrote: ${path.relative(projectRoot, paths.favicon)} (192x192)`);
+  // Favicon (browser tab) — use custom favicon.svg if present, otherwise fall back to icon source
+  if (await exists(paths.faviconSvg)) {
+    const svgBuffer = await fs.readFile(paths.faviconSvg);
+    await sharp(svgBuffer, { density: 300 })
+      .resize(192, 192, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png({ compressionLevel: 9 })
+      .toFile(paths.favicon);
+    log(`Wrote: ${path.relative(projectRoot, paths.favicon)} (192x192) [from favicon.svg]`);
+  } else {
+    await resizeContainSquare(sourceBuffer, 192, paths.favicon);
+    log(`Wrote: ${path.relative(projectRoot, paths.favicon)} (192x192)`);
+  }
 
   // PWA icons (useful for custom manifest setups + future-proofing)
   const pwa192 = path.join(paths.pwaDir, "icon-192.png");

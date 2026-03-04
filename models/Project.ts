@@ -51,8 +51,12 @@ export interface Milestone {
   title: string;
   description?: string | null;
   dueDate?: string | null;
-  status: 'pending' | 'in_progress' | 'submitted' | 'approved';
+  status: 'pending' | 'funded' | 'in_progress' | 'in_review' | 'submitted' | 'approved' | 'released' | 'disputed';
   orderIndex: number;
+  amount?: number | null;
+  submittedAt?: string | null;
+  reviewDeadline?: string | null;
+  approvedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

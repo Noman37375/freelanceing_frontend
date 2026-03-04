@@ -5,6 +5,7 @@ import { View, Image, StyleSheet, Dimensions } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { WalletProvider } from '@/contexts/WalletContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 import { SocketProvider } from '@/contexts/SocketContext';
 import { CallProvider } from '@/contexts/CallContext';
 import { CallModal } from '@/components/CallModal';
@@ -86,9 +87,11 @@ export default function RootLayout() {
       <SocketProvider>
         <CallProvider>
           <WalletProvider>
-            <RootNavigation />
-            <CallModal />
-            <StatusBar style="auto" />
+            <NotificationProvider>
+              <RootNavigation />
+              <CallModal />
+              <StatusBar style="auto" />
+            </NotificationProvider>
           </WalletProvider>
         </CallProvider>
       </SocketProvider>

@@ -82,6 +82,7 @@ export const disputeService = {
     reason: string;
     description?: string;
     amount?: number;
+    milestoneId?: string;
   }): Promise<Dispute> => {
     const response = await apiCall('/api/v1/disputes', {
       method: 'POST',

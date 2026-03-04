@@ -197,7 +197,7 @@ export default function ResolutionCenter() {
                             </View>
                             <View style={styles.infoContent}>
                                 <Text style={styles.infoLabel}>PROJECT</Text>
-                                <Text style={styles.infoValue}>{dispute.project?.title || dispute.title || 'N/A'}</Text>
+                                <Text style={styles.infoValue}>{dispute.title || dispute.projectId || 'N/A'}</Text>
                             </View>
                         </View>
 

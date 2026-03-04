@@ -28,20 +28,41 @@ import {
   AlertCircle,
   Plus,
   Trash2,
-  MessageCircle,
+  Lock,
+  ShieldCheck,
+  Ban,
+  Star,
 } from "lucide-react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { projectService, milestoneService } from "@/services/projectService";
+import { reviewService } from "@/services/reviewService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Project, Milestone } from "@/models/Project";
 
+// ── Status display config ────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  pending:     { label: "Not Started",       color: "#94A3B8", bg: "#F8FAFC", border: "#CBD5E1" },
-  in_progress: { label: "In Progress",       color: "#4F46E5", bg: "#EEF2FF", border: "#818CF8" },
-  submitted:   { label: "Awaiting Approval", color: "#D97706", bg: "#FFFBEB", border: "#FCD34D" },
-  approved:    { label: "Approved",          color: "#16A34A", bg: "#F0FDF4", border: "#86EFAC" },
+  pending:     { label: "Not Funded",          color: "#94A3B8", bg: "#F8FAFC", border: "#CBD5E1" },
+  funded:      { label: "Funded",              color: "#0891B2", bg: "#ECFEFF", border: "#67E8F9" },
+  in_progress: { label: "In Progress",         color: "#4F46E5", bg: "#EEF2FF", border: "#818CF8" },
+  in_review:   { label: "In Review",           color: "#D97706", bg: "#FFFBEB", border: "#FCD34D" },
+  submitted:   { label: "Awaiting Approval",   color: "#D97706", bg: "#FFFBEB", border: "#FCD34D" },
+  approved:    { label: "Approved",            color: "#16A34A", bg: "#F0FDF4", border: "#86EFAC" },
+  released:    { label: "Released",            color: "#16A34A", bg: "#F0FDF4", border: "#86EFAC" },
+  disputed:    { label: "Disputed",            color: "#DC2626", bg: "#FEF2F2", border: "#FCA5A5" },
 };
+
+// Returns a string like "3d 4h 12m" or "Expired" from a deadline ISO string
+function formatCountdown(deadlineIso: string): string {
+  const diff = new Date(deadlineIso).getTime() - Date.now();
+  if (diff <= 0) return "Expired";
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  if (days > 0) return `${days}d ${hours}h remaining`;
+  if (hours > 0) return `${hours}h ${mins}m remaining`;
+  return `${mins}m remaining`;
+}
 
 export default function ActiveDetailsScreen() {
   const router = useRouter();
@@ -54,11 +75,19 @@ export default function ActiveDetailsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // countdown tick (re-renders once per minute for review timers)
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Add milestone modal (Client)
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newDueDate, setNewDueDate] = useState("");
+  const [newAmount, setNewAmount] = useState("");
   const [addingMilestone, setAddingMilestone] = useState(false);
 
   // Request changes modal (Client)
@@ -66,6 +95,13 @@ export default function ActiveDetailsScreen() {
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string | null>(null);
   const [changesMessage, setChangesMessage] = useState("");
   const [sendingChanges, setSendingChanges] = useState(false);
+
+  // Review modal (Client, shown after milestone approval)
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewFreelancerId, setReviewFreelancerId] = useState<string | null>(null);
 
   const isClient = user?.role === "Client";
   const isFreelancer = user?.role === "Freelancer";
@@ -91,6 +127,31 @@ export default function ActiveDetailsScreen() {
 
   const onRefresh = () => { setRefreshing(true); fetchData(); };
 
+  // ── Client: Fund milestone ─────────────────────────────────────
+  const handleFund = async (milestoneId: string, title: string, amount: number) => {
+    Alert.alert(
+      "Fund Milestone",
+      `Lock $${amount.toFixed(2)} into escrow for "${title}"? The funds will be released to the freelancer once you approve their work.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Fund Escrow",
+          onPress: async () => {
+            try {
+              setActionLoading(milestoneId + "_fund");
+              const updated = await milestoneService.fundMilestone(milestoneId);
+              setMilestones((prev) => prev.map((m) => (m.id === milestoneId ? updated : m)));
+            } catch (error: any) {
+              Alert.alert("Error", error.message || "Failed to fund milestone");
+            } finally {
+              setActionLoading(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // ── Freelancer: Start ──────────────────────────────────────────
   const handleStart = async (milestoneId: string) => {
     try {
@@ -105,8 +166,6 @@ export default function ActiveDetailsScreen() {
   };
 
   // ── Freelancer: Submit ─────────────────────────────────────────
-  // NOTE: Do NOT use Alert.alert with async callbacks — unreliable on RN.
-  // Instead call API directly, show errors via Alert.
   const handleSubmit = async (milestoneId: string) => {
     try {
       setActionLoading(milestoneId + "_submit");
@@ -126,10 +185,37 @@ export default function ActiveDetailsScreen() {
       const result = await milestoneService.approveMilestone(milestoneId);
       setMilestones((prev) => prev.map((m) => (m.id === milestoneId ? result.milestone : m)));
       setProject((prev) => prev ? { ...prev, progress: result.progress } : prev);
+      // Prompt client to leave a review for the freelancer
+      if (project?.freelancer?.id) {
+        setReviewFreelancerId(project.freelancer.id);
+        setReviewRating(0);
+        setReviewComment('');
+        setShowReviewModal(true);
+      }
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to approve milestone");
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  // ── Client: Submit Review ──────────────────────────────────────
+  const handleSubmitReview = async () => {
+    if (!project || !reviewFreelancerId || reviewRating === 0) return;
+    try {
+      setReviewLoading(true);
+      await reviewService.createReview({
+        projectId: project.id,
+        revieweeId: reviewFreelancerId,
+        rating: reviewRating,
+        comment: reviewComment.trim() || undefined,
+      });
+      setShowReviewModal(false);
+      Alert.alert('Thank you!', 'Your review has been submitted.');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to submit review');
+    } finally {
+      setReviewLoading(false);
     }
   };
 
@@ -157,6 +243,11 @@ export default function ActiveDetailsScreen() {
   // ── Client: Add Milestone ──────────────────────────────────────
   const handleAddMilestone = async () => {
     if (!newTitle.trim() || !project) return;
+    const parsedAmount = parseFloat(newAmount);
+    if (newAmount && (isNaN(parsedAmount) || parsedAmount <= 0)) {
+      Alert.alert("Error", "Amount must be a positive number");
+      return;
+    }
     try {
       setAddingMilestone(true);
       const milestone = await milestoneService.createMilestone(project.id, {
@@ -164,10 +255,11 @@ export default function ActiveDetailsScreen() {
         description: newDesc.trim() || undefined,
         dueDate: newDueDate.trim() || undefined,
         orderIndex: milestones.length,
+        amount: newAmount ? parsedAmount : undefined,
       });
       setMilestones((prev) => [...prev, milestone]);
       setShowAddModal(false);
-      setNewTitle(""); setNewDesc(""); setNewDueDate("");
+      setNewTitle(""); setNewDesc(""); setNewDueDate(""); setNewAmount("");
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to add milestone");
     } finally {
@@ -182,10 +274,7 @@ export default function ActiveDetailsScreen() {
       {
         text: "Delete",
         style: "destructive",
-        onPress: () => {
-          // Sync delete — wrapped in separate async fn
-          deleteMilestone(milestoneId);
-        },
+        onPress: () => deleteMilestone(milestoneId),
       },
     ]);
   };
@@ -203,7 +292,7 @@ export default function ActiveDetailsScreen() {
     }
   };
 
-  // ── Loading / Error states ─────────────────────────────────────
+  // ── Loading / Error ────────────────────────────────────────────
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -226,8 +315,14 @@ export default function ActiveDetailsScreen() {
   }
 
   const progress = project.progress || 0;
-  const approvedCount = milestones.filter((m) => m.status === "approved").length;
+  const doneCount = milestones.filter((m) => m.status === "released" || m.status === "approved").length;
   const otherUser = isClient ? project.freelancer : project.client;
+
+  const canDelete = (status: Milestone["status"]) =>
+    status === "pending"; // only delete unfunded milestones
+
+  const isInReview = (status: Milestone["status"]) =>
+    status === "in_review" || status === "submitted";
 
   return (
     <View style={styles.container}>
@@ -274,7 +369,7 @@ export default function ActiveDetailsScreen() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                 <TrendingUp size={13} color="#A5B4FC" />
                 <Text style={styles.progressLabel}>
-                  {approvedCount}/{milestones.length} milestones approved
+                  {doneCount}/{milestones.length} milestones released
                 </Text>
               </View>
               <Text style={styles.progressPercent}>{progress}%</Text>
@@ -344,12 +439,29 @@ export default function ActiveDetailsScreen() {
                         <Text style={styles.dueDateText}>Due: {milestone.dueDate}</Text>
                       </View>
                     ) : null}
+                    {/* Escrow amount badge */}
+                    {milestone.amount ? (
+                      <View style={styles.amountRow}>
+                        <Lock size={11} color="#0891B2" />
+                        <Text style={styles.amountText}>
+                          ${milestone.amount.toFixed(2)} escrow
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
-                  <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
-                    {milestone.status === "approved"    && <CheckCircle size={11} color={cfg.color} />}
-                    {milestone.status === "submitted"   && <Clock       size={11} color={cfg.color} />}
-                    {milestone.status === "in_progress" && <PlayCircle  size={11} color={cfg.color} />}
-                    {milestone.status === "pending"     && <AlertCircle size={11} color={cfg.color} />}
+                  <View style={[styles.statusBadge, { backgroundColor: cfg.bg, borderColor: cfg.border }]}>
+                    {milestone.status === "released" || milestone.status === "approved"
+                      ? <CheckCircle size={11} color={cfg.color} />
+                      : milestone.status === "in_review" || milestone.status === "submitted"
+                      ? <Clock size={11} color={cfg.color} />
+                      : milestone.status === "in_progress"
+                      ? <PlayCircle size={11} color={cfg.color} />
+                      : milestone.status === "funded"
+                      ? <Lock size={11} color={cfg.color} />
+                      : milestone.status === "disputed"
+                      ? <Ban size={11} color={cfg.color} />
+                      : <AlertCircle size={11} color={cfg.color} />
+                    }
                     <Text style={[styles.statusText, { color: cfg.color }]}>{cfg.label}</Text>
                   </View>
                 </View>
@@ -358,8 +470,83 @@ export default function ActiveDetailsScreen() {
                   <Text style={styles.milestoneDesc}>{milestone.description}</Text>
                 ) : null}
 
-                {/* ── Freelancer actions ── */}
-                {isFreelancer && milestone.status === "pending" && (
+                {/* Review countdown (for in_review milestones) */}
+                {isInReview(milestone.status) && milestone.reviewDeadline ? (
+                  <View style={styles.countdownBadge}>
+                    <Clock size={13} color="#D97706" />
+                    <Text style={styles.countdownText}>
+                      Auto-release: {formatCountdown(milestone.reviewDeadline)}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {/* Disputed notice */}
+                {milestone.status === "disputed" && (
+                  <View style={styles.disputedBadge}>
+                    <Ban size={13} color="#DC2626" />
+                    <Text style={styles.disputedText}>Funds frozen — dispute in progress</Text>
+                  </View>
+                )}
+
+                {/* ── Client: Fund button (pending, amount set) ── */}
+                {isClient && milestone.status === "pending" && milestone.amount && milestone.amount > 0 && (
+                  <TouchableOpacity
+                    style={[styles.actionBtn, { backgroundColor: "#0891B2" }]}
+                    onPress={() => handleFund(milestone.id, milestone.title, milestone.amount!)}
+                    disabled={isLoadingAction("fund")}
+                    activeOpacity={0.8}
+                  >
+                    {isLoadingAction("fund") ? (
+                      <ActivityIndicator size="small" color="#FFF" />
+                    ) : (
+                      <>
+                        <Lock size={15} color="#FFF" />
+                        <Text style={styles.actionBtnText}>Fund Escrow — ${milestone.amount.toFixed(2)}</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+
+                {/* ── Client: pending but no amount — nudge ── */}
+                {isClient && milestone.status === "pending" && (!milestone.amount || milestone.amount <= 0) && (
+                  <Text style={styles.noAmountHint}>
+                    Set an amount on this milestone to enable escrow funding.
+                  </Text>
+                )}
+
+                {/* ── Client: Approve + Request Changes (in_review) ── */}
+                {isClient && isInReview(milestone.status) && (
+                  <View style={styles.clientActionRow}>
+                    <TouchableOpacity
+                      style={[styles.clientBtn, styles.approveBtn]}
+                      onPress={() => handleApprove(milestone.id)}
+                      disabled={isLoadingAction("approve")}
+                      activeOpacity={0.8}
+                    >
+                      {isLoadingAction("approve") ? (
+                        <ActivityIndicator size="small" color="#FFF" />
+                      ) : (
+                        <>
+                          <ShieldCheck size={14} color="#FFF" />
+                          <Text style={styles.clientBtnText}>Approve & Release</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.clientBtn, styles.changesBtn]}
+                      onPress={() => openChangesModal(milestone.id)}
+                      activeOpacity={0.8}
+                    >
+                      <AlertCircle size={14} color="#444751" />
+                      <Text style={[styles.clientBtnText, { color: "#444751" }]}>
+                        Request Changes
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {/* ── Freelancer: Start (funded) ── */}
+                {isFreelancer && milestone.status === "funded" && (
                   <TouchableOpacity
                     style={[styles.actionBtn, { backgroundColor: "#444751" }]}
                     onPress={() => handleStart(milestone.id)}
@@ -377,6 +564,7 @@ export default function ActiveDetailsScreen() {
                   </TouchableOpacity>
                 )}
 
+                {/* ── Freelancer: Submit (in_progress) ── */}
                 {isFreelancer && milestone.status === "in_progress" && (
                   <TouchableOpacity
                     style={[styles.actionBtn, { backgroundColor: "#4F46E5" }]}
@@ -389,52 +577,22 @@ export default function ActiveDetailsScreen() {
                     ) : (
                       <>
                         <Send size={15} color="#FFF" />
-                        <Text style={styles.actionBtnText}>Submit for Approval</Text>
+                        <Text style={styles.actionBtnText}>Submit for Review</Text>
                       </>
                     )}
                   </TouchableOpacity>
                 )}
 
-                {isFreelancer && milestone.status === "submitted" && (
+                {/* ── Freelancer: awaiting review ── */}
+                {isFreelancer && isInReview(milestone.status) && (
                   <View style={styles.awaitingBadge}>
                     <Clock size={14} color="#D97706" />
                     <Text style={styles.awaitingText}>Submitted — awaiting client review</Text>
                   </View>
                 )}
 
-                {/* ── Client actions ── */}
-                {isClient && milestone.status === "submitted" && (
-                  <View style={styles.clientActionRow}>
-                    <TouchableOpacity
-                      style={[styles.clientBtn, styles.approveBtn]}
-                      onPress={() => handleApprove(milestone.id)}
-                      disabled={isLoadingAction("approve")}
-                      activeOpacity={0.8}
-                    >
-                      {isLoadingAction("approve") ? (
-                        <ActivityIndicator size="small" color="#FFF" />
-                      ) : (
-                        <>
-                          <CheckCircle size={14} color="#FFF" />
-                          <Text style={styles.clientBtnText}>Approve</Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.clientBtn, styles.changesBtn]}
-                      onPress={() => openChangesModal(milestone.id)}
-                      activeOpacity={0.8}
-                    >
-                      <AlertCircle size={14} color="#444751" />
-                      <Text style={[styles.clientBtnText, { color: "#444751" }]}>
-                        Request Changes
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {/* Delete button (client, non-approved) */}
-                {isClient && milestone.status !== "approved" && (
+                {/* ── Delete button (client, only on unfunded milestones) ── */}
+                {isClient && canDelete(milestone.status) && (
                   <TouchableOpacity
                     style={styles.deleteBtn}
                     onPress={() => handleDelete(milestone.id, milestone.title)}
@@ -462,6 +620,16 @@ export default function ActiveDetailsScreen() {
               placeholderTextColor="#94A3B8"
               value={newTitle}
               onChangeText={setNewTitle}
+            />
+
+            <Text style={styles.inputLabel}>Amount ($)</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="e.g. 500"
+              placeholderTextColor="#94A3B8"
+              value={newAmount}
+              onChangeText={setNewAmount}
+              keyboardType="decimal-pad"
             />
 
             <Text style={styles.inputLabel}>Description</Text>
@@ -504,6 +672,62 @@ export default function ActiveDetailsScreen() {
         </View>
       </Modal>
 
+      {/* ── REVIEW MODAL (Client, after milestone approval) ── */}
+      <Modal visible={showReviewModal} transparent animationType="slide" onRequestClose={() => setShowReviewModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Rate Your Experience</Text>
+            <Text style={styles.modalSubtitle}>
+              How was working with this freelancer? Your feedback helps the community.
+            </Text>
+
+            <View style={styles.starRow}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity
+                  key={star}
+                  onPress={() => setReviewRating(star)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Star
+                    size={36}
+                    color={star <= reviewRating ? "#F59E0B" : "#CBD5E1"}
+                    fill={star <= reviewRating ? "#F59E0B" : "transparent"}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.inputLabel}>Comment (optional)</Text>
+            <TextInput
+              style={[styles.textInput, { height: 100, textAlignVertical: "top" }]}
+              placeholder="Share your experience with this freelancer..."
+              placeholderTextColor="#94A3B8"
+              value={reviewComment}
+              onChangeText={setReviewComment}
+              multiline
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: "#F1F5F9" }]}
+                onPress={() => setShowReviewModal(false)}
+              >
+                <Text style={{ color: "#475569", fontWeight: "700" }}>Skip</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: "#F59E0B", opacity: reviewRating === 0 ? 0.5 : 1 }]}
+                onPress={handleSubmitReview}
+                disabled={reviewLoading || reviewRating === 0}
+              >
+                {reviewLoading
+                  ? <ActivityIndicator size="small" color="#FFF" />
+                  : <Text style={{ color: "#FFF", fontWeight: "700" }}>Submit Review</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* ── REQUEST CHANGES MODAL (Client) ── */}
       <Modal visible={showChangesModal} transparent animationType="slide" onRequestClose={() => setShowChangesModal(false)}>
         <View style={styles.modalOverlay}>
@@ -515,7 +739,7 @@ export default function ActiveDetailsScreen() {
 
             <TextInput
               style={[styles.textInput, { height: 110, textAlignVertical: "top" }]}
-              placeholder="e.g. Please update the color scheme and adjust the font sizes…"
+              placeholder="e.g. Please update the color scheme…"
               placeholderTextColor="#94A3B8"
               value={changesMessage}
               onChangeText={setChangesMessage}
@@ -619,14 +843,37 @@ const styles = StyleSheet.create({
   milestoneTitle: { fontSize: 15, fontWeight: "700", color: "#1E293B" },
   dueDateRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
   dueDateText: { fontSize: 11, color: "#94A3B8" },
+  amountRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
+  amountText: { fontSize: 11, color: "#0891B2", fontWeight: "700" },
   statusBadge: {
     flexDirection: "row", alignItems: "center", gap: 4,
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1,
   },
   statusText: { fontSize: 11, fontWeight: "700" },
   milestoneDesc: { fontSize: 13, color: "#64748B", lineHeight: 19, marginBottom: 10, marginTop: 4 },
 
-  // Freelancer buttons
+  // Countdown
+  countdownBadge: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    marginTop: 8, paddingVertical: 7, paddingHorizontal: 12,
+    backgroundColor: "#FFFBEB", borderRadius: 10,
+    borderWidth: 1, borderColor: "#FDE68A",
+  },
+  countdownText: { color: "#D97706", fontSize: 12, fontWeight: "600" },
+
+  // Disputed
+  disputedBadge: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    marginTop: 8, paddingVertical: 7, paddingHorizontal: 12,
+    backgroundColor: "#FEF2F2", borderRadius: 10,
+    borderWidth: 1, borderColor: "#FCA5A5",
+  },
+  disputedText: { color: "#DC2626", fontSize: 12, fontWeight: "600" },
+
+  // No amount hint
+  noAmountHint: { fontSize: 12, color: "#94A3B8", fontStyle: "italic", marginTop: 8 },
+
+  // Action buttons (freelancer)
   actionBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     paddingVertical: 12, borderRadius: 12, marginTop: 6,
@@ -661,6 +908,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 24, paddingBottom: 44,
   },
+  starRow: { flexDirection: "row", gap: 14, justifyContent: "center", marginVertical: 20 },
   modalTitle: { fontSize: 18, fontWeight: "800", color: "#1E293B", marginBottom: 6 },
   modalSubtitle: { fontSize: 13, color: "#64748B", marginBottom: 16, lineHeight: 20 },
   inputLabel: { fontSize: 13, fontWeight: "700", color: "#475569", marginBottom: 6 },

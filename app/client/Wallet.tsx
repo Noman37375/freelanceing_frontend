@@ -1,271 +1,508 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { Wallet as WalletIcon, ArrowDownToLine, ArrowUpFromLine, Lock, Clock, ArrowLeft } from 'lucide-react-native';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  ActivityIndicator, Alert, Modal, TextInput,
+} from 'react-native';
+import {
+  Wallet as WalletIcon, ArrowDownToLine, ArrowUpFromLine,
+  Lock, Clock, ArrowLeft, Plus, X, Search,
+} from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { walletService, Transaction } from '@/services/walletService';
 
-export default function Wallet() {
-  const router = useRouter();
-  const [wallet, setWallet] = useState<any>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+const QUICK_AMOUNTS = [50, 100, 250, 500];
 
-  useEffect(() => {
-    fetchWalletData();
-  }, []);
+function txnIsCredit(type: string) {
+  return type === 'deposit' || type === 'refund';
+}
+
+export default function ClientWallet() {
+  const router = useRouter();
+
+  const [balance, setBalance]           = useState(0);
+  const [escrowBalance, setEscrowBalance] = useState(0);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading]           = useState(true);
+
+  // Filter / search
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+
+  // Add Funds modal
+  const [showAddModal, setShowAddModal]   = useState(false);
+  const [addAmount, setAddAmount]         = useState('');
+  const [addLoading, setAddLoading]       = useState(false);
+
+  // Withdraw modal
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawAmount, setWithdrawAmount]       = useState('');
+  const [withdrawLoading, setWithdrawLoading]     = useState(false);
+
+  useEffect(() => { fetchWalletData(); }, []);
 
   const fetchWalletData = async () => {
     try {
       setLoading(true);
-      const [walletData, transactionsData] = await Promise.all([
+      const [walletData, txData] = await Promise.all([
         walletService.getWallet(),
         walletService.getTransactions(),
       ]);
-      setWallet(walletData);
-      setTransactions(transactionsData);
+      setBalance(walletData.balance);
+      setEscrowBalance(walletData.escrowBalance);
+      setTransactions(txData);
     } catch (error: any) {
-      console.error('Failed to fetch wallet data:', error);
       Alert.alert('Error', error.message || 'Failed to load wallet data');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddFunds = () => {
-    Alert.prompt(
-      'Add Funds',
-      'Enter amount to add:',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Add',
-          onPress: async (amount) => {
-            if (!amount || parseFloat(amount) <= 0) {
-              Alert.alert('Error', 'Please enter a valid amount');
-              return;
-            }
-            try {
-              await walletService.addFunds(parseFloat(amount));
-              Alert.alert('Success', 'Funds added successfully');
-              fetchWalletData();
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to add funds');
-            }
-          },
-        },
-      ],
-      'plain-text'
-    );
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const getTransactionTitle = (transaction: Transaction) => {
-    if (transaction.project?.title) {
-      return transaction.project.title;
+  // ── Add Funds ──────────────────────────────────────────────────────────
+  const handleAddFunds = async () => {
+    const parsed = parseFloat(addAmount);
+    if (!addAmount || isNaN(parsed) || parsed <= 0) {
+      Alert.alert('Invalid amount', 'Please enter a positive amount.');
+      return;
     }
-    return transaction.description || 'Transaction';
+    if (parsed > 10000) {
+      Alert.alert('Limit exceeded', 'Maximum single deposit is $10,000.');
+      return;
+    }
+    try {
+      setAddLoading(true);
+      await walletService.addFunds(parsed);
+      await fetchWalletData();
+      setShowAddModal(false);
+      setAddAmount('');
+      Alert.alert('Success', `$${parsed.toFixed(2)} added to your wallet.`);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to add funds');
+    } finally {
+      setAddLoading(false);
+    }
   };
+
+  // ── Withdraw ───────────────────────────────────────────────────────────
+  const handleWithdraw = async () => {
+    const parsed = parseFloat(withdrawAmount);
+    if (!withdrawAmount || isNaN(parsed) || parsed <= 0) {
+      Alert.alert('Invalid amount', 'Please enter a positive amount.');
+      return;
+    }
+    if (parsed > balance) {
+      Alert.alert('Insufficient funds', `Your available balance is $${balance.toFixed(2)}.`);
+      return;
+    }
+    try {
+      setWithdrawLoading(true);
+      await walletService.withdrawFunds(parsed);
+      await fetchWalletData();
+      setShowWithdrawModal(false);
+      setWithdrawAmount('');
+      Alert.alert('Success', `$${parsed.toFixed(2)} has been withdrawn.`);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to withdraw funds');
+    } finally {
+      setWithdrawLoading(false);
+    }
+  };
+
+  const formatDate = (iso: string) => {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const filteredTxns = transactions.filter((t) => {
+    const matchesFilter =
+      filter === 'all' ||
+      t.type?.toLowerCase() === filter ||
+      t.status?.toLowerCase() === filter;
+    const matchesSearch = !search || t.description?.toLowerCase().includes(search.toLowerCase()) ||
+      t.project?.title?.toLowerCase().includes(search.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
 
   if (loading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={styles.centered}>
         <ActivityIndicator size="large" color="#282A32" />
       </View>
     );
   }
 
-  if (!wallet) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={styles.errorText}>Failed to load wallet data</Text>
-      </View>
-    );
-  }
+  const total = balance + escrowBalance;
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header with Back Arrow */}
+    <SafeAreaView style={styles.container}>
+      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#1F2937" strokeWidth={2} />
+          <ArrowLeft size={22} color="#1F2937" strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Wallet</Text>
-        <View style={{ width: 40 }} /> {/* Placeholder for spacing */}
+        <TouchableOpacity style={styles.refreshBtn} onPress={fetchWalletData}>
+          <WalletIcon size={20} color="#282A32" />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.balanceCard}>
-        <View style={styles.balanceHeader}>
-          <WalletIcon size={32} color="#282A32" strokeWidth={2} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+
+        {/* ── BALANCE CARD ── */}
+        <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>Total Balance</Text>
-        </View>
-        <Text style={styles.balanceAmount}>${wallet.total.toFixed(2)}</Text>
-
-        <View style={styles.balanceBreakdown}>
-          <View style={styles.breakdownItem}>
-            <Text style={styles.breakdownLabel}>Available</Text>
-            <Text style={styles.breakdownAmount}>${wallet.balance.toFixed(2)}</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.breakdownItem}>
-            <Text style={styles.breakdownLabel}>In Escrow</Text>
-            <Text style={[styles.breakdownAmount, styles.escrowAmount]}>${wallet.escrowBalance.toFixed(2)}</Text>
-          </View>
-        </View>
-
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.primaryButton} onPress={handleAddFunds}>
-            <ArrowDownToLine size={20} color="#FFFFFF" strokeWidth={2} />
-            <Text style={styles.primaryButtonText}>Add Funds</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.secondaryButton}>
-            <ArrowUpFromLine size={20} color="#282A32" strokeWidth={2} />
-            <Text style={styles.secondaryButtonText}>Withdraw</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Transactions</Text>
-        {transactions.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No transactions yet</Text>
-          </View>
-        ) : (
-          transactions.map((transaction) => (
-            <View key={transaction.id} style={styles.transactionCard}>
-              <View style={styles.transactionIcon}>
-                {transaction.type === 'escrow' && <Lock size={20} color="#F59E0B" strokeWidth={2} />}
-                {transaction.type === 'payment' && <ArrowUpFromLine size={20} color="#EF4444" strokeWidth={2} />}
-                {transaction.type === 'deposit' && <ArrowDownToLine size={20} color="#10B981" strokeWidth={2} />}
-                {transaction.type === 'withdrawal' && <ArrowUpFromLine size={20} color="#EF4444" strokeWidth={2} />}
-                {transaction.type === 'refund' && <ArrowDownToLine size={20} color="#10B981" strokeWidth={2} />}
-              </View>
-              <View style={styles.transactionInfo}>
-                <Text style={styles.transactionTitle}>{getTransactionTitle(transaction)}</Text>
-                <View style={styles.transactionMeta}>
-                  <Clock size={12} color="#6B7280" strokeWidth={2} />
-                  <Text style={styles.transactionDate}>{formatDate(transaction.createdAt)}</Text>
-                </View>
-              </View>
-              <View style={styles.transactionRight}>
-                <Text style={[styles.transactionAmount, transaction.amount > 0 ? styles.positiveAmount : styles.negativeAmount]}>
-                  {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
-                </Text>
-                {transaction.status === 'pending' && (
-                  <View style={styles.statusBadge}>
-                    <Text style={styles.statusText}>Pending</Text>
-                  </View>
-                )}
-                {transaction.type === 'escrow' && (
-                  <View style={styles.statusBadge}>
-                    <Text style={styles.statusText}>Locked</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          ))
-        )}
-      </View>
-
-      <View style={styles.infoBox}>
-        <Lock size={20} color="#282A32" strokeWidth={2} />
-        <View style={styles.infoContent}>
-          <Text style={styles.infoTitle}>About Escrow</Text>
-          <Text style={styles.infoText}>
-            Funds in escrow are held securely until project milestones are completed and approved.
+          <Text style={styles.balanceAmount}>
+            ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </Text>
+
+          <View style={styles.balanceBreakdown}>
+            <View style={styles.breakdownItem}>
+              <Text style={styles.breakdownLabel}>Available</Text>
+              <Text style={styles.breakdownAmount}>
+                ${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.breakdownItem}>
+              <Text style={styles.breakdownLabel}>In Escrow</Text>
+              <Text style={[styles.breakdownAmount, escrowBalance > 0 && styles.escrowAmountActive]}>
+                ${escrowBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.primaryButton} onPress={() => setShowAddModal(true)}>
+              <Plus size={18} color="#FFFFFF" strokeWidth={2.5} />
+              <Text style={styles.primaryButtonText}>Add Funds</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowWithdrawModal(true)}>
+              <ArrowUpFromLine size={18} color="#282A32" strokeWidth={2} />
+              <Text style={styles.secondaryButtonText}>Withdraw</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </ScrollView>
+
+        {/* ── ESCROW INFO ── */}
+        {escrowBalance > 0 && (
+          <View style={styles.infoBox}>
+            <Lock size={18} color="#0891B2" />
+            <View style={styles.infoContent}>
+              <Text style={styles.infoTitle}>Funds in Escrow</Text>
+              <Text style={styles.infoText}>
+                ${escrowBalance.toFixed(2)} is locked in milestone escrow and will be released upon approval.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* ── TRANSACTIONS ── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Transaction History</Text>
+
+          {/* Search */}
+          <View style={styles.searchWrapper}>
+            <Search size={16} color="#9CA3AF" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search transactions..."
+              placeholderTextColor="#9CA3AF"
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
+
+          {/* Filter chips */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+            {[
+              { label: 'All', value: 'all' },
+              { label: 'Deposits', value: 'deposit' },
+              { label: 'Escrow', value: 'escrow' },
+              { label: 'Payments', value: 'payment' },
+              { label: 'Completed', value: 'completed' },
+              { label: 'Pending', value: 'pending' },
+            ].map((item) => (
+              <TouchableOpacity
+                key={item.value}
+                style={[styles.chip, filter === item.value && styles.activeChip]}
+                onPress={() => setFilter(item.value)}
+              >
+                <Text style={[styles.chipText, filter === item.value && styles.activeChipText]}>
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {filteredTxns.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>No transactions found</Text>
+            </View>
+          ) : (
+            filteredTxns.map((txn) => {
+              const isCredit = txnIsCredit(txn.type);
+              return (
+                <View key={txn.id} style={styles.transactionCard}>
+                  <View style={[styles.txnIcon, isCredit ? styles.txnIconCredit : txn.type === 'escrow' ? styles.txnIconEscrow : styles.txnIconDebit]}>
+                    {isCredit && <ArrowDownToLine size={18} color="#10B981" strokeWidth={2} />}
+                    {txn.type === 'escrow' && <Lock size={18} color="#0891B2" strokeWidth={2} />}
+                    {!isCredit && txn.type !== 'escrow' && <ArrowUpFromLine size={18} color="#EF4444" strokeWidth={2} />}
+                  </View>
+                  <View style={styles.txnInfo}>
+                    <Text style={styles.txnTitle} numberOfLines={1}>
+                      {txn.project?.title || txn.description || txn.type}
+                    </Text>
+                    <View style={styles.txnMeta}>
+                      <Clock size={11} color="#9CA3AF" strokeWidth={2} />
+                      <Text style={styles.txnDate}>{formatDate(txn.createdAt)}</Text>
+                      {txn.status && (
+                        <Text style={[
+                          styles.txnStatus,
+                          txn.status === 'completed' && { color: '#10B981' },
+                          txn.status === 'pending' && { color: '#F59E0B' },
+                          txn.status === 'failed' && { color: '#EF4444' },
+                        ]}>
+                          · {txn.status}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                  <Text style={[styles.txnAmount, { color: isCredit ? '#10B981' : '#1F2937' }]}>
+                    {isCredit ? '+' : '-'}${Number(txn.amount).toFixed(2)}
+                  </Text>
+                </View>
+              );
+            })
+          )}
+        </View>
+
+      </ScrollView>
+
+      {/* ── ADD FUNDS MODAL ── */}
+      <Modal visible={showAddModal} transparent animationType="slide" onRequestClose={() => setShowAddModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add Funds</Text>
+              <TouchableOpacity onPress={() => { setShowAddModal(false); setAddAmount(''); }} style={styles.closeBtn}>
+                <X size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalSubtitle}>Funds are available instantly.</Text>
+
+            <View style={styles.amountInputWrapper}>
+              <Text style={styles.currencySymbol}>$</Text>
+              <TextInput
+                style={styles.amountInput}
+                placeholder="0.00"
+                placeholderTextColor="#9CA3AF"
+                value={addAmount}
+                onChangeText={setAddAmount}
+                keyboardType="decimal-pad"
+                autoFocus
+              />
+            </View>
+
+            <View style={styles.quickRow}>
+              {QUICK_AMOUNTS.map((amt) => (
+                <TouchableOpacity
+                  key={amt}
+                  style={[styles.quickBtn, addAmount === String(amt) && styles.quickBtnActive]}
+                  onPress={() => setAddAmount(String(amt))}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.quickBtnText, addAmount === String(amt) && styles.quickBtnTextActive]}>
+                    ${amt}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.confirmBtn, (!addAmount || addLoading) && styles.confirmBtnDisabled]}
+              onPress={handleAddFunds}
+              disabled={!addAmount || addLoading}
+              activeOpacity={0.85}
+            >
+              {addLoading
+                ? <ActivityIndicator color="#FFF" />
+                : <Text style={styles.confirmBtnText}>
+                    Add {addAmount ? `$${parseFloat(addAmount || '0').toFixed(2)}` : 'Funds'}
+                  </Text>
+              }
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── WITHDRAW MODAL ── */}
+      <Modal visible={showWithdrawModal} transparent animationType="slide" onRequestClose={() => setShowWithdrawModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Withdraw Funds</Text>
+              <TouchableOpacity onPress={() => { setShowWithdrawModal(false); setWithdrawAmount(''); }} style={styles.closeBtn}>
+                <X size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalSubtitle}>
+              Available: ${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Text>
+
+            <View style={styles.amountInputWrapper}>
+              <Text style={styles.currencySymbol}>$</Text>
+              <TextInput
+                style={styles.amountInput}
+                placeholder="0.00"
+                placeholderTextColor="#9CA3AF"
+                value={withdrawAmount}
+                onChangeText={setWithdrawAmount}
+                keyboardType="decimal-pad"
+                autoFocus
+              />
+            </View>
+
+            <View style={styles.quickRow}>
+              {QUICK_AMOUNTS.map((amt) => (
+                <TouchableOpacity
+                  key={amt}
+                  style={[styles.quickBtn, withdrawAmount === String(amt) && styles.quickBtnActive]}
+                  onPress={() => setWithdrawAmount(String(amt))}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.quickBtnText, withdrawAmount === String(amt) && styles.quickBtnTextActive]}>
+                    ${amt}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.confirmBtn, styles.withdrawBtn, (!withdrawAmount || withdrawLoading) && styles.confirmBtnDisabled]}
+              onPress={handleWithdraw}
+              disabled={!withdrawAmount || withdrawLoading}
+              activeOpacity={0.85}
+            >
+              {withdrawLoading
+                ? <ActivityIndicator color="#FFF" />
+                : <Text style={styles.confirmBtnText}>
+                    Withdraw {withdrawAmount ? `$${parseFloat(withdrawAmount || '0').toFixed(2)}` : 'Funds'}
+                  </Text>
+              }
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F4F6' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' },
+
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 14,
     backgroundColor: '#FFFFFF',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderBottomWidth: 1, borderBottomColor: '#F1F5F9',
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: { fontSize: 24, fontWeight: '700', color: '#1F2937' },
+  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: '#1F2937' },
+  refreshBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
+
+  // Balance card
   balanceCard: {
-    margin: 20,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
+    margin: 20, backgroundColor: '#282A32', borderRadius: 20, padding: 24,
   },
-  balanceHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
-  balanceLabel: { fontSize: 16, color: '#6B7280', fontWeight: '500' },
-  balanceAmount: { fontSize: 40, fontWeight: '700', color: '#1F2937', marginBottom: 20 },
-  balanceBreakdown: { flexDirection: 'row', backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16, marginBottom: 20 },
+  balanceLabel: { color: '#9CA3AF', fontSize: 13, fontWeight: '500', marginBottom: 4 },
+  balanceAmount: { color: '#FFFFFF', fontSize: 36, fontWeight: '800', marginBottom: 20 },
+  balanceBreakdown: {
+    flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 14, padding: 14, marginBottom: 20,
+  },
   breakdownItem: { flex: 1, alignItems: 'center' },
-  divider: { width: 1, backgroundColor: '#E5E7EB' },
-  breakdownLabel: { fontSize: 12, color: '#6B7280', fontWeight: '500', marginBottom: 4 },
-  breakdownAmount: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
-  escrowAmount: { color: '#F59E0B' },
+  divider: { width: 1, backgroundColor: 'rgba(255,255,255,0.12)' },
+  breakdownLabel: { color: '#9CA3AF', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', marginBottom: 4 },
+  breakdownAmount: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  escrowAmountActive: { color: '#67E8F9' },
+
   actionButtons: { flexDirection: 'row', gap: 12 },
-  primaryButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#282A32', paddingVertical: 14, borderRadius: 10 },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
-  secondaryButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#F4F4F8', paddingVertical: 14, borderRadius: 10, borderWidth: 1, borderColor: '#282A32' },
-  secondaryButtonText: { color: '#282A32', fontSize: 16, fontWeight: '600' },
-  section: { padding: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 16 },
-  transactionCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
-  transactionIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  transactionInfo: { flex: 1 },
-  transactionTitle: { fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 },
-  transactionMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  transactionDate: { fontSize: 12, color: '#6B7280' },
-  transactionRight: { alignItems: 'flex-end' },
-  transactionAmount: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  positiveAmount: { color: '#10B981' },
-  negativeAmount: { color: '#1F2937' },
-  statusBadge: { backgroundColor: '#FEF3C7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  statusText: { fontSize: 10, color: '#F59E0B', fontWeight: '600' },
-  infoBox: { flexDirection: 'row', margin: 20, marginTop: 0, padding: 16, backgroundColor: '#F4F4F8', borderRadius: 12, borderWidth: 1, borderColor: '#BFDBFE' },
-  infoContent: { flex: 1, marginLeft: 12 },
-  infoTitle: { fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 },
-  infoText: { fontSize: 12, color: '#6B7280', lineHeight: 18 },
-  emptyState: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+  primaryButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFFFFF', paddingVertical: 13, borderRadius: 12 },
+  primaryButtonText: { color: '#282A32', fontSize: 15, fontWeight: '700' },
+  secondaryButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'transparent', paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.3)' },
+  secondaryButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+
+  // Info box
+  infoBox: {
+    flexDirection: 'row', marginHorizontal: 20, marginBottom: 4,
+    padding: 14, backgroundColor: '#F0F9FF', borderRadius: 14, borderWidth: 1, borderColor: '#BAE6FD',
   },
-  emptyText: {
-    fontSize: 14,
-    color: '#6B7280',
+  infoContent: { flex: 1, marginLeft: 10 },
+  infoTitle: { fontSize: 13, fontWeight: '700', color: '#0C4A6E', marginBottom: 2 },
+  infoText: { fontSize: 12, color: '#0891B2', lineHeight: 17 },
+
+  // Transactions
+  section: { paddingHorizontal: 20, marginTop: 20 },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: '#1F2937', marginBottom: 14 },
+
+  searchWrapper: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    borderRadius: 12, paddingHorizontal: 12, height: 44,
+    borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 12, gap: 8,
   },
-  errorText: {
-    fontSize: 16,
-    color: '#EF4444',
+  searchInput: { flex: 1, fontSize: 14, color: '#1F2937' },
+
+  filterRow: { marginBottom: 16 },
+  chip: { paddingHorizontal: 14, paddingVertical: 7, backgroundColor: '#FFFFFF', borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#E5E7EB' },
+  activeChip: { backgroundColor: '#282A32', borderColor: '#282A32' },
+  chipText: { color: '#6B7280', fontWeight: '600', fontSize: 12 },
+  activeChipText: { color: '#FFF' },
+
+  transactionCard: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    borderRadius: 14, padding: 14, marginBottom: 10,
+    borderWidth: 1, borderColor: '#F1F5F9',
   },
+  txnIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  txnIconCredit: { backgroundColor: '#F0FDF4' },
+  txnIconEscrow: { backgroundColor: '#F0F9FF' },
+  txnIconDebit: { backgroundColor: '#FEF2F2' },
+  txnInfo: { flex: 1 },
+  txnTitle: { fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 },
+  txnMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  txnDate: { fontSize: 11, color: '#9CA3AF' },
+  txnStatus: { fontSize: 11, fontWeight: '600', color: '#9CA3AF' },
+  txnAmount: { fontSize: 15, fontWeight: '800' },
+
+  emptyState: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 36, alignItems: 'center' },
+  emptyText: { fontSize: 14, color: '#9CA3AF', fontWeight: '500' },
+
+  // Modals
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalCard: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: '#1F2937' },
+  closeBtn: { padding: 6, backgroundColor: '#F3F4F6', borderRadius: 10 },
+  modalSubtitle: { fontSize: 13, color: '#6B7280', marginBottom: 22 },
+
+  amountInputWrapper: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F9FAFB', borderWidth: 2, borderColor: '#E5E7EB',
+    borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 18,
+  },
+  currencySymbol: { fontSize: 22, fontWeight: '800', color: '#1F2937', marginRight: 8 },
+  amountInput: { flex: 1, fontSize: 26, fontWeight: '800', color: '#1F2937' },
+
+  quickRow: { flexDirection: 'row', gap: 8, marginBottom: 24 },
+  quickBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
+  quickBtnActive: { backgroundColor: '#282A32', borderColor: '#282A32' },
+  quickBtnText: { fontSize: 13, fontWeight: '700', color: '#4B5563' },
+  quickBtnTextActive: { color: '#FFF' },
+
+  confirmBtn: { backgroundColor: '#282A32', borderRadius: 14, paddingVertical: 15, alignItems: 'center' },
+  withdrawBtn: { backgroundColor: '#1F2937' },
+  confirmBtnDisabled: { opacity: 0.45 },
+  confirmBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
 });

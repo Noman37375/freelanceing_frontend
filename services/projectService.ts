@@ -265,12 +265,17 @@ export const milestoneService = {
 
   createMilestone: async (
     projectId: string,
-    data: { title: string; description?: string; dueDate?: string; orderIndex?: number }
+    data: { title: string; description?: string; dueDate?: string; orderIndex?: number; amount?: number }
   ): Promise<Milestone> => {
     const response = await apiCall(`/api/v1/projects/${projectId}/milestones`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    return response.data.milestone;
+  },
+
+  fundMilestone: async (milestoneId: string): Promise<Milestone> => {
+    const response = await apiCall(`/api/v1/milestones/${milestoneId}/fund`, { method: 'PATCH' });
     return response.data.milestone;
   },
 

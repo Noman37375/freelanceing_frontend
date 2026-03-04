@@ -112,4 +112,18 @@ export const walletService = {
       transaction: response.data.transaction,
     };
   },
+
+  /**
+   * Withdraw funds from wallet
+   */
+  withdrawFunds: async (amount: number): Promise<{ wallet: Wallet; transaction: Transaction }> => {
+    const response = await apiCall('/api/v1/wallet/withdraw', {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    });
+    return {
+      wallet: response.data.wallet,
+      transaction: response.data.transaction,
+    };
+  },
 };

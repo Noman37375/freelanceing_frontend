@@ -104,9 +104,12 @@ export default function DisputeDetail() {
         </View>
 
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.contactButton}>
+          <TouchableOpacity
+            style={styles.contactButton}
+            onPress={() => router.push({ pathname: '/resolution-center' as any, params: { disputeId: dispute.id } })}
+          >
             <MessageSquare size={18} color="#282A32" />
-            <Text style={styles.contactButtonText}>Contact Support</Text>
+            <Text style={styles.contactButtonText}>Open Resolution Center</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

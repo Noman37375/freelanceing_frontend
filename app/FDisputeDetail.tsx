@@ -105,8 +105,11 @@ export default function FDisputeDetail() {
         </View>
 
         {/* HELP FOOTER */}
-        <TouchableOpacity style={styles.supportButton}>
-          <Text style={styles.supportButtonText}>Contact Support for this Case</Text>
+        <TouchableOpacity
+          style={styles.supportButton}
+          onPress={() => router.push({ pathname: '/resolution-center' as any, params: { disputeId: parsedDispute.id } })}
+        >
+          <Text style={styles.supportButtonText}>Open Resolution Center</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

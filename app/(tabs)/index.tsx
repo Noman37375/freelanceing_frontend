@@ -19,6 +19,7 @@ import { Search, Bell, Filter, MapPin } from 'lucide-react-native';
 
 import { storageGet } from '@/utils/storage';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotifications } from '@/contexts/NotificationContext';
 import { projectService } from '@/services/projectService';
 import { adminService } from '@/services/adminService';
 import { Project } from '@/models/Project';
@@ -39,6 +40,7 @@ const timeAgo = (timestamp?: string) => {
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -186,6 +188,13 @@ export default function HomeScreen() {
               onPress={() => router.push('../notifications')}
             >
               <Bell size={22} color="#444751" />
+              {unreadCount > 0 && (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.8}>
               {user?.profileImage ? (
@@ -361,11 +370,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
       android: { elevation: 3 },
     }),
   },
+  bellBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: '#FFF',
+  },
+  bellBadgeText: { color: '#FFF', fontSize: 9, fontWeight: '800' },
 
   findProjectsHeading: { fontSize: 22, fontWeight: '700', color: '#444751', marginBottom: 14 },
   searchRow: { marginBottom: 24 },

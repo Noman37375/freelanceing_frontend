@@ -22,6 +22,7 @@ interface Milestone {
   description?: string;
   dueDate?: string;
   orderIndex?: number;
+  amount?: number;
 }
 
 export default function AddMilestonesScreen() {
@@ -32,6 +33,7 @@ export default function AddMilestonesScreen() {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
 
   const titleRef = useRef<TextInput>(null);
@@ -52,17 +54,25 @@ export default function AddMilestonesScreen() {
       return;
     }
 
+    const parsedAmount = parseFloat(amount);
+    if (amount && (isNaN(parsedAmount) || parsedAmount <= 0)) {
+      Alert.alert("Error", "Amount must be a positive number.");
+      return;
+    }
+
     setLoading(true);
     try {
       const newMilestone = await milestoneService.createMilestone(projectId, {
         title: title.trim(),
         description: description.trim() || undefined,
         orderIndex: milestones.length + 1,
+        amount: amount ? parsedAmount : undefined,
       });
 
       setMilestones((prev) => [...prev, newMilestone]);
       setTitle("");
       setDescription("");
+      setAmount("");
       titleRef.current?.focus();
     } catch (error: any) {
       console.error("Failed to add milestone:", error);
@@ -117,6 +127,19 @@ export default function AddMilestonesScreen() {
         </View>
 
         <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Amount ($) — Escrow Value</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. 500"
+            value={amount}
+            onChangeText={setAmount}
+            keyboardType="decimal-pad"
+            returnKeyType="next"
+            onSubmitEditing={() => descriptionRef.current?.focus()}
+          />
+        </View>
+
+        <View style={styles.fieldContainer}>
           <Text style={styles.label}>Description (Optional)</Text>
           <TextInput
             ref={descriptionRef}
@@ -151,6 +174,9 @@ export default function AddMilestonesScreen() {
               <View style={styles.milestoneCard}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.milestoneTitle}>{item.title}</Text>
+                  {item.amount && (
+                    <Text style={styles.milestoneAmount}>${item.amount.toFixed(2)} escrow</Text>
+                  )}
                   {item.description && (
                     <Text style={styles.milestoneDesc}>{item.description}</Text>
                   )}
@@ -187,6 +213,7 @@ const styles = StyleSheet.create({
   helperText: { fontSize: 14, color: COLORS.gray500, fontStyle: "italic" },
   milestoneCard: { flexDirection: "row", alignItems: "center", backgroundColor: COLORS.white, padding: 12, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: COLORS.gray200 },
   milestoneTitle: { fontSize: 16, fontWeight: "600", color: COLORS.gray900 },
+  milestoneAmount: { fontSize: 13, fontWeight: "700", color: "#0891B2", marginTop: 2 },
   milestoneDesc: { fontSize: 14, color: COLORS.gray700, marginTop: 4 },
   deleteText: { color: COLORS.error, fontWeight: "700", marginLeft: 12 },
   finishButton: { backgroundColor: COLORS.success, paddingVertical: 16, borderRadius: 12, alignItems: "center", marginTop: 20 },

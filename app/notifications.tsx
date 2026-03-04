@@ -20,14 +20,18 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { notificationService, Notification } from "@/services/notificationService";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const { clearUnreadCount } = useNotifications();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchNotifications();
+    // Clear badge as soon as screen opens
+    clearUnreadCount();
     const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
     return () => clearInterval(interval);
   }, []);
@@ -48,6 +52,7 @@ export default function NotificationsScreen() {
     try {
       await notificationService.markAllAsRead();
       setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
+      clearUnreadCount();
     } catch (error: any) {
       console.error('Failed to mark all as read:', error);
     }

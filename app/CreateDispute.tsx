@@ -27,7 +27,7 @@ import { formatCurrency } from '@/utils/helpers';
 export default function CreateDispute() {
     const router = useRouter();
     const { user } = useAuth();
-    const { projectId: initialProjectId, projectTitle: initialProjectTitle } = useLocalSearchParams<{ projectId?: string; projectTitle?: string }>();
+    const { projectId: initialProjectId, projectTitle: initialProjectTitle, milestoneId: initialMilestoneId } = useLocalSearchParams<{ projectId?: string; projectTitle?: string; milestoneId?: string }>();
 
     const [projects, setProjects] = useState<Project[]>([]);
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -104,6 +104,7 @@ export default function CreateDispute() {
                 reason,
                 description,
                 amount: parseFloat(amount),
+                milestoneId: initialMilestoneId || undefined,
             });
 
             Alert.alert('Success', 'Dispute created successfully. You can now chat with the other party in the Resolution Center.', [

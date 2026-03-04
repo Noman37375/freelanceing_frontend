@@ -182,6 +182,7 @@ export default function BidNow() {
   const [submitting, setSubmitting]         = useState(false);
   const [showSuccessModal, setShowSuccess]  = useState(false);
   const [showDetails, setShowDetails]       = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const [milestones, setMilestones]         = useState<MilestoneRow[]>([
     { id: "1", description: "Down Payment", dueDate: "", amount: "" },
@@ -260,12 +261,28 @@ export default function BidNow() {
   // ── Submit ─────────────────────────────────────────────────────────────────
 
   const handleSubmit = async () => {
+    setSubmitAttempted(true);
     if (!id) return Alert.alert("Error", "Missing project ID");
-    const total = getTotalAmount();
-    if (total <= 0)           return Alert.alert("Error", "Please enter a valid bid amount");
-    if (!coverLetter.trim())  return Alert.alert("Error", "Please write a cover letter");
     if (!user || user.role !== "Freelancer")
       return Alert.alert("Error", "Only freelancers can submit proposals");
+
+    // Per-milestone validation
+    for (let i = 0; i < milestones.length; i++) {
+      const m = milestones[i];
+      const n = i + 1;
+      if (!m.description.trim())
+        return Alert.alert("Validation Error", `Milestone ${n}: Please enter a description`);
+      if (!m.dueDate)
+        return Alert.alert("Validation Error", `Milestone ${n}: Please select a due date`);
+      const amt = parseFloat(m.amount);
+      if (isNaN(amt) || amt <= 0)
+        return Alert.alert("Validation Error", `Milestone ${n}: Please enter a valid amount greater than 0`);
+    }
+
+    if (!coverLetter.trim())
+      return Alert.alert("Validation Error", "Please write a cover letter");
+
+    const total = getTotalAmount();
 
     try {
       setSubmitting(true);
@@ -437,12 +454,19 @@ export default function BidNow() {
 
                 {/* Description */}
                 <TextInput
-                  style={[styles.input, styles.milestoneDescInput]}
+                  style={[
+                    styles.input,
+                    styles.milestoneDescInput,
+                    submitAttempted && !m.description.trim() && styles.inputError,
+                  ]}
                   placeholder="What will be delivered in this milestone?"
                   placeholderTextColor="#94A3B8"
                   value={m.description}
                   onChangeText={v => updateMilestone(m.id, "description", v)}
                 />
+                {submitAttempted && !m.description.trim() && (
+                  <Text style={styles.fieldError}>Description is required</Text>
+                )}
 
                 {/* Due Date + Amount */}
                 <View style={styles.milestoneRow}>
@@ -451,9 +475,15 @@ export default function BidNow() {
                       value={m.dueDate}
                       onChange={d => updateMilestone(m.id, "dueDate", d)}
                     />
+                    {submitAttempted && !m.dueDate && (
+                      <Text style={styles.fieldError}>Due date required</Text>
+                    )}
                   </View>
                   <View style={styles.milestoneAmountWrapper}>
-                    <View style={styles.amountInputWrapper}>
+                    <View style={[
+                      styles.amountInputWrapper,
+                      submitAttempted && !(parseFloat(m.amount) > 0) && styles.amountInputError,
+                    ]}>
                       <Text style={styles.amountPrefix}>$</Text>
                       <TextInput
                         style={styles.amountInput}
@@ -464,6 +494,9 @@ export default function BidNow() {
                         onChangeText={v => updateMilestone(m.id, "amount", v)}
                       />
                     </View>
+                    {submitAttempted && !(parseFloat(m.amount) > 0) && (
+                      <Text style={styles.fieldError}>Amount required</Text>
+                    )}
                   </View>
                 </View>
 
@@ -499,7 +532,11 @@ export default function BidNow() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Cover Letter</Text>
           <TextInput
-            style={[styles.input, styles.coverLetterInput]}
+            style={[
+              styles.input,
+              styles.coverLetterInput,
+              submitAttempted && !coverLetter.trim() && styles.inputError,
+            ]}
             placeholder="Write your cover letter here…"
             placeholderTextColor="#94A3B8"
             value={coverLetter}
@@ -507,6 +544,9 @@ export default function BidNow() {
             multiline
             textAlignVertical="top"
           />
+          {submitAttempted && !coverLetter.trim() && (
+            <Text style={styles.fieldError}>Cover letter is required</Text>
+          )}
         </View>
 
         {/* Submit */}
@@ -876,6 +916,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#1E293B",
   },
+  inputError: { borderColor: "#EF4444", borderWidth: 1.5 },
+  amountInputError: { borderColor: "#EF4444", borderWidth: 1.5 },
+  fieldError: { color: "#EF4444", fontSize: 11, fontWeight: "600" as const, marginTop: 3 },
   coverLetterInput: { height: 120, paddingTop: 12, textAlignVertical: "top" },
 
   // Submit

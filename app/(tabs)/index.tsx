@@ -20,7 +20,7 @@ import { Search, Bell, Filter, MapPin } from 'lucide-react-native';
 import { storageGet } from '@/utils/storage';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
-import { projectService } from '@/services/projectService';
+import { projectService, proposalService } from '@/services/projectService';
 import { adminService } from '@/services/adminService';
 import { Project } from '@/models/Project';
 import { formatCurrency } from '@/utils/helpers';
@@ -47,6 +47,8 @@ export default function HomeScreen() {
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeCount, setActiveCount] = useState<number | null>(null);
+  const [inProgressCount, setInProgressCount] = useState<number | null>(null);
 
   useEffect(() => {
     const checkRole = async () => {
@@ -68,12 +70,17 @@ export default function HomeScreen() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [servicesResult, projectsResult] = await Promise.allSettled([
+      const [servicesResult, projectsResult, inProgressResult, proposalsResult] = await Promise.allSettled([
         adminService.getServiceCategories(),
         projectService.getProjects({ status: 'ACTIVE', available: true }),
+        projectService.getProjects({ freelancerId: user?.id, status: 'IN_PROGRESS' }),
+        proposalService.getMyProposals(),
       ]);
       setCategories(servicesResult.status === 'fulfilled' ? (servicesResult.value || []) : []);
-      setRecentProjects(projectsResult.status === 'fulfilled' ? (projectsResult.value || []) : []);
+      const activeProjects = projectsResult.status === 'fulfilled' ? (projectsResult.value || []) : [];
+      setRecentProjects(activeProjects);
+      setActiveCount(activeProjects.length);
+      setInProgressCount(inProgressResult.status === 'fulfilled' ? (inProgressResult.value?.length ?? 0) : 0);
     } catch (error: any) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -228,6 +235,22 @@ export default function HomeScreen() {
             {/* <TouchableOpacity onPress={goToFindProjects} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Filter size={20} color="#94A3B8" />
             </TouchableOpacity> */}
+          </View>
+        </View>
+
+        {/* Overview Cards */}
+        <View style={styles.overviewRow}>
+          <View style={[styles.overviewCard, styles.overviewCardActive]}>
+            <Text style={styles.overviewCardLabel}>Active Projects</Text>
+            <Text style={[styles.overviewCardCount, { color: '#10B981' }]}>
+              {activeCount === null ? '—' : activeCount}
+            </Text>
+          </View>
+          <View style={[styles.overviewCard, styles.overviewCardInProgress]}>
+            <Text style={styles.overviewCardLabel}>In Progress</Text>
+            <Text style={[styles.overviewCardCount, { color: '#4F46E5' }]}>
+              {inProgressCount === null ? '—' : inProgressCount}
+            </Text>
           </View>
         </View>
 
@@ -424,6 +447,46 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontSize: 20, fontWeight: '700', color: '#444751' },
   showMore: { fontSize: 14, color: '#64748B', fontWeight: '500' },
+
+  overviewRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  overviewCard: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
+      android: { elevation: 3 },
+    }),
+  },
+  overviewCardActive: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+  },
+  overviewCardInProgress: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#4F46E5',
+  },
+  overviewCardLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  overviewCardCount: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#1E293B',
+  },
 
   allServiceSection: {
     marginBottom: 20,

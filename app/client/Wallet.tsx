@@ -20,6 +20,14 @@ function txnIsCredit(type: string) {
 export default function ClientWallet() {
   const router = useRouter();
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(client-tabs)/profile' as any);
+    }
+  };
+
   const [balance, setBalance]           = useState(0);
   const [escrowBalance, setEscrowBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -137,7 +145,7 @@ export default function ClientWallet() {
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <ArrowLeft size={22} color="#1F2937" strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Wallet</Text>

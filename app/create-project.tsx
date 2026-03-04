@@ -12,7 +12,197 @@ import {
   Platform,
   Modal,
 } from "react-native";
-import { CheckCircle2 } from "lucide-react-native";
+import { CheckCircle2, Calendar, ChevronLeft, ChevronRight } from "lucide-react-native";
+
+// ─── Date helpers ──────────────────────────────────────────────────────────────
+const MONTHS_FULL = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December",
+];
+const getDaysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate();
+
+/** Format "YYYY-MM-DD" → "Jan 4, 2026" */
+function fmtDate(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${MONTHS_FULL[(m || 1) - 1]?.slice(0, 3)} ${d}, ${y}`;
+}
+
+/** Calculate human-readable duration between two ISO date strings */
+function calcDuration(startISO: string, endISO: string): string {
+  const s = new Date(startISO);
+  const e = new Date(endISO);
+  let years  = e.getFullYear() - s.getFullYear();
+  let months = e.getMonth()    - s.getMonth();
+  let days   = e.getDate()     - s.getDate();
+
+  if (days < 0) {
+    months -= 1;
+    const prevMonth = e.getMonth() === 0 ? 11 : e.getMonth() - 1;
+    const prevYear  = e.getMonth() === 0 ? e.getFullYear() - 1 : e.getFullYear();
+    days += getDaysInMonth(prevMonth, prevYear);
+  }
+  if (months < 0) { years -= 1; months += 12; }
+
+  const parts: string[] = [];
+  if (years  > 0) parts.push(`${years} year${years   > 1 ? "s" : ""}`);
+  if (months > 0) parts.push(`${months} month${months > 1 ? "s" : ""}`);
+  if (days   > 0) parts.push(`${days} day${days       > 1 ? "s" : ""}`);
+  return parts.length > 0 ? parts.join(" ") : "0 days";
+}
+
+// ─── Reusable single-date picker ───────────────────────────────────────────────
+interface DatePickerFieldProps {
+  label: string;
+  placeholder: string;
+  value: string;          // "YYYY-MM-DD"
+  onChange: (v: string) => void;
+  minDate?: string;       // "YYYY-MM-DD" — disallow earlier dates
+}
+
+function DatePickerField({ label, placeholder, value, onChange, minDate }: DatePickerFieldProps) {
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const [open, setOpen] = useState(false);
+  const [pMonth, setPMonth] = useState(today.getMonth());
+  const [pDay,   setPDay]   = useState(today.getDate());
+  const [pYear,  setPYear]  = useState(currentYear);
+
+  const openPicker = () => {
+    if (value) {
+      const [y, m, d] = value.split("-").map(Number);
+      setPYear(y || currentYear);
+      setPMonth((m || 1) - 1);
+      setPDay(d || 1);
+    } else {
+      setPMonth(today.getMonth());
+      setPDay(today.getDate());
+      setPYear(currentYear);
+    }
+    setOpen(true);
+  };
+
+  const adjustMonth = (dir: 1 | -1) => setPMonth(m => (m + dir + 12) % 12);
+  const adjustDay   = (dir: 1 | -1) => {
+    const max = getDaysInMonth(pMonth, pYear);
+    setPDay(d => { const n = d + dir; return n < 1 ? max : n > max ? 1 : n; });
+  };
+  const adjustYear  = (dir: 1 | -1) =>
+    setPYear(y => { const n = y + dir; return n < currentYear ? currentYear : n > currentYear + 10 ? currentYear + 10 : n; });
+
+  const handleDone = () => {
+    const d   = Math.min(pDay, getDaysInMonth(pMonth, pYear));
+    const iso = `${pYear}-${String(pMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    if (minDate && iso < minDate) {
+      // silently clamp to minDate
+      onChange(minDate);
+    } else {
+      onChange(iso);
+    }
+    setOpen(false);
+  };
+
+  return (
+    <>
+      <TouchableOpacity style={dfStyles.trigger} onPress={openPicker} activeOpacity={0.75}>
+        <Calendar size={16} color={value ? "#282A32" : "#94A3B8"} />
+        <View style={{ flex: 1 }}>
+          <Text style={dfStyles.triggerLabel}>{label}</Text>
+          <Text style={[dfStyles.triggerText, !value && dfStyles.placeholder]}>
+            {value ? fmtDate(value) : placeholder}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={dfStyles.overlay} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={dfStyles.card}>
+            <Text style={dfStyles.title}>{label}</Text>
+            {([
+              { label: "Month", display: MONTHS_FULL[pMonth], onPrev: () => adjustMonth(-1), onNext: () => adjustMonth(1) },
+              { label: "Day",   display: String(pDay).padStart(2, "0"),  onPrev: () => adjustDay(-1),   onNext: () => adjustDay(1) },
+              { label: "Year",  display: String(pYear),                  onPrev: () => adjustYear(-1),  onNext: () => adjustYear(1) },
+            ] as const).map(row => (
+              <View key={row.label} style={dfStyles.row}>
+                <Text style={dfStyles.rowLabel}>{row.label}</Text>
+                <View style={dfStyles.controls}>
+                  <TouchableOpacity style={dfStyles.arrowBtn} onPress={row.onPrev}>
+                    <ChevronLeft size={18} color="#444751" />
+                  </TouchableOpacity>
+                  <Text style={dfStyles.value}>{row.display}</Text>
+                  <TouchableOpacity style={dfStyles.arrowBtn} onPress={row.onNext}>
+                    <ChevronRight size={18} color="#444751" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+            <View style={dfStyles.footer}>
+              <TouchableOpacity style={dfStyles.cancelBtn} onPress={() => setOpen(false)}>
+                <Text style={dfStyles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={dfStyles.doneBtn} onPress={handleDone}>
+                <Text style={dfStyles.doneText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+}
+
+const dfStyles = StyleSheet.create({
+  trigger: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: "#FFF",
+    flex: 1,
+  },
+  triggerLabel: { fontSize: 10, fontWeight: "700", color: "#94A3B8", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 },
+  triggerText: { fontSize: 14, color: "#1F293A", fontWeight: "600" },
+  placeholder: { color: "#94A3B8", fontWeight: "400" },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  card: {
+    backgroundColor: "#FFF",
+    borderRadius: 20,
+    padding: 24,
+    width: "100%",
+    maxWidth: 340,
+    ...Platform.select({
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 16 },
+      android: { elevation: 10 },
+    }),
+  },
+  title: { fontSize: 17, fontWeight: "800", color: "#1E293B", marginBottom: 20, textAlign: "center" },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
+  rowLabel: { fontSize: 13, fontWeight: "700", color: "#64748B", width: 52 },
+  controls: { flexDirection: "row", alignItems: "center", flex: 1, justifyContent: "flex-end", gap: 12 },
+  arrowBtn: { width: 34, height: 34, borderRadius: 10, backgroundColor: "#F1F5F9", justifyContent: "center", alignItems: "center" },
+  value: { fontSize: 15, fontWeight: "700", color: "#1E293B", minWidth: 80, textAlign: "center" },
+  footer: { flexDirection: "row", gap: 12, marginTop: 24 },
+  cancelBtn: { flex: 1, height: 46, borderRadius: 12, backgroundColor: "#F1F5F9", justifyContent: "center", alignItems: "center" },
+  cancelText: { fontSize: 15, fontWeight: "700", color: "#64748B" },
+  doneBtn: { flex: 2, height: 46, borderRadius: 12, backgroundColor: "#282A32", justifyContent: "center", alignItems: "center" },
+  doneText: { fontSize: 15, fontWeight: "700", color: "#FFF" },
+});
 import ScreenHeader from "@/components/ScreenHeader";
 import { useRouter } from "expo-router";
 import { projectService } from "@/services/projectService";
@@ -39,7 +229,6 @@ export default function CreateProjectScreen() {
   const descriptionRef = useRef<TextInput>(null);
   const budgetRef = useRef<TextInput>(null);
   const locationRef = useRef<TextInput>(null);
-  const durationRef = useRef<TextInput>(null);
   const tagsRef = useRef<TextInput>(null);
 
   // Form fields
@@ -53,7 +242,8 @@ export default function CreateProjectScreen() {
   const [currenciesLoading, setCurrenciesLoading] = useState(true);
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState("");
-  const [duration, setDuration] = useState("");
+  const [startDate, setStartDate] = useState(""); // YYYY-MM-DD
+  const [endDate, setEndDate] = useState("");     // YYYY-MM-DD
   const [tags, setTags] = useState("");
   const [tagsArray, setTagsArray] = useState<string[]>([]);
 
@@ -189,7 +379,7 @@ export default function CreateProjectScreen() {
         currency: currency || "USD",
         location: location.trim() || undefined,
         category: category || undefined,
-        duration: duration.trim() || undefined,
+        duration: (startDate && endDate) ? calcDuration(startDate, endDate) : undefined,
         tags: tagsArray.length > 0 ? tagsArray : undefined,
       };
 
@@ -220,7 +410,7 @@ export default function CreateProjectScreen() {
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Project Title *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, attemptedSubmit && !title.trim() && styles.inputError]}
               placeholder="e.g. Mobile App Development"
               value={title}
               onChangeText={setTitle}
@@ -238,7 +428,7 @@ export default function CreateProjectScreen() {
             <Text style={styles.label}>Description *</Text>
             <TextInput
               ref={descriptionRef}
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, styles.textArea, attemptedSubmit && !description.trim() && styles.inputError]}
               placeholder="Describe your project in detail..."
               value={description}
               onChangeText={setDescription}
@@ -303,7 +493,7 @@ export default function CreateProjectScreen() {
             )}
             <TextInput
               ref={budgetRef}
-              style={styles.input}
+              style={[styles.input, attemptedSubmit && !isBudgetValid && styles.inputError]}
               placeholder="e.g. 500"
               value={budget}
               onChangeText={handleBudgetChange}
@@ -351,26 +541,26 @@ export default function CreateProjectScreen() {
             )}
           </View>
 
-          {/* Location (LinkedIn-style autocomplete) */}
+          {/* Location (autocomplete via Open-Meteo Geocoding API) */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Location</Text>
             <TextInput
               ref={locationRef}
               style={styles.input}
-              placeholder="e.g. Karachi, Lahore, Islamabad"
+              placeholder="Search city, e.g. Karachi"
               value={location}
               onChangeText={handleLocationChange}
               onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 200)}
               onFocus={() => location.trim().length >= 2 && setShowLocationSuggestions(true)}
               returnKeyType="next"
-              onSubmitEditing={() => durationRef.current?.focus()}
+              onSubmitEditing={() => tagsRef.current?.focus()}
             />
             {showLocationSuggestions && (
               <View style={styles.suggestionsContainer}>
                 {locationSuggestionsLoading ? (
                   <View style={styles.suggestionItem}>
                     <ActivityIndicator size="small" color={COLORS.primary} />
-                    <Text style={styles.suggestionLoadingText}>Searching...</Text>
+                    <Text style={styles.suggestionLoadingText}>Searching locations...</Text>
                   </View>
                 ) : locationSuggestions.length > 0 ? (
                   locationSuggestions.map((s) => (
@@ -394,32 +584,35 @@ export default function CreateProjectScreen() {
             )}
           </View>
 
-          {/* Estimated Duration (preset options like Location) */}
+          {/* Project Duration (Start → End calendar pickers) */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Estimated Duration</Text>
-            <View style={styles.durationChipsRow}>
-              {["1 week", "2 weeks", "1 month", "2 months", "3 months", "6 months", "1 year"].map((d) => (
-                <TouchableOpacity
-                  key={d}
-                  style={[styles.durationChip, duration === d && styles.durationChipActive]}
-                  onPress={() => setDuration(duration === d ? "" : d)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.durationChipText, duration === d && styles.durationChipTextActive]}>
-                    {d}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            <Text style={styles.label}>Project Duration</Text>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <DatePickerField
+                label="Start Date"
+                placeholder="Select start"
+                value={startDate}
+                onChange={(v) => {
+                  setStartDate(v);
+                  // If end date is before new start date, clear it
+                  if (endDate && v > endDate) setEndDate("");
+                }}
+              />
+              <DatePickerField
+                label="End Date"
+                placeholder="Select end"
+                value={endDate}
+                onChange={setEndDate}
+                minDate={startDate || undefined}
+              />
             </View>
-            <TextInput
-              ref={durationRef}
-              style={[styles.input, styles.durationInput]}
-              placeholder="Or type custom (e.g. 3 weeks)"
-              value={duration}
-              onChangeText={setDuration}
-              returnKeyType="next"
-              onSubmitEditing={() => tagsRef.current?.focus()}
-            />
+            {startDate && endDate && (
+              <View style={styles.durationBadge}>
+                <Text style={styles.durationBadgeText}>
+                  Estimated: {calcDuration(startDate, endDate)}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Tags */}
@@ -584,6 +777,10 @@ const styles = StyleSheet.create({
   currencyItemActive: {
     backgroundColor: COLORS.gray100,
   },
+  inputError: {
+    borderColor: COLORS.error,
+    borderWidth: 1.5,
+  },
   helperError: {
     marginTop: 6,
     color: COLORS.error,
@@ -636,34 +833,18 @@ const styles = StyleSheet.create({
   categoryTextActive: {
     color: COLORS.white,
   },
-  durationChipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 10,
-  },
-  durationChip: {
+  durationBadge: {
+    marginTop: 10,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: COLORS.gray100,
-    borderWidth: 1,
-    borderColor: COLORS.gray200,
+    backgroundColor: "#E0F2FE",
+    alignSelf: "flex-start",
   },
-  durationChipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  durationChipText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: COLORS.gray700,
-  },
-  durationChipTextActive: {
-    color: COLORS.white,
-  },
-  durationInput: {
-    marginTop: 0,
+  durationBadgeText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#0369A1",
   },
   tagsContainer: {
     flexDirection: "row",

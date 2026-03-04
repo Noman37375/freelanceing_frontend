@@ -35,6 +35,14 @@ export default function ResolutionCenter() {
     const { orderId, disputeId } = useLocalSearchParams<{ orderId: string; disputeId?: string }>();
     const { user } = useAuth();
 
+    const handleBack = () => {
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace('/FDisputes' as any);
+        }
+    };
+
     const [dispute, setDispute] = useState<Dispute | null>(null);
     const [messages, setMessages] = useState<DisputeMessage[]>([]);
     const [evidence, setEvidence] = useState<DisputeEvidence[]>([]);
@@ -157,7 +165,7 @@ export default function ResolutionCenter() {
                 <View style={styles.errorContainer}>
                     <AlertTriangle size={48} color="#EF4444" />
                     <Text style={styles.errorText}>Dispute not found</Text>
-                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                    <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                         <Text style={styles.backButtonText}>Go Back</Text>
                     </TouchableOpacity>
                 </View>
@@ -174,7 +182,7 @@ export default function ResolutionCenter() {
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
+                    <TouchableOpacity style={styles.headerBackButton} onPress={handleBack}>
                         <ArrowLeft size={24} color="#282A32" />
                     </TouchableOpacity>
                     <View style={styles.headerCenter}>

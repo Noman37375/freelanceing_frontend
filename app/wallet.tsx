@@ -42,6 +42,15 @@ function TxnIcon({ type }: { type: string }) {
 // ── component ──────────────────────────────────────────────────────────────
 export default function WalletScreen() {
   const router = useRouter();
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/profile' as any);
+    }
+  };
+
   const {
     balance,
     escrowBalance,
@@ -139,7 +148,7 @@ export default function WalletScreen() {
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <ArrowLeft size={22} color="#282A32" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Financial Wallet</Text>

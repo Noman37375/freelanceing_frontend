@@ -74,9 +74,9 @@ async function main() {
   // Priority: icon-source.svg → icon-source.png → icon.png (fallback)
   if (await exists(paths.iconSourceSvg)) {
     const svgBuffer = await fs.readFile(paths.iconSourceSvg);
-    // SVG already contains its own background — render at 1024×1024, no padding
     await sharp(svgBuffer, { density: 300 })
-      .resize(1024, 1024)
+      .resize(1024, 1024, { fit: "fill" })
+      .flatten({ background: "#1A2332" })   // zero transparent pixels — fills edge-to-edge
       .png({ compressionLevel: 9 })
       .toFile(paths.icon);
     log(`Wrote: ${path.relative(projectRoot, paths.icon)} (1024x1024) [from icon-source.svg]`);
@@ -96,7 +96,8 @@ async function main() {
   if (await exists(paths.splashSourceSvg)) {
     const svgBuffer = await fs.readFile(paths.splashSourceSvg);
     await sharp(svgBuffer, { density: 300 })
-      .resize(1024, 1024)
+      .resize(1024, 1024, { fit: "fill" })
+      .flatten({ background: "#000000" })
       .png({ compressionLevel: 9 })
       .toFile(paths.splash);
     log(`Wrote: ${path.relative(projectRoot, paths.splash)} (1024x1024) [from splash-source.svg]`);
@@ -120,7 +121,8 @@ async function main() {
   if (await exists(paths.faviconSvg)) {
     const svgBuffer = await fs.readFile(paths.faviconSvg);
     await sharp(svgBuffer, { density: 300 })
-      .resize(192, 192, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .resize(192, 192, { fit: "fill" })
+      .flatten({ background: "#1A2332" })
       .png({ compressionLevel: 9 })
       .toFile(paths.favicon);
     log(`Wrote: ${path.relative(projectRoot, paths.favicon)} (192x192) [from favicon.svg]`);

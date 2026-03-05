@@ -9,12 +9,16 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "android": {
+      "package": "com.pakfreelance.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1A2332"
       }
     },
     "ios": {
+      "bundleIdentifier": "com.pakfreelance.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "supportsTablet": true
     },
     "web": {
@@ -33,6 +37,14 @@
           "image": "./assets/images/splash.png",
           "imageWidth": 200,
           "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#1A2332",
+          "sounds": []
         }
       ]
     ],

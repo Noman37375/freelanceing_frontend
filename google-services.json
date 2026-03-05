@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "261030915456",
+    "project_id": "pakfreelance-8b264",
+    "storage_bucket": "pakfreelance-8b264.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:261030915456:android:a414599384a1dc31012565",
+        "android_client_info": {
+          "package_name": "com.pakfreelance.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5XNlf83XSb7Yav92ZYyxIhm378e2ME5Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

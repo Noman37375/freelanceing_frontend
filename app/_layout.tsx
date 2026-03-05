@@ -11,6 +11,7 @@ import { CallProvider } from '@/contexts/CallContext';
 import { CallModal } from '@/components/CallModal';
 import { UpdateBanner } from '@/components/UpdateBanner';
 import { useUpdateCheck } from '@/hooks/useUpdateCheck';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useEffect, useRef, useState } from 'react';
 
 // Keep native splash visible until we're ready, then show welcome.jpeg as initial loading
@@ -87,6 +88,11 @@ function UpdateChecker() {
   return <UpdateBanner onDismiss={dismissUpdate} />;
 }
 
+function PushNotificationSetup() {
+  usePushNotifications();
+  return null;
+}
+
 export default function RootLayout() {
   useFrameworkReady();
 
@@ -99,6 +105,7 @@ export default function RootLayout() {
               <RootNavigation />
               <CallModal />
               <UpdateChecker />
+              <PushNotificationSetup />
               <StatusBar style="auto" />
             </NotificationProvider>
           </WalletProvider>

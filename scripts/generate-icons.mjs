@@ -8,16 +8,19 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..");
 
 const paths = {
-  // Tip: create this file for best results (a clean, high-res square logo)
-  // This script will generate all required sizes from it.
-  iconSource: path.join(projectRoot, "assets", "images", "icon-source.png"),
-  icon: path.join(projectRoot, "assets", "images", "icon.png"),
-  faviconSvg: path.join(projectRoot, "assets", "images", "favicon.svg"),
-  favicon: path.join(projectRoot, "assets", "images", "favicon.png"),
-  pwaDir: path.join(projectRoot, "assets", "images", "pwa"),
+  iconSourceSvg:         path.join(projectRoot, "assets", "images", "icon-source.svg"),
+  iconSourcePng:         path.join(projectRoot, "assets", "images", "icon-source.png"),
+  icon:                  path.join(projectRoot, "assets", "images", "icon.png"),
+  adaptiveIconSourceSvg: path.join(projectRoot, "assets", "images", "adaptive-icon-source.svg"),
+  adaptiveIcon:          path.join(projectRoot, "assets", "images", "adaptive-icon.png"),
+  splashSourceSvg:       path.join(projectRoot, "assets", "images", "splash-source.svg"),
+  splash:                path.join(projectRoot, "assets", "images", "splash.png"),
+  faviconSvg:            path.join(projectRoot, "assets", "images", "favicon.svg"),
+  favicon:               path.join(projectRoot, "assets", "images", "favicon.png"),
+  pwaDir:                path.join(projectRoot, "assets", "images", "pwa"),
 };
 
-const background = "#ffffff"; // change if you want a different background
+const background = "#ffffff";
 
 async function exists(p) {
   try {
@@ -65,22 +68,53 @@ async function makeMaskable(buffer, size, outPath) {
 }
 
 async function main() {
-  const sourcePath = (await exists(paths.iconSource)) ? paths.iconSource : paths.icon;
-  if (!(await exists(sourcePath))) {
-    throw new Error(
-      `Icon source not found. Expected either:\n- ${paths.iconSource}\n- ${paths.icon}`
-    );
-  }
-
   await ensureDir(paths.pwaDir);
 
-  const sourceBuffer = await fs.readFile(sourcePath);
-  const meta = await sharp(sourceBuffer).metadata();
-  log(`Using source: ${path.relative(projectRoot, sourcePath)} (${meta.width}x${meta.height})`);
+  // ── App icon ────────────────────────────────────────────────────────────────
+  // Priority: icon-source.svg → icon-source.png → icon.png (fallback)
+  if (await exists(paths.iconSourceSvg)) {
+    const svgBuffer = await fs.readFile(paths.iconSourceSvg);
+    // SVG already contains its own background — render at 1024×1024, no padding
+    await sharp(svgBuffer, { density: 300 })
+      .resize(1024, 1024)
+      .png({ compressionLevel: 9 })
+      .toFile(paths.icon);
+    log(`Wrote: ${path.relative(projectRoot, paths.icon)} (1024x1024) [from icon-source.svg]`);
+  } else {
+    const sourcePath = (await exists(paths.iconSourcePng)) ? paths.iconSourcePng : paths.icon;
+    if (!(await exists(sourcePath))) {
+      throw new Error(`Icon source not found. Expected: ${paths.iconSourceSvg}, ${paths.iconSourcePng}, or ${paths.icon}`);
+    }
+    const sourceBuffer = await fs.readFile(sourcePath);
+    const meta = await sharp(sourceBuffer).metadata();
+    log(`Using source: ${path.relative(projectRoot, sourcePath)} (${meta.width}x${meta.height})`);
+    await resizeContainSquare(sourceBuffer, 1024, paths.icon);
+    log(`Wrote: ${path.relative(projectRoot, paths.icon)} (1024x1024)`);
+  }
 
-  // App icon (Expo uses this for native + for generating web assets during export)
-  await resizeContainSquare(sourceBuffer, 1024, paths.icon);
-  log(`Wrote: ${path.relative(projectRoot, paths.icon)} (1024x1024)`);
+  // ── Splash screen ────────────────────────────────────────────────────────────
+  if (await exists(paths.splashSourceSvg)) {
+    const svgBuffer = await fs.readFile(paths.splashSourceSvg);
+    await sharp(svgBuffer, { density: 300 })
+      .resize(1024, 1024)
+      .png({ compressionLevel: 9 })
+      .toFile(paths.splash);
+    log(`Wrote: ${path.relative(projectRoot, paths.splash)} (1024x1024) [from splash-source.svg]`);
+  }
+
+  // ── Android Adaptive Icon foreground ────────────────────────────────────────
+  // Transparent background — OS applies backgroundColor from app.json
+  if (await exists(paths.adaptiveIconSourceSvg)) {
+    const svgBuffer = await fs.readFile(paths.adaptiveIconSourceSvg);
+    await sharp(svgBuffer, { density: 300 })
+      .resize(1024, 1024)
+      .png({ compressionLevel: 9 })
+      .toFile(paths.adaptiveIcon);
+    log(`Wrote: ${path.relative(projectRoot, paths.adaptiveIcon)} (1024x1024) [from adaptive-icon-source.svg]`);
+  }
+
+  // Re-read icon.png for PWA icon generation
+  const iconBuffer = await fs.readFile(paths.icon);
 
   // Favicon (browser tab) — use custom favicon.svg if present, otherwise fall back to icon source
   if (await exists(paths.faviconSvg)) {
@@ -91,7 +125,7 @@ async function main() {
       .toFile(paths.favicon);
     log(`Wrote: ${path.relative(projectRoot, paths.favicon)} (192x192) [from favicon.svg]`);
   } else {
-    await resizeContainSquare(sourceBuffer, 192, paths.favicon);
+    await resizeContainSquare(iconBuffer, 192, paths.favicon);
     log(`Wrote: ${path.relative(projectRoot, paths.favicon)} (192x192)`);
   }
 
@@ -101,10 +135,10 @@ async function main() {
   const pwa192Mask = path.join(paths.pwaDir, "icon-192-maskable.png");
   const pwa512Mask = path.join(paths.pwaDir, "icon-512-maskable.png");
 
-  await resizeContainSquare(sourceBuffer, 192, pwa192);
-  await resizeContainSquare(sourceBuffer, 512, pwa512);
-  await makeMaskable(sourceBuffer, 192, pwa192Mask);
-  await makeMaskable(sourceBuffer, 512, pwa512Mask);
+  await resizeContainSquare(iconBuffer, 192, pwa192);
+  await resizeContainSquare(iconBuffer, 512, pwa512);
+  await makeMaskable(iconBuffer, 192, pwa192Mask);
+  await makeMaskable(iconBuffer, 512, pwa512Mask);
 
   log(`Wrote: ${path.relative(projectRoot, pwa192)} (192x192)`);
   log(`Wrote: ${path.relative(projectRoot, pwa512)} (512x512)`);

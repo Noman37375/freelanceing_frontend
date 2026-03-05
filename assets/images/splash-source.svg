@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+
+  <!-- Full black background — fills entire screen with splash.backgroundColor="#000000" -->
+  <rect width="1024" height="1024" fill="#000000"/>
+
+  <!--
+    Same PF letterforms as icon-source.svg but slightly smaller (320px tall)
+    and centered on the black canvas.
+
+    Letter height: 320px
+    Vertical center: y=512   Letters run y=352 → y=672
+
+    Bar thickness: 44px
+
+    P  occupies x: 372 → 492  (120px wide)
+    Gap: 492 → 532  (40px)
+    F  occupies x: 532 → 652  (120px wide)
+
+    Combined center: (372+652)/2 = 512  ✓
+  -->
+
+  <!-- ═══ P ═══ -->
+  <rect x="372" y="352" width="44" height="320" rx="10" fill="#FFFFFF"/>
+  <rect x="416" y="352" width="76" height="44"  rx="10" fill="#FFFFFF"/>
+  <rect x="448" y="352" width="44" height="164" rx="10" fill="#FFFFFF"/>
+  <rect x="416" y="472" width="76" height="44"  rx="10" fill="#FFFFFF"/>
+
+  <!-- ═══ F ═══ -->
+  <rect x="532" y="352" width="44" height="320" rx="10" fill="#FFFFFF"/>
+  <rect x="576" y="352" width="120" height="44" rx="10" fill="#FFFFFF"/>
+  <rect x="576" y="464" width="94"  height="44" rx="10" fill="#FFFFFF"/>
+
+  <!-- Green accent dot -->
+  <circle cx="696" cy="352" r="22" fill="#10B981"/>
+
+</svg>

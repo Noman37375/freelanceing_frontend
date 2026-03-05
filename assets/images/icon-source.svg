@@ -1,55 +1,54 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
 
-  <!-- ── Background ─────────────────────────────────────────── -->
+  <!-- Full opaque background — fills edge to edge, zero transparent pixels -->
   <rect width="1024" height="1024" fill="#1A2332"/>
 
-  <!-- ── Outer badge ring (subtle depth) ───────────────────── -->
-  <circle cx="512" cy="490" r="420" fill="none" stroke="#FFFFFF" stroke-width="18" opacity="0.08"/>
-  <circle cx="512" cy="490" r="390" fill="none" stroke="#FFFFFF" stroke-width="6"  opacity="0.18"/>
-
-  <!-- ── Green connecting arc (the "Connecting Talent" bridge) -->
-  <!--    Sweeps under the PF letters, connecting left→right   -->
-  <path d="M 268,628 C 268,798 756,798 756,628"
-        fill="none" stroke="#10B981" stroke-width="28"
-        stroke-linecap="round" opacity="0.95"/>
-
-  <!-- Green node dots at arc endpoints -->
-  <circle cx="268" cy="628" r="22" fill="#10B981"/>
-  <circle cx="756" cy="628" r="22" fill="#10B981"/>
-
-  <!-- Small connector dot at arc bottom center -->
-  <circle cx="512" cy="766" r="14" fill="#10B981" opacity="0.6"/>
-
-  <!-- ── P letterform ───────────────────────────────────────── -->
   <!--
-    P spans x: 310 → 458  (148px)
-    Height: y 300 → 680   (380px)
-    Bar thickness: 52px
+    NO outer rings — they caused curved arc artifacts at squircle edges.
+
+    PF letterforms — enlarged to fill the safe zone properly.
+    Safe zone: inner 66% = x 174→850, y 174→850
+
+    Bar thickness: 68px
+    Letter height: 460px  (y: 230 → 690)
+    Combined PF center: x=512
+
+    P  x: 220 → 412  (192px wide)
+    gap: 412 → 476   (64px)
+    F  x: 476 → 700  (224px wide)
+    center: (220+700)/2 = 460 — shift right 52px → P: 272→464, F: 528→752
+    Recheck center: (272+752)/2 = 512 ✓
   -->
+
+  <!-- ══ P ══ -->
   <!-- Left vertical bar -->
-  <rect x="310" y="300" width="52" height="380" rx="14" fill="#FFFFFF"/>
+  <rect x="272" y="230" width="68" height="460" rx="18" fill="#FFFFFF"/>
   <!-- Top horizontal cap -->
-  <rect x="362" y="300" width="96" height="52"  rx="14" fill="#FFFFFF"/>
+  <rect x="340" y="230" width="124" height="68" rx="18" fill="#FFFFFF"/>
   <!-- Bowl right side (top half) -->
-  <rect x="406" y="300" width="52" height="196" rx="14" fill="#FFFFFF"/>
-  <!-- Middle cap (closes bowl) -->
-  <rect x="362" y="444" width="96" height="52"  rx="14" fill="#FFFFFF"/>
+  <rect x="396" y="230" width="68" height="234" rx="18" fill="#FFFFFF"/>
+  <!-- Middle cap (closes the bowl) -->
+  <rect x="340" y="396" width="124" height="68" rx="18" fill="#FFFFFF"/>
 
-  <!-- ── F letterform ───────────────────────────────────────── -->
-  <!--
-    F spans x: 514 → 714  (200px incl. bars)
-    Height: y 300 → 680   (380px)
-    Bar thickness: 52px
-  -->
+  <!-- ══ F ══ -->
   <!-- Left vertical bar -->
-  <rect x="514" y="300" width="52" height="380" rx="14" fill="#FFFFFF"/>
-  <!-- Top horizontal bar (full width) -->
-  <rect x="566" y="300" width="148" height="52" rx="14" fill="#FFFFFF"/>
+  <rect x="528" y="230" width="68" height="460" rx="18" fill="#FFFFFF"/>
+  <!-- Top horizontal bar -->
+  <rect x="596" y="230" width="156" height="68" rx="18" fill="#FFFFFF"/>
   <!-- Middle horizontal bar (shorter) -->
-  <rect x="566" y="444" width="116" height="52" rx="14" fill="#FFFFFF"/>
+  <rect x="596" y="396" width="120" height="68" rx="18" fill="#FFFFFF"/>
 
-  <!-- ── Green accent diamond between P and F at top ──────── -->
-  <rect x="490" y="276" width="44" height="44" rx="8"
-        fill="#10B981" transform="rotate(45 512 298)"/>
+  <!-- Green connecting arc — "Connecting Talent" -->
+  <path d="M 272,660 C 272,820 752,820 752,660"
+        fill="none" stroke="#10B981" stroke-width="32"
+        stroke-linecap="round"/>
+
+  <!-- Arc endpoint dots -->
+  <circle cx="272" cy="660" r="26" fill="#10B981"/>
+  <circle cx="752" cy="660" r="26" fill="#10B981"/>
+
+  <!-- Green diamond between P and F at top -->
+  <rect x="484" y="200" width="52" height="52" rx="10"
+        fill="#10B981" transform="rotate(45 510 226)"/>
 
 </svg>

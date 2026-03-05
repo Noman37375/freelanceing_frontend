@@ -160,6 +160,17 @@ async function main() {
   await fs.writeFile(indexPath, html);
   log(`Patched: ${path.relative(projectRoot, indexPath)}`);
 
+  // Version file — read by the app on startup to detect new deployments
+  const buildId = process.env.VERCEL_GIT_COMMIT_SHA
+    || process.env.CF_PAGES_COMMIT_SHA
+    || Date.now().toString();
+  const versionJson = {
+    buildId,
+    buildTime: new Date().toISOString(),
+  };
+  await writeFile(path.join(distDir, "version.json"), JSON.stringify(versionJson, null, 2));
+  log(`Wrote: dist/version.json (buildId: ${buildId.slice(0, 8)})`);
+
   log("PWA postbuild done.");
 }
 

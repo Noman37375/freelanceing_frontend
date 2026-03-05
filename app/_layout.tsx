@@ -9,6 +9,8 @@ import { NotificationProvider } from '@/contexts/NotificationContext';
 import { SocketProvider } from '@/contexts/SocketContext';
 import { CallProvider } from '@/contexts/CallContext';
 import { CallModal } from '@/components/CallModal';
+import { UpdateBanner } from '@/components/UpdateBanner';
+import { useUpdateCheck } from '@/hooks/useUpdateCheck';
 import { useEffect, useRef, useState } from 'react';
 
 // Keep native splash visible until we're ready, then show welcome.jpeg as initial loading
@@ -79,6 +81,12 @@ const styles = StyleSheet.create({
   splashImage: StyleSheet.absoluteFillObject,
 });
 
+function UpdateChecker() {
+  const { updateAvailable, dismissUpdate } = useUpdateCheck();
+  if (!updateAvailable) return null;
+  return <UpdateBanner onDismiss={dismissUpdate} />;
+}
+
 export default function RootLayout() {
   useFrameworkReady();
 
@@ -90,6 +98,7 @@ export default function RootLayout() {
             <NotificationProvider>
               <RootNavigation />
               <CallModal />
+              <UpdateChecker />
               <StatusBar style="auto" />
             </NotificationProvider>
           </WalletProvider>

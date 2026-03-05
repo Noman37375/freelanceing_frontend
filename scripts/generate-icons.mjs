@@ -20,7 +20,7 @@ const paths = {
   pwaDir:                path.join(projectRoot, "assets", "images", "pwa"),
 };
 
-const background = "#ffffff";
+const background = "#1A2332"; // app's dark background — used for maskable icon padding
 
 async function exists(p) {
   try {

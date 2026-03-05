@@ -63,8 +63,8 @@ async function main() {
 
   const name = expo.name ?? "App";
   const shortName = (expo.name ?? "App").slice(0, 12);
-  const themeColor = "#ffffff";
-  const backgroundColor = "#ffffff";
+  const themeColor = "#1A2332";
+  const backgroundColor = "#1A2332";
 
   await ensureDir(distIconsDir);
 
@@ -86,15 +86,13 @@ async function main() {
     log(`Copied: ${path.relative(projectRoot, src)} -> ${path.relative(projectRoot, dest)}`);
   }
 
-  // Apple touch icon (iOS uses this for Add to Home Screen)
-  const iconSourcePath = (await exists(path.join(projectRoot, "assets", "images", "icon-source.png")))
-    ? path.join(projectRoot, "assets", "images", "icon-source.png")
-    : path.join(projectRoot, "assets", "images", "icon.png");
-
+  // Apple touch icon (iOS Add to Home Screen) — use icon.png which has full dark background
+  const iconPngPath = path.join(projectRoot, "assets", "images", "icon.png");
   const appleTouchPath = path.join(distIconsDir, "apple-touch-icon.png");
-  const srcBuffer = await fs.readFile(iconSourcePath);
+  const srcBuffer = await fs.readFile(iconPngPath);
   await sharp(srcBuffer)
-    .resize(180, 180, { fit: "contain", background: backgroundColor })
+    .resize(180, 180, { fit: "fill" })
+    .flatten({ background: backgroundColor })
     .png({ compressionLevel: 9 })
     .toFile(appleTouchPath);
   log(`Wrote: ${path.relative(projectRoot, appleTouchPath)} (180x180)`);

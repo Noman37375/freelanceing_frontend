@@ -1,46 +1,55 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
 
-  <!-- Dark background (full square — iOS/Android apply their own masks) -->
+  <!-- ── Background ─────────────────────────────────────────── -->
   <rect width="1024" height="1024" fill="#1A2332"/>
 
-  <!-- Subtle green accent ring -->
-  <circle cx="512" cy="512" r="420" fill="none" stroke="#10B981" stroke-width="8" opacity="0.15"/>
+  <!-- ── Outer badge ring (subtle depth) ───────────────────── -->
+  <circle cx="512" cy="490" r="420" fill="none" stroke="#FFFFFF" stroke-width="18" opacity="0.08"/>
+  <circle cx="512" cy="490" r="390" fill="none" stroke="#FFFFFF" stroke-width="6"  opacity="0.18"/>
 
+  <!-- ── Green connecting arc (the "Connecting Talent" bridge) -->
+  <!--    Sweeps under the PF letters, connecting left→right   -->
+  <path d="M 268,628 C 268,798 756,798 756,628"
+        fill="none" stroke="#10B981" stroke-width="28"
+        stroke-linecap="round" opacity="0.95"/>
+
+  <!-- Green node dots at arc endpoints -->
+  <circle cx="268" cy="628" r="22" fill="#10B981"/>
+  <circle cx="756" cy="628" r="22" fill="#10B981"/>
+
+  <!-- Small connector dot at arc bottom center -->
+  <circle cx="512" cy="766" r="14" fill="#10B981" opacity="0.6"/>
+
+  <!-- ── P letterform ───────────────────────────────────────── -->
   <!--
-    PF letterforms — drawn as filled rectangles (no font dependency, renders
-    identically on every server/OS via sharp/librsvg).
-
-    Canvas: 1024×1024   Letter height: 400px
-    Vertical center: y=512   So letters run y=312 → y=712
-
+    P spans x: 310 → 458  (148px)
+    Height: y 300 → 680   (380px)
     Bar thickness: 52px
-
-    P  occupies x: 347 → 487  (140px wide)
-    Gap: 487 → 537  (50px)
-    F  occupies x: 537 → 677  (140px wide)
-
-    Combined group center: (347+677)/2 = 512  ✓
   -->
-
-  <!-- ═══ P ═══ -->
   <!-- Left vertical bar -->
-  <rect x="347" y="312" width="52" height="400" rx="12" fill="#FFFFFF"/>
+  <rect x="310" y="300" width="52" height="380" rx="14" fill="#FFFFFF"/>
   <!-- Top horizontal cap -->
-  <rect x="399" y="312" width="88" height="52" rx="12" fill="#FFFFFF"/>
-  <!-- P bowl – right vertical (top half only) -->
-  <rect x="435" y="312" width="52" height="204" rx="12" fill="#FFFFFF"/>
-  <!-- Middle horizontal cap (closes the bowl) -->
-  <rect x="399" y="464" width="88" height="52" rx="12" fill="#FFFFFF"/>
+  <rect x="362" y="300" width="96" height="52"  rx="14" fill="#FFFFFF"/>
+  <!-- Bowl right side (top half) -->
+  <rect x="406" y="300" width="52" height="196" rx="14" fill="#FFFFFF"/>
+  <!-- Middle cap (closes bowl) -->
+  <rect x="362" y="444" width="96" height="52"  rx="14" fill="#FFFFFF"/>
 
-  <!-- ═══ F ═══ -->
+  <!-- ── F letterform ───────────────────────────────────────── -->
+  <!--
+    F spans x: 514 → 714  (200px incl. bars)
+    Height: y 300 → 680   (380px)
+    Bar thickness: 52px
+  -->
   <!-- Left vertical bar -->
-  <rect x="537" y="312" width="52" height="400" rx="12" fill="#FFFFFF"/>
+  <rect x="514" y="300" width="52" height="380" rx="14" fill="#FFFFFF"/>
   <!-- Top horizontal bar (full width) -->
-  <rect x="589" y="312" width="140" height="52" rx="12" fill="#FFFFFF"/>
+  <rect x="566" y="300" width="148" height="52" rx="14" fill="#FFFFFF"/>
   <!-- Middle horizontal bar (shorter) -->
-  <rect x="589" y="476" width="110" height="52" rx="12" fill="#FFFFFF"/>
+  <rect x="566" y="444" width="116" height="52" rx="14" fill="#FFFFFF"/>
 
-  <!-- Green accent dot (top-right of F) -->
-  <circle cx="729" cy="312" r="26" fill="#10B981"/>
+  <!-- ── Green accent diamond between P and F at top ──────── -->
+  <rect x="490" y="276" width="44" height="44" rx="8"
+        fill="#10B981" transform="rotate(45 512 298)"/>
 
 </svg>

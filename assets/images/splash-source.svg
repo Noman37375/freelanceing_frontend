@@ -1,36 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
 
-  <!-- Full black background — fills entire screen with splash.backgroundColor="#000000" -->
+  <!-- Full black background -->
   <rect width="1024" height="1024" fill="#000000"/>
 
-  <!--
-    Same PF letterforms as icon-source.svg but slightly smaller (320px tall)
-    and centered on the black canvas.
+  <!-- Subtle ring -->
+  <circle cx="512" cy="490" r="390" fill="none" stroke="#FFFFFF" stroke-width="5" opacity="0.12"/>
 
-    Letter height: 320px
-    Vertical center: y=512   Letters run y=352 → y=672
+  <!-- Green connecting arc -->
+  <path d="M 290,616 C 290,776 734,776 734,616"
+        fill="none" stroke="#10B981" stroke-width="24"
+        stroke-linecap="round" opacity="0.95"/>
 
-    Bar thickness: 44px
+  <circle cx="290" cy="616" r="18" fill="#10B981"/>
+  <circle cx="734" cy="616" r="18" fill="#10B981"/>
+  <circle cx="512" cy="750" r="12" fill="#10B981" opacity="0.6"/>
 
-    P  occupies x: 372 → 492  (120px wide)
-    Gap: 492 → 532  (40px)
-    F  occupies x: 532 → 652  (120px wide)
+  <!-- P -->
+  <rect x="326" y="308" width="46" height="332" rx="12" fill="#FFFFFF"/>
+  <rect x="372" y="308" width="84"  height="46"  rx="12" fill="#FFFFFF"/>
+  <rect x="412" y="308" width="46"  height="172" rx="12" fill="#FFFFFF"/>
+  <rect x="372" y="434" width="84"  height="46"  rx="12" fill="#FFFFFF"/>
 
-    Combined center: (372+652)/2 = 512  ✓
-  -->
+  <!-- F -->
+  <rect x="518" y="308" width="46"  height="332" rx="12" fill="#FFFFFF"/>
+  <rect x="564" y="308" width="136" height="46"  rx="12" fill="#FFFFFF"/>
+  <rect x="564" y="434" width="106" height="46"  rx="12" fill="#FFFFFF"/>
 
-  <!-- ═══ P ═══ -->
-  <rect x="372" y="352" width="44" height="320" rx="10" fill="#FFFFFF"/>
-  <rect x="416" y="352" width="76" height="44"  rx="10" fill="#FFFFFF"/>
-  <rect x="448" y="352" width="44" height="164" rx="10" fill="#FFFFFF"/>
-  <rect x="416" y="472" width="76" height="44"  rx="10" fill="#FFFFFF"/>
-
-  <!-- ═══ F ═══ -->
-  <rect x="532" y="352" width="44" height="320" rx="10" fill="#FFFFFF"/>
-  <rect x="576" y="352" width="120" height="44" rx="10" fill="#FFFFFF"/>
-  <rect x="576" y="464" width="94"  height="44" rx="10" fill="#FFFFFF"/>
-
-  <!-- Green accent dot -->
-  <circle cx="696" cy="352" r="22" fill="#10B981"/>
+  <!-- Green diamond -->
+  <rect x="490" y="282" width="40" height="40" rx="7"
+        fill="#10B981" transform="rotate(45 510 302)"/>
 
 </svg>

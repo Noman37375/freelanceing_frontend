@@ -1,46 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-  <!-- Rounded square background -->
-  <rect width="100" height="100" rx="22" fill="#1A2332"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
 
-  <!-- Subtle green ring accent -->
-  <circle cx="50" cy="50" r="42" fill="none" stroke="#10B981" stroke-width="2.5" opacity="0.18"/>
+  <!-- Background -->
+  <rect width="100" height="100" rx="20" fill="#1A2332"/>
 
-  <!-- Network / connecting-talent dots -->
-  <circle cx="18" cy="18" r="3.5" fill="#10B981" opacity="0.55"/>
-  <circle cx="82" cy="18" r="3.5" fill="#10B981" opacity="0.4"/>
-  <circle cx="82" cy="82" r="3.5" fill="#10B981" opacity="0.3"/>
-  <circle cx="18" cy="82" r="3.5" fill="#10B981" opacity="0.3"/>
+  <!-- Green connecting arc -->
+  <path d="M 18,64 C 18,82 82,82 82,64"
+        fill="none" stroke="#10B981" stroke-width="5"
+        stroke-linecap="round"/>
 
-  <!-- Connecting lines (network motif) -->
-  <line x1="21" y1="18" x2="79" y2="18" stroke="#10B981" stroke-width="1" opacity="0.2"/>
-  <line x1="82" y1="21" x2="82" y2="79" stroke="#10B981" stroke-width="1" opacity="0.15"/>
+  <!-- Arc endpoint dots -->
+  <circle cx="18" cy="64" r="4" fill="#10B981"/>
+  <circle cx="82" cy="64" r="4" fill="#10B981"/>
 
-  <!-- "P" letterform — white -->
-  <path
-    d="M24 30 L24 70
-       M24 30 L38 30
-       Q50 30 50 43
-       Q50 56 38 56
-       L24 56"
-    fill="none"
-    stroke="#FFFFFF"
-    stroke-width="7.5"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
+  <!-- P -->
+  <rect x="20" y="26" width="8"  height="36" rx="2" fill="#FFFFFF"/>
+  <rect x="28" y="26" width="13" height="8"  rx="2" fill="#FFFFFF"/>
+  <rect x="33" y="26" width="8"  height="19" rx="2" fill="#FFFFFF"/>
+  <rect x="28" y="37" width="13" height="8"  rx="2" fill="#FFFFFF"/>
 
-  <!-- "F" letterform — green -->
-  <path
-    d="M57 30 L76 30
-       M57 30 L57 70
-       M57 51 L73 51"
-    fill="none"
-    stroke="#10B981"
-    stroke-width="7.5"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
+  <!-- F -->
+  <rect x="51" y="26" width="8"  height="36" rx="2" fill="#FFFFFF"/>
+  <rect x="59" y="26" width="21" height="8"  rx="2" fill="#FFFFFF"/>
+  <rect x="59" y="37" width="17" height="8"  rx="2" fill="#FFFFFF"/>
 
-  <!-- Green accent dot on top-right of F -->
-  <circle cx="76" cy="30" r="5" fill="#10B981"/>
+  <!-- Diamond accent -->
+  <rect x="43" y="21" width="8" height="8" rx="1.5"
+        fill="#10B981" transform="rotate(45 47 25)"/>
+
 </svg>

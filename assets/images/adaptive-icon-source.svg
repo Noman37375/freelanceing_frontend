@@ -1,33 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
 
   <!--
-    Android Adaptive Icon — FOREGROUND LAYER
-    Background is transparent; backgroundColor="#1A2332" is applied by the OS.
+    ANDROID ADAPTIVE ICON — foreground layer only.
+    Background is TRANSPARENT — Android OS fills with backgroundColor="#1A2332"
+    and clips to the device's shape (circle / squircle / square / etc.)
 
-    Safe zone: inner 66% of 1024 = ~676px
-    So logo must sit within x: 174→850, y: 174→850
-    We center a slightly smaller PF (330px wide, 380px tall) at 512,512.
-
-    Letters run y=322 → y=702  (380px tall, center=512 ✓)
-    P  x: 347 → 487  (140px)
-    Gap:   487 → 537  (50px)
-    F  x: 537 → 677  (140px)
-    Combined center: (347+677)/2 = 512 ✓
-    All within safe zone (174→850) ✓
+    Safe zone: inner 66% → x: 174–850, y: 174–850
+    All elements are within safe zone ✓
   -->
 
-  <!-- ═══ P ═══ -->
-  <rect x="347" y="322" width="52" height="380" rx="12" fill="#FFFFFF"/>
-  <rect x="399" y="322" width="88" height="52"  rx="12" fill="#FFFFFF"/>
-  <rect x="435" y="322" width="52" height="194" rx="12" fill="#FFFFFF"/>
-  <rect x="399" y="464" width="88" height="52"  rx="12" fill="#FFFFFF"/>
+  <!-- Subtle white ring (visible against the dark backgroundColor) -->
+  <circle cx="512" cy="490" r="390" fill="none" stroke="#FFFFFF" stroke-width="6" opacity="0.18"/>
 
-  <!-- ═══ F ═══ -->
-  <rect x="537" y="322" width="52" height="380" rx="12" fill="#FFFFFF"/>
-  <rect x="589" y="322" width="140" height="52" rx="12" fill="#FFFFFF"/>
-  <rect x="589" y="476" width="110" height="52" rx="12" fill="#FFFFFF"/>
+  <!-- Green connecting arc -->
+  <path d="M 268,628 C 268,798 756,798 756,628"
+        fill="none" stroke="#10B981" stroke-width="28"
+        stroke-linecap="round" opacity="0.95"/>
 
-  <!-- Green accent dot -->
-  <circle cx="729" cy="322" r="26" fill="#10B981"/>
+  <!-- Green node dots -->
+  <circle cx="268" cy="628" r="22" fill="#10B981"/>
+  <circle cx="756" cy="628" r="22" fill="#10B981"/>
+  <circle cx="512" cy="766" r="14" fill="#10B981" opacity="0.6"/>
+
+  <!-- P letterform -->
+  <rect x="310" y="300" width="52" height="380" rx="14" fill="#FFFFFF"/>
+  <rect x="362" y="300" width="96" height="52"  rx="14" fill="#FFFFFF"/>
+  <rect x="406" y="300" width="52" height="196" rx="14" fill="#FFFFFF"/>
+  <rect x="362" y="444" width="96" height="52"  rx="14" fill="#FFFFFF"/>
+
+  <!-- F letterform -->
+  <rect x="514" y="300" width="52" height="380" rx="14" fill="#FFFFFF"/>
+  <rect x="566" y="300" width="148" height="52" rx="14" fill="#FFFFFF"/>
+  <rect x="566" y="444" width="116" height="52" rx="14" fill="#FFFFFF"/>
+
+  <!-- Green diamond accent -->
+  <rect x="490" y="276" width="44" height="44" rx="8"
+        fill="#10B981" transform="rotate(45 512 298)"/>
 
 </svg>

@@ -1,6 +1,7 @@
 // WalletContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { walletService, Transaction } from '@/services/walletService';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface WalletContextType {
   balance: number;
@@ -18,6 +19,7 @@ interface WalletContextType {
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [balance, setBalance] = useState<number>(0);
   const [escrowBalance, setEscrowBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -47,8 +49,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    getTransactionHistory();
-  }, []);
+    // Only auto-fetch wallet data when a user is authenticated
+    if (user) {
+      getTransactionHistory();
+    }
+  }, [user]);
 
   const value: WalletContextType = {
     balance,

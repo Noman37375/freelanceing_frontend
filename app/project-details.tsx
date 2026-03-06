@@ -71,14 +71,16 @@ export default function ProjectDetails() {
       try {
         setMilestonesLoading(true);
 
-        const fetchedMilestones =
-          await milestoneService.getMilestonesByProjectId(id);
-
+        const fetchedMilestones = await milestoneService.getMilestonesByProjectId(id);
         console.log("Fetched milestones:", fetchedMilestones);
-
         setMilestones(fetchedMilestones || []);
-      } catch (error) {
-        console.error("Failed to fetch milestones:", error);
+      } catch (error: any) {
+        // If user isn't allowed to see milestones, just show empty state without noisy error
+        if (typeof error?.message === 'string' && error.message.toLowerCase().includes('access denied')) {
+          console.log("User not allowed to view milestones for this project.");
+        } else {
+          console.error("Failed to fetch milestones:", error);
+        }
       } finally {
         setMilestonesLoading(false);
       }

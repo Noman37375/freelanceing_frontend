@@ -10,6 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { walletService, Transaction } from '@/services/walletService';
+import { useAuth } from '@/contexts/AuthContext';
 
 const QUICK_AMOUNTS = [50, 100, 250, 500];
 
@@ -19,6 +20,7 @@ function txnIsCredit(type: string) {
 
 export default function ClientWallet() {
   const router = useRouter();
+  const { user } = useAuth();
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -47,9 +49,18 @@ export default function ClientWallet() {
   const [withdrawAmount, setWithdrawAmount]       = useState('');
   const [withdrawLoading, setWithdrawLoading]     = useState(false);
 
-  useEffect(() => { fetchWalletData(); }, []);
+  useEffect(() => {
+    if (user) {
+      fetchWalletData();
+    }
+  }, [user]);
 
   const fetchWalletData = async () => {
+    // Do not call wallet APIs if not authenticated
+    if (!user) {
+      return;
+    }
+
     try {
       setLoading(true);
       const [walletData, txData] = await Promise.all([

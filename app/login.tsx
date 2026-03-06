@@ -12,20 +12,27 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react-native";
+import { Eye, EyeOff, Lock, Mail, Briefcase, UserCircle } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { COLORS, TYPOGRAPHY, BORDER_RADIUS, SPACING, SHADOWS } from "@/constants/theme";
+import { RoleSelectionRequired } from "@/services/authService";
+
+type Step = 'credentials' | 'role-select';
 
 export default function Login() {
+  const [step, setStep] = useState<Step>('credentials');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  // Role selection state
+  const [pendingRoleData, setPendingRoleData] = useState<RoleSelectionRequired | null>(null);
+  const [loadingRole, setLoadingRole] = useState<string | null>(null);
 
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, loginWithRole } = useAuth();
 
   const handleLogin = async () => {
     setErrorMessage("");
@@ -45,15 +52,20 @@ export default function Login() {
 
     try {
       console.log('[Login] Attempting login for:', email);
-      const user = await login(email, password);
-      console.log('[Login] Login successful', user?.role);
+      const result = await login(email, password);
 
-      // After successful login, redirect based on role
-      if (user?.role === 'Admin') {
-        router.replace("/(admin)/dashboard" as any);
-      } else {
-        router.replace("/(tabs)" as any);
+      // Dual-role: show role picker
+      if (result && 'requiresRoleSelection' in result && result.requiresRoleSelection) {
+        setPendingRoleData(result as RoleSelectionRequired);
+        setStep('role-select');
+        return;
       }
+
+      const user = result as any;
+      console.log('[Login] Login successful', user?.activeRole || user?.role);
+
+      // Navigate to root — index.tsx reads activeRole and redirects to the right tab
+      router.replace('/' as any);
     } catch (error: any) {
       console.error('[Login] Error:', error);
       let errorMsg = error.message || "Invalid email or password.";
@@ -78,6 +90,86 @@ export default function Login() {
       setIsLoading(false);
     }
   };
+
+  const handleRoleSelect = async (role: string) => {
+    setIsLoading(true);
+    setLoadingRole(role);
+    setErrorMessage("");
+    try {
+      await loginWithRole(email, password, role);
+      console.log('[Login] Role selected:', role);
+      // Navigate to root — index.tsx reads activeRole and redirects to the right tab
+      router.replace('/' as any);
+    } catch (error: any) {
+      setErrorMessage(error.message || "Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+      setLoadingRole(null);
+    }
+  };
+
+  if (step === 'role-select' && pendingRoleData) {
+    return (
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
+        <StatusBar style="dark" />
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <Text style={styles.logoText}>PAK FREELANCE</Text>
+          </View>
+
+          <View style={styles.mainContent}>
+            <View style={styles.titleContainer}>
+              <Text style={styles.title}>Choose your role</Text>
+              <Text style={styles.subtitle}>Select how you want to use the platform today</Text>
+            </View>
+
+            {errorMessage ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.roleCardsContainer}>
+              {pendingRoleData.roles.includes('Freelancer') && (
+                <TouchableOpacity
+                  style={styles.roleCard}
+                  onPress={() => handleRoleSelect('Freelancer')}
+                  disabled={isLoading}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.roleIconBox}>
+                    <Briefcase size={32} color={COLORS.primary} strokeWidth={2} />
+                  </View>
+                  <Text style={styles.roleCardTitle}>Freelancer</Text>
+                  <Text style={styles.roleCardSubtitle}>Find work & submit proposals</Text>
+                  {loadingRole === 'Freelancer' && (
+                    <ActivityIndicator color={COLORS.primary} style={{ marginTop: 8 }} />
+                  )}
+                </TouchableOpacity>
+              )}
+              {pendingRoleData.roles.includes('Client') && (
+                <TouchableOpacity
+                  style={styles.roleCard}
+                  onPress={() => handleRoleSelect('Client')}
+                  disabled={isLoading}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.roleIconBox}>
+                    <UserCircle size={32} color={COLORS.primary} strokeWidth={2} />
+                  </View>
+                  <Text style={styles.roleCardTitle}>Client</Text>
+                  <Text style={styles.roleCardSubtitle}>Post projects & hire talent</Text>
+                  {loadingRole === 'Client' && (
+                    <ActivityIndicator color={COLORS.primary} style={{ marginTop: 8 }} />
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -360,5 +452,50 @@ const styles = StyleSheet.create({
   footerText: {
     color: COLORS.textTertiary,
     fontSize: TYPOGRAPHY.fontSize.sm,
+  },
+  // Role selection styles
+  roleCardsContainer: {
+    flexDirection: 'row',
+    gap: SPACING.m,
+    marginBottom: SPACING.xl,
+  },
+  roleCard: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    borderRadius: BORDER_RADIUS.l,
+    padding: SPACING.l,
+    alignItems: 'center',
+    gap: SPACING.s,
+    ...SHADOWS.glow,
+  },
+  roleIconBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: `${COLORS.primary}12`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xs,
+  },
+  roleCardTitle: {
+    fontSize: TYPOGRAPHY.fontSize.lg,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: COLORS.background,
+  },
+  roleCardSubtitle: {
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: COLORS.textTertiary,
+    textAlign: 'center',
+  },
+  backButton: {
+    alignItems: 'center',
+    paddingVertical: SPACING.m,
+  },
+  backButtonText: {
+    color: COLORS.primary,
+    fontSize: TYPOGRAPHY.fontSize.base,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
   },
 });

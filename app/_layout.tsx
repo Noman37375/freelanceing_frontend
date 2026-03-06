@@ -46,13 +46,16 @@ function RootNavigation() {
   const showSplash = !minTimeElapsed || (isLoading && !isPublicRoute && !user);
   const prevShowSplash = useRef(true);
 
-  // When splash ends and user is not logged in, always show welcome first (so restored /login doesn't skip it)
+  // When splash ends and user is not logged in, show welcome first
+  // Guard: don't redirect if user is already on a public/auth route (e.g. mid-login)
   useEffect(() => {
-    if (prevShowSplash.current && !showSplash && !user) {
+    const onAuthRoute = ['/login', '/signup', '/welcome', '/verify-email', '/forgot-password', '/change-password', '/complete-profile']
+      .some(r => pathname?.startsWith(r));
+    if (prevShowSplash.current && !showSplash && !user && !onAuthRoute) {
       router.replace('/welcome');
     }
     prevShowSplash.current = showSplash;
-  }, [showSplash, user, router]);
+  }, [showSplash, user, pathname, router]);
 
   useEffect(() => {
     if (showSplash) {

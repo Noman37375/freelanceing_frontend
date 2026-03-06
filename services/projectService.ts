@@ -37,7 +37,9 @@ const apiCall = async (endpoint: string, options: RequestInit = {}): Promise<any
 
     if (!response.ok) {
       const errorMessage = data.message || data.error || `API Error: ${response.status}`;
-      throw new Error(errorMessage);
+      const err: any = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
     }
 
     return data;
@@ -254,8 +256,16 @@ export const proposalService = {
 export const milestoneService = {
 
   getMilestonesByProjectId: async (projectId: string): Promise<Milestone[]> => {
-    const response = await apiCall(`/api/v1/projects/${projectId}/milestones`);
-    return response.data.milestones || [];
+    try {
+      const response = await apiCall(`/api/v1/projects/${projectId}/milestones`);
+      return response.data.milestones || [];
+    } catch (error: any) {
+      // If user is not allowed to see milestones (403 Access denied), treat as no milestones
+      if (error?.status === 403 || typeof error?.message === 'string' && error.message.toLowerCase().includes('access denied')) {
+        return [];
+      }
+      throw error;
+    }
   },
 
   getMilestones: async (projectId: string): Promise<Milestone[]> => {

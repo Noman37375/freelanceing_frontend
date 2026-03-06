@@ -1,7 +1,7 @@
 // AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { storageGet, storageSet, storageRemove } from "@/utils/storage";
-import authService, { User as AuthUser } from "@/services/authService";
+import authService, { User as AuthUser, RoleSelectionRequired } from "@/services/authService";
 
 interface Language {
   name: string;
@@ -59,7 +59,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<User | undefined>;
+  login: (email: string, password: string) => Promise<User | RoleSelectionRequired | undefined>;
+  loginWithRole: (email: string, password: string, role: 'Client' | 'Freelancer') => Promise<User | undefined>;
   signup: (userName: string, email: string, password: string, role?: 'Admin' | 'Client' | 'Freelancer') => Promise<{ user: User; accessToken: string; refreshToken: string }>;
   logout: () => Promise<void>;
   verifyEmail: (otp: string) => Promise<User | null>;
@@ -147,13 +148,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await authService.signin({ email, password });
 
+      // Dual-role flow: backend is asking user to pick a role
+      if ('requiresRoleSelection' in response && response.requiresRoleSelection) {
+        return response;
+      }
+
       if (response.user) {
-        setUser(response.user);
+        setUser(response.user as any);
         await storageSet("user", JSON.stringify(response.user));
       }
-      return response.user;
+      return response.user as any;
     } catch (error: any) {
       throw new Error(error.message || "Login failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 🔥 LOGIN WITH ROLE (Client/Freelancer)
+  const loginWithRole = async (email: string, password: string, role: 'Client' | 'Freelancer') => {
+    setIsLoading(true);
+    try {
+      const response = await authService.signinWithRole({ email, password, role });
+      if (response.user) {
+        setUser(response.user as any);
+        await storageSet("user", JSON.stringify(response.user));
+      }
+      return response.user as any;
+    } catch (error: any) {
+      throw new Error(error.message || "Login with role failed");
     } finally {
       setIsLoading(false);
     }
@@ -238,11 +261,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
 
     try {
-      // Call API with all profile data
-      await authService.updateUser(userData);
+      // Call API with all profile data and get updated user back
+      const { user: updatedUser } = await authService.updateUser(userData);
 
-      // Refresh user data
-      await refreshUser();
+      // Update local auth state immediately
+      setUser(updatedUser as any);
+      await storageSet("user", JSON.stringify(updatedUser));
     } catch (error: any) {
       throw new Error(error.message || "Failed to update profile");
     }
@@ -254,6 +278,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         isLoading,
         login,
+        loginWithRole,
         signup,
         logout,
         verifyEmail,

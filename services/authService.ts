@@ -19,6 +19,10 @@ export interface SigninRequest {
   password: string;
 }
 
+export interface SigninWithRoleRequest extends SigninRequest {
+  role: 'Client' | 'Freelancer';
+}
+
 export interface VerifyEmailRequest {
   otp: string;
 }
@@ -67,6 +71,16 @@ export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
 }
+
+// When backend requires explicit role selection before issuing tokens
+export interface RoleSelectionRequired {
+  requiresRoleSelection: true;
+  roles: ('Client' | 'Freelancer')[];
+  email: string;
+  userId: string;
+}
+
+export type SigninResult = AuthResponse | RoleSelectionRequired;
 
 // Helper function to get auth token
 const getAuthToken = async (): Promise<string | null> => {
@@ -187,22 +201,61 @@ export const authService = {
    * Sign in user
    * POST /api/v1/auth/signin
    */
-  signin: async (data: SigninRequest): Promise<AuthResponse> => {
+  signin: async (data: SigninRequest): Promise<SigninResult> => {
     const response = await apiCall('/api/v1/auth/signin', {
       method: 'POST',
       body: JSON.stringify(data),
     });
 
-    // Backend returns: { statusCode, message, data: { user, accessToken, refreshToken } }
+    // Backend returns either:
+    // 1) { statusCode, message, data: { requiresRoleSelection, roles, email, userId } }
+    // 2) (for Admin) { statusCode, message, data: { user, accessToken, refreshToken } }
     const responseData = response.data || response;
-    
-    // Store tokens
+
+    // Case 1: dual-role flow – role selection required
+    if (responseData?.requiresRoleSelection) {
+      const payload: RoleSelectionRequired = {
+        requiresRoleSelection: true,
+        roles: responseData.roles || ['Freelancer', 'Client'],
+        email: responseData.email,
+        userId: responseData.userId,
+      };
+      return payload;
+    }
+
+    // Case 2: normal auth with tokens (e.g. Admin)
     if (responseData?.accessToken && responseData?.refreshToken) {
       await storageSet('accessToken', responseData.accessToken);
       await storageSet('refreshToken', responseData.refreshToken);
       console.log('[AuthService] Tokens stored successfully');
     } else {
       console.warn('[AuthService] No tokens in response:', responseData);
+    }
+
+    return {
+      user: responseData.user,
+      accessToken: responseData.accessToken,
+      refreshToken: responseData.refreshToken,
+    };
+  },
+
+  /**
+   * Sign in user with explicit role (Client/Freelancer)
+   * POST /api/v1/auth/signin-with-role
+   */
+  signinWithRole: async (data: SigninWithRoleRequest): Promise<AuthResponse> => {
+    const response = await apiCall('/api/v1/auth/signin-with-role', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    const responseData = response.data || response;
+
+    if (responseData?.accessToken && responseData?.refreshToken) {
+      await storageSet('accessToken', responseData.accessToken);
+      await storageSet('refreshToken', responseData.refreshToken);
+      await storageSet('user', JSON.stringify(responseData.user));
+      console.log('[AuthService] Tokens stored successfully (with role)');
     }
 
     return {
@@ -374,11 +427,13 @@ export const authService = {
    * POST /api/v1/auth/update-user
    * Requires authentication
    */
-  updateUser: async (profileData: Partial<User>): Promise<ApiResponse> => {
-    return await apiCall('/api/v1/auth/update-user', {
+  updateUser: async (profileData: Partial<User>): Promise<{ user: User }> => {
+    const response = await apiCall('/api/v1/auth/update-user', {
       method: 'POST',
       body: JSON.stringify(profileData),
     });
+    const data = response.data || response;
+    return { user: data.user as User };
   },
 
   /**

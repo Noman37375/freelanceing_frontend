@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Platform, StatusBar } from 'react-native';
-import { Trash2, Edit2, X, Check, ChevronLeft, Calendar, DollarSign } from 'lucide-react-native';
+import { Trash2, Edit2, X, Check, ChevronLeft, Calendar, DollarSign, User, Briefcase, MapPin, Clock } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
 import { Project } from '@/models/Project';
 import { formatCurrency } from '@/utils/helpers';
@@ -35,45 +35,45 @@ export default function ManageProjects() {
         loadProjects();
     }, [loadProjects]);
 
-    const handleDelete = async (id: string, title: string) => {
-        if (Platform.OS === 'web') {
-            const confirmed = window.confirm(`Are you sure you want to delete "${title}"?`);
-            if (confirmed) {
-                try {
-                    setDeletingId(id);
-                    await adminService.deleteProject(id);
-                    setProjects(prev => prev.filter(p => p.id !== id));
-                } catch (error) {
-                    Alert.alert('Error', 'Failed to delete project');
-                } finally {
-                    setDeletingId(null);
-                }
-            }
-        } else {
-            Alert.alert(
-                'Delete Project',
-                `Are you sure you want to delete "${title}"?`,
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                        text: 'Delete',
-                        style: 'destructive',
-                        onPress: async () => {
-                            try {
-                                setDeletingId(id);
-                                await adminService.deleteProject(id);
-                                setProjects(prev => prev.filter(p => p.id !== id));
-                            } catch (error) {
-                                Alert.alert('Error', 'Failed to delete project');
-                            } finally {
-                                setDeletingId(null);
-                            }
-                        }
-                    },
-                ]
-            );
-        }
-    };
+    // const handleDelete = async (id: string, title: string) => {
+    //     if (Platform.OS === 'web') {
+    //         const confirmed = window.confirm(`Are you sure you want to delete "${title}"?`);
+    //         if (confirmed) {
+    //             try {
+    //                 setDeletingId(id);
+    //                 await adminService.deleteProject(id);
+    //                 setProjects(prev => prev.filter(p => p.id !== id));
+    //             } catch (error) {
+    //                 Alert.alert('Error', 'Failed to delete project');
+    //             } finally {
+    //                 setDeletingId(null);
+    //             }
+    //         }
+    //     } else {
+    //         Alert.alert(
+    //             'Delete Project',
+    //             `Are you sure you want to delete "${title}"?`,
+    //             [
+    //                 { text: 'Cancel', style: 'cancel' },
+    //                 {
+    //                     text: 'Delete',
+    //                     style: 'destructive',
+    //                     onPress: async () => {
+    //                         try {
+    //                             setDeletingId(id);
+    //                             await adminService.deleteProject(id);
+    //                             setProjects(prev => prev.filter(p => p.id !== id));
+    //                         } catch (error) {
+    //                             Alert.alert('Error', 'Failed to delete project');
+    //                         } finally {
+    //                             setDeletingId(null);
+    //                         }
+    //                     }
+    //                 },
+    //             ]
+    //         );
+    //     }
+    // };
 
     const handleEdit = (project: Project) => {
         setEditingProject(project);
@@ -117,14 +117,26 @@ export default function ManageProjects() {
         return status.replace('_', ' ').toUpperCase();
     };
 
+    const getClientName = (p: Project) => {
+        const c = p.client as any;
+        return c?.userName ?? c?.user_name ?? '—';
+    };
+    const getFreelancerName = (p: Project) => {
+        const f = p.freelancer as any;
+        return f?.userName ?? f?.user_name ?? null;
+    };
+
     const renderItem = ({ item }: { item: Project }) => {
         const statusStyle = getStatusStyle(item.status);
+        const clientName = getClientName(item);
+        const freelancerName = getFreelancerName(item);
         return (
             <View style={styles.card}>
                 <View style={styles.cardHeader}>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
                         <View style={styles.budgetRow}>
+                            <DollarSign size={14} color="#10B981" />
                             <Text style={styles.budgetAmount}>{formatCurrency(item.budget, item.currency || 'USD')}</Text>
                             <Text style={styles.budgetLabel}>Budget</Text>
                         </View>
@@ -137,31 +149,64 @@ export default function ManageProjects() {
                         >
                             <Edit2 size={18} color={deletingId ? "#CBD5E1" : "#282A32"} />
                         </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => handleDelete(item.id, item.title)}
-                            style={styles.iconButton}
-                            disabled={!!deletingId}
-                        >
-                            {deletingId === item.id ? (
-                                <ActivityIndicator size="small" color="#EF4444" />
-                            ) : (
-                                <Trash2 size={18} color={deletingId ? "#CBD5E1" : "#EF4444"} />
-                            )}
-                        </TouchableOpacity>
                     </View>
                 </View>
 
-                <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
+                <Text style={styles.description} numberOfLines={2}>{item.description || 'No description'}</Text>
+
+                <View style={styles.detailsSection}>
+                    <Text style={styles.detailsTitle}>Project details</Text>
+                    <View style={styles.detailRow}>
+                        <User size={14} color="#64748B" />
+                        <Text style={styles.detailLabel}>Client</Text>
+                        <Text style={styles.detailValue} numberOfLines={1}>{clientName}</Text>
+                    </View>
+                    {item.category ? (
+                        <View style={styles.detailRow}>
+                            <Briefcase size={14} color="#64748B" />
+                            <Text style={styles.detailLabel}>Category</Text>
+                            <Text style={styles.detailValue} numberOfLines={1}>{item.category}</Text>
+                        </View>
+                    ) : null}
+                    <View style={styles.detailRow}>
+                        <User size={14} color="#64748B" />
+                        <Text style={styles.detailLabel}>Freelancer</Text>
+                        <Text style={styles.detailValue} numberOfLines={1}>
+                            {freelancerName || 'Not assigned'}
+                        </Text>
+                    </View>
+                    {(item.duration || item.projectDuration) ? (
+                        <View style={styles.detailRow}>
+                            <Clock size={14} color="#64748B" />
+                            <Text style={styles.detailLabel}>Duration</Text>
+                            <Text style={styles.detailValue} numberOfLines={1}>
+                                {item.duration || (item.projectDuration || '').replace(/_/g, ' ')}
+                            </Text>
+                        </View>
+                    ) : null}
+                    {item.location ? (
+                        <View style={styles.detailRow}>
+                            <MapPin size={14} color="#64748B" />
+                            <Text style={styles.detailLabel}>Location</Text>
+                            <Text style={styles.detailValue} numberOfLines={1}>{item.location}</Text>
+                        </View>
+                    ) : null}
+                    <View style={styles.detailRow}>
+                        <View style={{ width: 14 }} />
+                        <Text style={styles.detailLabel}>Bids</Text>
+                        <Text style={styles.detailValue}>{item.bidsCount ?? item.proposals ?? 0}</Text>
+                    </View>
+                </View>
 
                 <View style={styles.tagsContainer}>
-                    {item.skills?.slice(0, 3).map((skill, index) => (
+                    {(item.skills?.length ? item.skills : item.tags)?.slice(0, 3).map((skill, index) => (
                         <View key={index} style={styles.tag}>
                             <Text style={styles.tagText}>{skill}</Text>
                         </View>
                     ))}
-                    {(item.skills?.length || 0) > 3 && (
+                    {((item.skills?.length || item.tags?.length) || 0) > 3 && (
                         <View style={styles.tag}>
-                            <Text style={styles.tagText}>+{(item.skills?.length || 0) - 3}</Text>
+                            <Text style={styles.tagText}>+{((item.skills?.length || item.tags?.length) || 0) - 3}</Text>
                         </View>
                     )}
                 </View>
@@ -412,8 +457,42 @@ const styles = StyleSheet.create({
     description: {
         color: '#64748B',
         fontSize: 14,
-        marginBottom: 16,
+        marginBottom: 12,
         lineHeight: 20,
+    },
+    detailsSection: {
+        backgroundColor: '#F8FAFC',
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+    },
+    detailsTitle: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#64748B',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 10,
+    },
+    detailRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 6,
+    },
+    detailLabel: {
+        fontSize: 12,
+        color: '#94A3B8',
+        fontWeight: '600',
+        minWidth: 72,
+    },
+    detailValue: {
+        flex: 1,
+        fontSize: 13,
+        color: '#475569',
+        fontWeight: '600',
     },
     tagsContainer: {
         flexDirection: 'row',

@@ -278,7 +278,7 @@ export default function AdminDashboard() {
                                 ))}
                             </View>
 
-                            <View style={styles.projectsSection}>
+                            {/* <View style={styles.projectsSection}>
                                 <View style={styles.sectionHeader}>
                                     <Text style={[styles.sectionTitle, { fontSize: isMobile ? 18 : 22 }]}>
                                         Active projects <Text style={styles.countText}>({activeProjects.length})</Text>
@@ -289,7 +289,7 @@ export default function AdminDashboard() {
                                 <View style={styles.projectsCard}>
                                     <AdminActivityTable projects={activeProjectsForTable} />
                                 </View>
-                            </View>
+                            </View> */}
 
                         </View>
 

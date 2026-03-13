@@ -1,0 +1,13 @@
+diff --git a/node_modules/react-native-toast-message/lib/src/components/AnimatedContainer.js b/node_modules/react-native-toast-message/lib/src/components/AnimatedContainer.js
+index f9f2a10..7c3e981 100644
+--- a/node_modules/react-native-toast-message/lib/src/components/AnimatedContainer.js
++++ b/node_modules/react-native-toast-message/lib/src/components/AnimatedContainer.js
+@@ -5,7 +5,7 @@ import { usePanResponder, useSlideAnimation, useViewDimensions } from '../hooks'
+ import { noop } from '../utils/func';
+ import { bound } from '../utils/number';
+ import { getTestId } from '../utils/test-id';
+-import { styles } from './AnimatedContainer.styles';
++import { styles } from './AnimatedContainer.styles.js';
+ /**
+  * Produces a positive damping value.
+  *

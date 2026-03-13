@@ -21,6 +21,7 @@ export interface SigninRequest {
 
 export interface SigninWithRoleRequest extends SigninRequest {
   role: 'Client' | 'Freelancer';
+  preAuthToken?: string;
 }
 
 export interface VerifyEmailRequest {
@@ -64,6 +65,7 @@ export interface User {
   hourlyRate?: number;
   currency?: string;
   phone?: string;
+  twoFactorEnabled?: boolean;
 }
 
 export interface AuthResponse {
@@ -80,7 +82,13 @@ export interface RoleSelectionRequired {
   userId: string;
 }
 
-export type SigninResult = AuthResponse | RoleSelectionRequired;
+// When backend requires 2FA OTP before role selection
+export interface Requires2FA {
+  requires2FA: true;
+  email: string;
+}
+
+export type SigninResult = AuthResponse | RoleSelectionRequired | Requires2FA;
 
 // Helper function to get auth token
 const getAuthToken = async (): Promise<string | null> => {
@@ -212,7 +220,16 @@ export const authService = {
     // 2) (for Admin) { statusCode, message, data: { user, accessToken, refreshToken } }
     const responseData = response.data || response;
 
-    // Case 1: dual-role flow – role selection required
+    // Case 1a: 2FA required — OTP sent, must verify before role selection
+    if (responseData?.requires2FA) {
+      const payload: Requires2FA = {
+        requires2FA: true,
+        email: responseData.email,
+      };
+      return payload;
+    }
+
+    // Case 1b: dual-role flow – role selection required
     if (responseData?.requiresRoleSelection) {
       const payload: RoleSelectionRequired = {
         requiresRoleSelection: true,
@@ -242,6 +259,7 @@ export const authService = {
   /**
    * Sign in user with explicit role (Client/Freelancer)
    * POST /api/v1/auth/signin-with-role
+   * If 2FA was enabled, pass preAuthToken from /2fa/pre-verify
    */
   signinWithRole: async (data: SigninWithRoleRequest): Promise<AuthResponse> => {
     const response = await apiCall('/api/v1/auth/signin-with-role', {
@@ -262,6 +280,25 @@ export const authService = {
       user: responseData.user,
       accessToken: responseData.accessToken,
       refreshToken: responseData.refreshToken,
+    };
+  },
+
+  /**
+   * Verify 2FA OTP before role selection
+   * POST /api/v1/auth/2fa/pre-verify
+   * Returns a short-lived preAuthToken + roles for the role-select step
+   */
+  preVerify2FA: async (email: string, otp: string): Promise<{ preAuthToken: string; roles: ('Client' | 'Freelancer')[]; email: string; userId: string }> => {
+    const response = await apiCall('/api/v1/auth/2fa/pre-verify', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    });
+    const responseData = response.data || response;
+    return {
+      preAuthToken: responseData.preAuthToken,
+      roles: responseData.roles || ['Client', 'Freelancer'],
+      email: responseData.email,
+      userId: responseData.userId,
     };
   },
 
@@ -434,6 +471,21 @@ export const authService = {
     });
     const data = response.data || response;
     return { user: data.user as User };
+  },
+
+  /**
+   * Upload profile image (multipart)
+   * POST /api/v1/auth/upload-profile-image
+   * Requires authentication. Saves to DB and returns updated user; image visible in UI after refresh.
+   */
+  /**
+   * Toggle 2FA on/off — directly flips the flag, no OTP required
+   * POST /api/v1/auth/2fa/toggle
+   */
+  toggle2FA: async (): Promise<User> => {
+    const response = await apiCall('/api/v1/auth/2fa/toggle', { method: 'POST' });
+    const data = response.data || response;
+    return data.user as User;
   },
 
   /**

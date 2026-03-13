@@ -8,6 +8,7 @@ import { WalletProvider } from '@/contexts/WalletContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { SocketProvider } from '@/contexts/SocketContext';
 import { CallProvider } from '@/contexts/CallContext';
+import Toast from 'react-native-toast-message';
 import { CallModal } from '@/components/CallModal';
 import { UpdateBanner } from '@/components/UpdateBanner';
 import { useUpdateCheck } from '@/hooks/useUpdateCheck';
@@ -25,17 +26,28 @@ function RootNavigation() {
   const router = useRouter();
   const pathname = usePathname();
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+  const prevUserRef = useRef<typeof user>(undefined);
 
   useEffect(() => {
     const t = setTimeout(() => setMinTimeElapsed(true), SPLASH_MIN_MS);
     return () => clearTimeout(t);
   }, []);
 
+  // After logout (user was logged in, now null) → always go to sign-in, not welcome
+  useEffect(() => {
+    if (user) {
+      prevUserRef.current = user;
+    } else if (prevUserRef.current) {
+      prevUserRef.current = undefined;
+      router.replace('/login');
+    }
+  }, [user, router]);
+
   useEffect(() => {
     const publicRoutes = ['/welcome', '/login', '/signup', '/complete-profile', '/forgot-password', '/verify-email', '/change-password'];
     const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route));
     if (!isLoading && !user && !isPublicRoute) {
-      // From index/root: show welcome first; from any other route (e.g. after logout): go to login
+      // From index/root: show welcome first; from any other route: go to login (logout case handled above)
       const isIndex = pathname === '/' || pathname === '';
       router.replace(isIndex ? '/welcome' : '/login');
     }
@@ -109,6 +121,7 @@ export default function RootLayout() {
               <CallModal />
               <UpdateChecker />
               <PushNotificationSetup />
+              <Toast />
               <StatusBar style="auto" />
             </NotificationProvider>
           </WalletProvider>

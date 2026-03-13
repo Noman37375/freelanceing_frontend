@@ -67,7 +67,7 @@ export default function ManageFreelancers() {
         closeOptions();
         try {
             setDeletingId(selectedUser.id);
-            const updated = await adminService.suspendUser(selectedUser.id);
+            await adminService.suspendUser(selectedUser.id);
             setFreelancers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: 'suspended' as const } : u));
             Alert.alert('Success', `${selectedUser.userName} has been suspended.`);
         } catch (error) {

@@ -57,6 +57,22 @@ export const adminService = {
         return response?.data;
     },
 
+    suspendUser: async (id: string): Promise<User> => {
+        const response = await apiCall(`/api/v1/admin/users/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: 'suspended' })
+        });
+        return response?.data;
+    },
+
+    reactivateUser: async (id: string): Promise<User> => {
+        const response = await apiCall(`/api/v1/admin/users/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: 'active' })
+        });
+        return response?.data;
+    },
+
     // Projects
     getAllProjects: async (): Promise<Project[]> => {
         const response = await apiCall('/api/v1/admin/projects');

@@ -385,8 +385,10 @@ export default function CreateProjectScreen() {
 
       const newProject = await projectService.createProject(projectData);
 
-// Navigate to Add Milestones screen immediately
-      router.push(`/add-milestones?projectId=${newProject.id}`);
+// Navigate to Add Milestones screen with budget & currency for equal split
+      const budgetParam = encodeURIComponent(String(budgetValue));
+      const currencyParam = encodeURIComponent(currency || "USD");
+      router.push(`/add-milestones?projectId=${newProject.id}&budget=${budgetParam}&currency=${currencyParam}`);
       setShowSuccessModal(true);
     } catch (error: any) {
       console.error("Failed to create project:", error);

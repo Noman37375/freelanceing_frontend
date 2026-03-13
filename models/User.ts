@@ -6,6 +6,7 @@ export interface User {
   avatar?: string;
   role: 'freelancer' | 'client' | 'Admin';
   isVerified: boolean;
+  status?: 'active' | 'suspended';
   createdAt: string;
   updatedAt: string;
   bio?: string;

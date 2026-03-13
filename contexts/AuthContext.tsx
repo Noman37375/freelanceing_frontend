@@ -1,7 +1,7 @@
 // AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { storageGet, storageSet, storageRemove } from "@/utils/storage";
-import authService, { User as AuthUser, RoleSelectionRequired } from "@/services/authService";
+import authService, { User as AuthUser, RoleSelectionRequired, Requires2FA } from "@/services/authService";
 
 interface Language {
   name: string;
@@ -54,13 +54,14 @@ interface User {
   reviewsCount?: number;
   projectsCompleted?: number;
   about?: string;
+  twoFactorEnabled?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<User | RoleSelectionRequired | undefined>;
-  loginWithRole: (email: string, password: string, role: 'Client' | 'Freelancer') => Promise<User | undefined>;
+  login: (email: string, password: string) => Promise<User | RoleSelectionRequired | Requires2FA | undefined>;
+  loginWithRole: (email: string, password: string, role: 'Client' | 'Freelancer', preAuthToken?: string) => Promise<User | undefined>;
   signup: (userName: string, email: string, password: string, role?: 'Admin' | 'Client' | 'Freelancer') => Promise<{ user: User; accessToken: string; refreshToken: string }>;
   logout: () => Promise<void>;
   verifyEmail: (otp: string) => Promise<User | null>;
@@ -148,16 +149,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await authService.signin({ email, password });
 
-      // Dual-role flow: backend is asking user to pick a role
-      if ('requiresRoleSelection' in response && response.requiresRoleSelection) {
-        return response;
+      // 2FA required — OTP sent, frontend must verify before role selection
+      if ('requires2FA' in response && response.requires2FA) {
+        return response as Requires2FA;
       }
 
-      if (response.user) {
-        setUser(response.user as any);
-        await storageSet("user", JSON.stringify(response.user));
+      // Dual-role flow: backend is asking user to pick a role
+      if ('requiresRoleSelection' in response && response.requiresRoleSelection) {
+        return response as RoleSelectionRequired;
       }
-      return response.user as any;
+
+      if ((response as any).user) {
+        setUser((response as any).user as any);
+        await storageSet("user", JSON.stringify((response as any).user));
+      }
+      return (response as any).user as any;
     } catch (error: any) {
       throw new Error(error.message || "Login failed");
     } finally {
@@ -166,10 +172,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // 🔥 LOGIN WITH ROLE (Client/Freelancer)
-  const loginWithRole = async (email: string, password: string, role: 'Client' | 'Freelancer') => {
+  const loginWithRole = async (email: string, password: string, role: 'Client' | 'Freelancer', preAuthToken?: string) => {
     setIsLoading(true);
     try {
-      const response = await authService.signinWithRole({ email, password, role });
+      const response = await authService.signinWithRole({ email, password, role, preAuthToken });
       if (response.user) {
         setUser(response.user as any);
         await storageSet("user", JSON.stringify(response.user));

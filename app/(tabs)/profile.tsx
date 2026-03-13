@@ -51,10 +51,12 @@ import {
   BarChart3,
   DollarSign,
   Phone,
+  Shield,
 } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from "@/contexts/AuthContext";
+import authService from '@/services/authService';
 import SkillTag from "@/components/SkillTag";
 import SectionCard from "@/components/SectionCard";
 import { useWallet } from "@/contexts/WalletContext";
@@ -69,6 +71,11 @@ import {
   filterCountryCodes,
   type CountryCodeItem,
 } from "@/services/countryCodeService";
+import {
+  fetchLanguages,
+  filterLanguages,
+  type LanguageItem,
+} from "@/services/languageService";
 
 const { width } = Dimensions.get('window');
 
@@ -85,6 +92,7 @@ export default function ProfileScreen() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifLoading, setIsNotifLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [twoFALoading, setTwoFALoading] = useState(false);
 
   // Load unread count on mount and when user changes (real-time)
   useEffect(() => {
@@ -119,6 +127,10 @@ export default function ProfileScreen() {
   const [editedCurrency, setEditedCurrency] = useState("USD");
   const [editedSkills, setEditedSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState("");
+  const [editedLanguages, setEditedLanguages] = useState<string[]>([]);
+  const [languageInput, setLanguageInput] = useState("");
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [allLanguages] = useState<LanguageItem[]>(() => fetchLanguages());
 
   const [currencies, setCurrencies] = useState<CurrencyItem[]>([]);
   const [currencySearch, setCurrencySearch] = useState("");
@@ -138,6 +150,13 @@ export default function ProfileScreen() {
       setEditedHourlyRate(user.hourlyRate?.toString() || "");
       setEditedCurrency(user.currency || "USD");
       setEditedSkills(user.skills || []);
+      setEditedLanguages(
+        Array.isArray(user.languages)
+          ? (user.languages as any[]).map((l) => (typeof l === 'string' ? l : l?.name || '')).filter(Boolean)
+          : []
+      );
+      setLanguageInput("");
+      setShowLanguageDropdown(false);
       setEditedPhoneNumber("");
       setSelectedCountry(null);
     }
@@ -264,6 +283,7 @@ export default function ProfileScreen() {
         hourlyRate: editedHourlyRate ? parseFloat(editedHourlyRate) : undefined,
         currency: editedCurrency || "USD",
         skills: editedSkills.length > 0 ? editedSkills : undefined,
+        languages: editedLanguages.length > 0 ? editedLanguages : undefined,
       };
 
       await updateProfile(profileData);
@@ -274,6 +294,18 @@ export default function ProfileScreen() {
       Alert.alert("Error", error.message || "Failed to update profile");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleToggle2FA = async () => {
+    setTwoFALoading(true);
+    try {
+      await authService.toggle2FA();
+      await refreshUser();
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to update Two-Factor Authentication.');
+    } finally {
+      setTwoFALoading(false);
     }
   };
 
@@ -375,57 +407,8 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* Earnings Card */}
-            {/* <View style={styles.earningsCard}>
-              <View style={styles.earningsLeft}>
-                <View style={styles.walletIconBox}>
-                  <WalletIcon size={24} color="#FFFFFF" strokeWidth={2.5} />
-                </View>
-                <View>
-                  <Text style={styles.earningsLabel}>Total Earnings</Text>
-                  <Text style={styles.earningsValue}>${balance.toLocaleString()}</Text>
-                </View>
-              </View>
-              <TouchableOpacity 
-                style={styles.viewWalletBtn}
-                onPress={() => setWalletModalVisible(true)}
-              >
-                <Text style={styles.viewWalletText}>View</Text>
-                <ChevronRight size={18} color="#444751" strokeWidth={2.5} />
-              </TouchableOpacity>
-            </View> */}
           </View>
 
-          {/* Quick Actions */}
-          {/* <View style={styles.quickActions}>
-            <TouchableOpacity style={styles.actionBtn}>
-              <View style={styles.actionIconBox}>
-                <Briefcase size={20} color="#444751" strokeWidth={2.5} />
-              </View>
-              <Text style={styles.actionText}>Briefs</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionBtn}>
-              <View style={styles.actionIconBox}>
-                <Heart size={20} color="#444751" strokeWidth={2.5} />
-              </View>
-              <Text style={styles.actionText}>Saved</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionBtn}>
-              <View style={styles.actionIconBox}>
-                <BarChart3 size={20} color="#444751" strokeWidth={2.5} />
-              </View>
-              <Text style={styles.actionText}>Analytics</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionBtn}>
-              <View style={styles.actionIconBox}>
-                <Send size={20} color="#444751" strokeWidth={2.5} />
-              </View>
-              <Text style={styles.actionText}>Invite</Text>
-            </TouchableOpacity>
-          </View> */}
 
           {/* Menu Sections */}
           <View style={styles.menuSection}>
@@ -469,6 +452,27 @@ export default function ProfileScreen() {
                 </View>
                 <ChevronRight size={20} color="#C2C2C8" strokeWidth={2.5} />
               </TouchableOpacity>
+
+              <View style={styles.menuDivider} />
+              <View style={styles.menuItem}>
+                <View style={styles.menuLeft}>
+                  <View style={styles.menuIconBox}>
+                    <Shield size={20} color="#444751" strokeWidth={2.5} />
+                  </View>
+                  <Text style={styles.menuText}>Two-Factor Auth</Text>
+                </View>
+                {twoFALoading ? (
+                  <ActivityIndicator size="small" color="#C2C2C8" />
+                ) : (
+                  <TouchableOpacity
+                    onPress={handleToggle2FA}
+                    activeOpacity={0.8}
+                    style={[styles.toggleTrack, user?.twoFactorEnabled && styles.toggleTrackOn]}
+                  >
+                    <View style={[styles.toggleThumb, user?.twoFactorEnabled && styles.toggleThumbOn]} />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
 
@@ -487,15 +491,6 @@ export default function ProfileScreen() {
 
               {/* <View style={styles.menuDivider} /> */}
 
-              {/* <TouchableOpacity style={styles.menuItem}>
-                <View style={styles.menuLeft}>
-                  <View style={styles.menuIconBox}>
-                    <MessageCircle size={20} color="#444751" strokeWidth={2.5} />
-                  </View>
-                  <Text style={styles.menuText}>Help Center</Text>
-                </View>
-                <ChevronRight size={20} color="#C2C2C8" strokeWidth={2.5} />
-              </TouchableOpacity> */}
             </View>
           </View>
 
@@ -723,6 +718,63 @@ export default function ProfileScreen() {
                 </View>
               </View>
 
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Languages</Text>
+                <TextInput
+                  style={styles.inputField}
+                  value={languageInput}
+                  onChangeText={(t) => { setLanguageInput(t); setShowLanguageDropdown(true); }}
+                  onFocus={() => setShowLanguageDropdown(true)}
+                  placeholder="Search language (e.g. English, Urdu)"
+                  placeholderTextColor="#C2C2C8"
+                  returnKeyType="done"
+                />
+                {showLanguageDropdown && (
+                  <View style={styles.dropdownBox}>
+                    <ScrollView style={styles.dropdownList} keyboardShouldPersistTaps="handled">
+                      {filterLanguages(allLanguages, languageInput).length === 0 ? (
+                        <View style={styles.dropdownItem}>
+                          <Text style={styles.dropdownEmpty}>No languages found</Text>
+                        </View>
+                      ) : (
+                        filterLanguages(allLanguages, languageInput).map((l) => (
+                          <TouchableOpacity
+                            key={l.code}
+                            style={[
+                              styles.dropdownItem,
+                              editedLanguages.includes(l.name) && styles.dropdownItemActive,
+                            ]}
+                            onPress={() => {
+                              if (!editedLanguages.includes(l.name)) {
+                                setEditedLanguages([...editedLanguages, l.name]);
+                              }
+                              setLanguageInput("");
+                              setShowLanguageDropdown(false);
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={styles.dropdownItemText}>{l.displayLabel}</Text>
+                          </TouchableOpacity>
+                        ))
+                      )}
+                    </ScrollView>
+                  </View>
+                )}
+                <View style={styles.skillsWrap}>
+                  {editedLanguages.map((lang, i) => (
+                    <View key={i} style={styles.langChip}>
+                      <Text style={styles.langChipText}>{lang}</Text>
+                      <TouchableOpacity
+                        onPress={() => setEditedLanguages(editedLanguages.filter((_, idx) => idx !== i))}
+                        hitSlop={8}
+                      >
+                        <X size={14} color="#6B7280" strokeWidth={2.5} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
               <TouchableOpacity
                 style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
                 onPress={handleSaveProfile}
@@ -914,6 +966,7 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
+
     </View>
   );
 }
@@ -1442,9 +1495,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   skillsWrap: {
+    paddingTop: 10,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  langChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EEF2FF',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  langChipText: {
+    fontSize: 13,
+    color: '#4F46E5',
+    fontWeight: '500',
   },
 
   // ========== BUTTONS ==========
@@ -1466,6 +1534,45 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.3,
+  },
+  twoFABadge: {
+    backgroundColor: '#22c55e',
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
+  twoFABadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  toggleTrack: {
+    width: 46,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#E5E4EA',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  toggleTrackOn: {
+    backgroundColor: '#444751',
+  },
+  toggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
+    alignSelf: 'flex-start',
+  },
+  toggleThumbOn: {
+    alignSelf: 'flex-end',
   },
 
   // ========== WALLET MODAL ==========

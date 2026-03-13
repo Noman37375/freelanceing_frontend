@@ -13,6 +13,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { Eye, EyeOff, User, Mail, Lock, Briefcase, UserCircle, CheckCircle2 } from "lucide-react-native";
+import Toast from "react-native-toast-message";
 import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
 import { COLORS, TYPOGRAPHY, BORDER_RADIUS, SPACING, SHADOWS } from "@/constants/theme";
@@ -25,8 +26,10 @@ export default function Signup() {
   const [role, setRole] = useState<'Freelancer' | 'Client'>('Freelancer');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
   const [usernameError, setUsernameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [checkingUsername, setCheckingUsername] = useState(false);
   const usernameCheckRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userNameRef = useRef<string>(userName);
@@ -71,7 +74,8 @@ export default function Signup() {
 
   const handlePasswordChange = (text: string) => {
     setPassword(text);
-    setErrorMessage("");
+    setPasswordError("");
+    setConfirmPasswordError("");
 
     // Check password criteria
     setPasswordCriteria({
@@ -81,39 +85,59 @@ export default function Signup() {
     });
   };
 
+  const clearFieldErrors = () => {
+    setUsernameError("");
+    setEmailError("");
+    setPasswordError("");
+    setConfirmPasswordError("");
+  };
+
   const handleSignup = async () => {
-    setErrorMessage("");
+    setUsernameError("");
+    setEmailError("");
+    setPasswordError("");
+    setConfirmPasswordError("");
 
-    if (!userName || !email || !password || !confirmPassword) {
-      setErrorMessage("Please fill all fields.");
-      return;
+    let hasError = false;
+    if (!userName.trim()) {
+      setUsernameError("Username is required.");
+      hasError = true;
+    } else if (userName.trim().length < 3) {
+      setUsernameError("Username must be at least 3 characters.");
+      hasError = true;
+    } else if (usernameError) {
+      setUsernameError("Please choose a different username.");
+      hasError = true;
     }
 
-    if (userName.length < 3) {
-      setErrorMessage("Username must be at least 3 characters.");
-      return;
+    if (!email.trim()) {
+      setEmailError("Email is required.");
+      hasError = true;
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setEmailError("Please enter a valid email address.");
+        hasError = true;
+      }
     }
 
-    if (usernameError) {
-      setErrorMessage("Please choose a different username.");
-      return;
+    if (!password) {
+      setPasswordError("Password is required.");
+      hasError = true;
+    } else if (password.length < 6) {
+      setPasswordError("Password must be at least 6 characters.");
+      hasError = true;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setErrorMessage("Please enter a valid email address.");
-      return;
+    if (!confirmPassword) {
+      setConfirmPasswordError("Please confirm your password.");
+      hasError = true;
+    } else if (password !== confirmPassword) {
+      setConfirmPasswordError("Passwords do not match.");
+      hasError = true;
     }
 
-    if (password.length < 6) {
-      setErrorMessage("Password must be at least 6 characters.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setErrorMessage("Passwords do not match.");
-      return;
-    }
+    if (hasError) return;
 
     setIsLoading(true);
 
@@ -130,15 +154,19 @@ export default function Signup() {
       console.error('[Signup] Error:', error);
       let errorMsg = error.message || "Signup failed. Please try again.";
 
-      if (errorMsg.includes("already exists") || errorMsg.includes("User exists") || errorMsg.includes("USER_EXISTS")) {
-        errorMsg = "This email or username is already registered. Please use a different one.";
+      if (errorMsg.includes("already exists") || errorMsg.includes("User exists") || errorMsg.includes("USER_EXISTS") || errorMsg.toLowerCase().includes("email")) {
+        setEmailError("This email is already registered. Please use a different one.");
+        Toast.show({ type: "error", text1: "Already registered.", text2: "This email or username is already in use." });
+      } else if (errorMsg.toLowerCase().includes("username") || errorMsg.toLowerCase().includes("user name")) {
+        setUsernameError("This username is already taken. Please choose another.");
+        Toast.show({ type: "error", text1: "Username taken.", text2: "Please choose a different username." });
       } else if (errorMsg.includes("Network") || errorMsg.includes("timeout") || errorMsg.includes("Failed to fetch")) {
-        errorMsg = "Connection error. Please check your internet connection.";
+        Toast.show({ type: "error", text1: "Connection error.", text2: "Please check your internet connection." });
       } else if (errorMsg.includes("Missing") || errorMsg.includes("required") || errorMsg.includes("MISSING")) {
-        errorMsg = "Please fill all required fields correctly.";
+        Toast.show({ type: "error", text1: "Missing fields.", text2: "Please fill all required fields correctly." });
+      } else {
+        Toast.show({ type: "error", text1: "Signup failed.", text2: errorMsg });
       }
-
-      setErrorMessage(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -165,12 +193,6 @@ export default function Signup() {
             <Text style={styles.subtitle}>Join to find projects or hire freelancers</Text>
           </View>
 
-          {errorMessage ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{errorMessage}</Text>
-            </View>
-          ) : null}
-
           <View style={styles.formContainer}>
             {/* Username */}
             <View style={styles.inputGroup}>
@@ -189,7 +211,7 @@ export default function Signup() {
                   onChangeText={(text) => {
                     setUserName(text);
                     userNameRef.current = text;
-                    setErrorMessage("");
+                    clearFieldErrors();
                   }}
                   autoCapitalize="none"
                   onFocus={() => setFocusedInput('userName')}
@@ -201,7 +223,7 @@ export default function Signup() {
                 )}
               </View>
               {usernameError ? (
-                <Text style={styles.usernameErrorText}>{usernameError}</Text>
+                <Text style={styles.fieldErrorText}>{usernameError}</Text>
               ) : null}
             </View>
 
@@ -210,7 +232,8 @@ export default function Signup() {
               <Text style={styles.inputLabel}>Email</Text>
               <View style={[
                 styles.inputWrapper,
-                focusedInput === 'email' && styles.inputWrapperFocused
+                focusedInput === 'email' && styles.inputWrapperFocused,
+                emailError ? styles.inputWrapperError : undefined
               ]}>
                 <Mail size={20} color={focusedInput === 'email' ? COLORS.primary : COLORS.textTertiary} />
                 <TextInput
@@ -220,7 +243,7 @@ export default function Signup() {
                   value={email}
                   onChangeText={(text) => {
                     setEmail(text);
-                    setErrorMessage("");
+                    clearFieldErrors();
                   }}
                   autoCapitalize="none"
                   keyboardType="email-address"
@@ -229,6 +252,7 @@ export default function Signup() {
                   editable={!isLoading}
                 />
               </View>
+              {emailError ? <Text style={styles.fieldErrorText}>{emailError}</Text> : null}
             </View>
 
             {/* Password */}
@@ -236,7 +260,8 @@ export default function Signup() {
               <Text style={styles.inputLabel}>Password</Text>
               <View style={[
                 styles.inputWrapper,
-                focusedInput === 'password' && styles.inputWrapperFocused
+                focusedInput === 'password' && styles.inputWrapperFocused,
+                passwordError ? styles.inputWrapperError : undefined
               ]}>
                 <Lock size={20} color={focusedInput === 'password' ? COLORS.primary : COLORS.textTertiary} />
                 <TextInput
@@ -275,6 +300,7 @@ export default function Signup() {
                   </View>
                 </View>
               )}
+              {passwordError ? <Text style={styles.fieldErrorText}>{passwordError}</Text> : null}
             </View>
 
             {/* Confirm Password */}
@@ -282,7 +308,8 @@ export default function Signup() {
               <Text style={styles.inputLabel}>Confirm Password</Text>
               <View style={[
                 styles.inputWrapper,
-                focusedInput === 'confirmPassword' && styles.inputWrapperFocused
+                focusedInput === 'confirmPassword' && styles.inputWrapperFocused,
+                confirmPasswordError ? styles.inputWrapperError : undefined
               ]}>
                 <Lock size={20} color={focusedInput === 'confirmPassword' ? COLORS.primary : COLORS.textTertiary} />
                 <TextInput
@@ -292,7 +319,7 @@ export default function Signup() {
                   value={confirmPassword}
                   onChangeText={(text) => {
                     setConfirmPassword(text);
-                    setErrorMessage("");
+                    clearFieldErrors();
                   }}
                   secureTextEntry={!showConfirmPassword}
                   onFocus={() => setFocusedInput('confirmPassword')}
@@ -300,6 +327,7 @@ export default function Signup() {
                   editable={!isLoading}
                 />
               </View>
+              {confirmPasswordError ? <Text style={styles.fieldErrorText}>{confirmPasswordError}</Text> : null}
             </View>
 
             {/* Role Selection */}
@@ -446,7 +474,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.error,
     borderWidth: 1,
   },
-  usernameErrorText: {
+  fieldErrorText: {
     marginTop: 6,
     fontSize: TYPOGRAPHY.fontSize.sm,
     color: COLORS.error,

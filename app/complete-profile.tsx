@@ -16,6 +16,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, Plus, X, Link, DollarSign, Phone } from 'lucide-react-native';
+import Toast from 'react-native-toast-message';
 import { useAuth } from '@/contexts/AuthContext';
 import { COLORS, TYPOGRAPHY, BORDER_RADIUS, SPACING, SHADOWS } from '@/constants/theme';
 import {
@@ -28,6 +29,11 @@ import {
   filterCountryCodes,
   type CountryCodeItem,
 } from '@/services/countryCodeService';
+import {
+  fetchLanguages,
+  filterLanguages,
+  type LanguageItem,
+} from '@/services/languageService';
 
 export default function CompleteProfile() {
   const router = useRouter();
@@ -44,6 +50,8 @@ export default function CompleteProfile() {
       : []
   );
   const [languageInput, setLanguageInput] = useState('');
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [allLanguages] = useState<LanguageItem[]>(() => fetchLanguages());
   const [portfolioLink, setPortfolioLink] = useState(
     typeof user?.portfolio === 'string'
       ? user.portfolio
@@ -68,7 +76,11 @@ export default function CompleteProfile() {
   const [countriesLoading, setCountriesLoading] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [bioError, setBioError] = useState('');
+  const [skillsError, setSkillsError] = useState('');
+  const [hourlyRateError, setHourlyRateError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [countryError, setCountryError] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user && !params.email) {
@@ -145,12 +157,13 @@ export default function CompleteProfile() {
     setSkills(skills.filter((_, i) => i !== index));
   };
 
-  const addLanguage = () => {
-    const trimmed = languageInput.trim();
+  const addLanguage = (name: string) => {
+    const trimmed = name.trim();
     if (trimmed && !languages.includes(trimmed)) {
       setLanguages([...languages, trimmed]);
-      setLanguageInput('');
     }
+    setLanguageInput('');
+    setShowLanguageDropdown(false);
   };
 
   const removeLanguage = (index: number) => {
@@ -180,34 +193,51 @@ export default function CompleteProfile() {
     }
   };
 
+  const clearFieldErrors = () => {
+    setBioError('');
+    setSkillsError('');
+    setHourlyRateError('');
+    setPhoneError('');
+    setCountryError('');
+  };
+
   const handleSubmit = async () => {
-    setErrorMessage('');
+    setBioError('');
+    setSkillsError('');
+    setHourlyRateError('');
+    setPhoneError('');
+    setCountryError('');
+
     if (!user) {
-      setErrorMessage('Session loading. Please wait a moment and try again.');
+      Toast.show({ type: 'error', text1: 'Session loading.', text2: 'Please wait a moment and try again.' });
       return;
     }
+
+    let hasError = false;
     if (!bio.trim()) {
-      setErrorMessage('Please add a short bio.');
-      return;
+      setBioError('Please add a short bio.');
+      hasError = true;
     }
     if (skills.length === 0) {
-      setErrorMessage('Please add at least one skill.');
-      return;
+      setSkillsError('Please add at least one skill.');
+      hasError = true;
     }
     const rate = hourlyRate.trim() ? parseFloat(hourlyRate) : undefined;
     if (hourlyRate.trim() && (isNaN(rate!) || rate! < 0)) {
-      setErrorMessage('Please enter a valid hourly rate.');
-      return;
+      setHourlyRateError('Please enter a valid hourly rate (e.g. 25).');
+      hasError = true;
+    }
+    if (!selectedCountry) {
+      setCountryError('Please select your country code.');
+      hasError = true;
     }
     const fullPhone = (selectedCountry?.dialCode ?? '').replace(/\D/g, '') + phoneNumber.replace(/\D/g, '');
-    if (!selectedCountry) {
-      setErrorMessage('Please select your country code.');
-      return;
+    if (selectedCountry && !fullPhone.trim()) {
+      setPhoneError('Please enter your phone number.');
+      hasError = true;
     }
-    if (!fullPhone.trim()) {
-      setErrorMessage('Please enter your phone number.');
-      return;
-    }
+
+    if (hasError) return;
 
     setIsSubmitting(true);
     try {
@@ -224,7 +254,12 @@ export default function CompleteProfile() {
 
       router.replace('/(tabs)' as any);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to save profile.');
+      const msg = err.message || 'Failed to save profile.';
+      Toast.show({ type: 'error', text1: 'Profile error.', text2: msg });
+      if (msg.toLowerCase().includes('bio')) setBioError(msg);
+      else if (msg.toLowerCase().includes('skill')) setSkillsError(msg);
+      else if (msg.toLowerCase().includes('rate') || msg.toLowerCase().includes('hourly')) setHourlyRateError(msg);
+      else if (msg.toLowerCase().includes('phone')) setPhoneError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -264,12 +299,6 @@ export default function CompleteProfile() {
           <Text style={styles.subtitle}>Add your details so clients can find you</Text>
         </View>
 
-        {errorMessage ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{errorMessage}</Text>
-          </View>
-        ) : null}
-
         {/* Profile photo - centered */}
         <View style={styles.avatarSection}>
           <TouchableOpacity onPress={handlePickImage} style={styles.avatarWrap} activeOpacity={0.8}>
@@ -293,15 +322,16 @@ export default function CompleteProfile() {
         <View style={styles.section}>
           <Text style={styles.label}>Bio *</Text>
           <TextInput
-            style={styles.textArea}
+            style={[styles.textArea, bioError ? styles.inputError : undefined]}
             placeholder="Tell clients about yourself and your experience..."
             placeholderTextColor={COLORS.textTertiary}
             value={bio}
-            onChangeText={setBio}
+            onChangeText={(t) => { setBio(t); clearFieldErrors(); }}
             multiline
             numberOfLines={4}
             textAlignVertical="top"
           />
+          {bioError ? <Text style={styles.fieldErrorText}>{bioError}</Text> : null}
         </View>
 
         {/* Skills */}
@@ -309,11 +339,11 @@ export default function CompleteProfile() {
           <Text style={styles.label}>Skills *</Text>
           <View style={styles.tagRow}>
             <TextInput
-              style={styles.tagInput}
+              style={[styles.tagInput, skillsError ? styles.inputError : undefined]}
               placeholder="e.g. React, Node.js"
               placeholderTextColor={COLORS.textTertiary}
               value={skillInput}
-              onChangeText={setSkillInput}
+              onChangeText={(t) => { setSkillInput(t); clearFieldErrors(); }}
               onSubmitEditing={addSkill}
               returnKeyType="done"
             />
@@ -331,25 +361,46 @@ export default function CompleteProfile() {
               </View>
             ))}
           </View>
+          {skillsError ? <Text style={styles.fieldErrorText}>{skillsError}</Text> : null}
         </View>
 
         {/* Languages */}
         <View style={styles.section}>
           <Text style={styles.label}>Languages</Text>
-          <View style={styles.tagRow}>
-            <TextInput
-              style={styles.tagInput}
-              placeholder="e.g. English, Urdu"
-              placeholderTextColor={COLORS.textTertiary}
-              value={languageInput}
-              onChangeText={setLanguageInput}
-              onSubmitEditing={addLanguage}
-              returnKeyType="done"
-            />
-            <TouchableOpacity style={styles.addBtn} onPress={addLanguage}>
-              <Plus size={20} color={COLORS.white} />
-            </TouchableOpacity>
-          </View>
+          <TextInput
+            style={styles.tagInput}
+            placeholder="Search language (e.g. English, Urdu)"
+            placeholderTextColor={COLORS.textTertiary}
+            value={languageInput}
+            onChangeText={(t) => { setLanguageInput(t); setShowLanguageDropdown(true); }}
+            onFocus={() => setShowLanguageDropdown(true)}
+            returnKeyType="done"
+          />
+          {showLanguageDropdown && (
+            <View style={styles.currencyDropdown}>
+              <ScrollView style={styles.currencyList} keyboardShouldPersistTaps="handled">
+                {filterLanguages(allLanguages, languageInput).length === 0 ? (
+                  <View style={styles.dropdownItem}>
+                    <Text style={styles.dropdownEmpty}>No languages found</Text>
+                  </View>
+                ) : (
+                  filterLanguages(allLanguages, languageInput).map((l) => (
+                    <TouchableOpacity
+                      key={l.code}
+                      style={[
+                        styles.dropdownItem,
+                        languages.includes(l.name) && styles.dropdownItemActive,
+                      ]}
+                      onPress={() => addLanguage(l.name)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.dropdownItemText}>{l.displayLabel}</Text>
+                    </TouchableOpacity>
+                  ))
+                )}
+              </ScrollView>
+            </View>
+          )}
           <View style={styles.chipWrap}>
             {languages.map((lang, i) => (
               <View key={i} style={[styles.chip, styles.chipLang]}>
@@ -426,23 +477,24 @@ export default function CompleteProfile() {
                 </ScrollView>
               </View>
             )}
-            <View style={styles.inputWithIcon}>
+            <View style={[styles.inputWithIcon, hourlyRateError ? styles.inputError : undefined]}>
               <DollarSign size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
               <TextInput
                 style={styles.inputFlex}
                 placeholder="25"
                 placeholderTextColor={COLORS.textTertiary}
                 value={hourlyRate}
-                onChangeText={setHourlyRate}
+                onChangeText={(t) => { setHourlyRate(t); clearFieldErrors(); }}
                 keyboardType="decimal-pad"
               />
             </View>
+            {hourlyRateError ? <Text style={styles.fieldErrorText}>{hourlyRateError}</Text> : null}
           </View>
           <View style={styles.halfSection}>
             <Text style={styles.label}>Phone number *</Text>
             <TouchableOpacity
-              style={styles.currencyTrigger}
-              onPress={() => { setShowCountryDropdown((v) => !v); setShowCurrencyDropdown(false); }}
+              style={[styles.currencyTrigger, countryError ? styles.inputError : undefined]}
+              onPress={() => { setShowCountryDropdown((v) => !v); setShowCurrencyDropdown(false); clearFieldErrors(); }}
               activeOpacity={0.8}
             >
               {countriesLoading ? (
@@ -483,17 +535,19 @@ export default function CompleteProfile() {
                 </ScrollView>
               </View>
             )}
-            <View style={styles.inputWithIcon}>
+            <View style={[styles.inputWithIcon, phoneError ? styles.inputError : undefined]}>
               <Phone size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
               <TextInput
                 style={styles.inputFlex}
                 placeholder="300 1234567"
                 placeholderTextColor={COLORS.textTertiary}
                 value={phoneNumber}
-                onChangeText={setPhoneNumber}
+                onChangeText={(t) => { setPhoneNumber(t); clearFieldErrors(); }}
                 keyboardType="phone-pad"
               />
             </View>
+            {countryError ? <Text style={styles.fieldErrorText}>{countryError}</Text> : null}
+            {phoneError ? <Text style={styles.fieldErrorText}>{phoneError}</Text> : null}
           </View>
         </View>
 
@@ -566,6 +620,16 @@ const styles = StyleSheet.create({
     color: COLORS.error,
     fontSize: TYPOGRAPHY.fontSize.base,
     textAlign: 'center',
+  },
+  inputError: {
+    borderColor: COLORS.error,
+    borderWidth: 1,
+  },
+  fieldErrorText: {
+    marginTop: 6,
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: COLORS.error,
+    fontWeight: '600',
   },
   avatarSection: {
     alignItems: 'center',
@@ -680,6 +744,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   chipWrap: {
+    paddingTop: 10,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: SPACING.s,

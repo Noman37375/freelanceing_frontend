@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Alert, ActivityIndicator } from 'react-native';
-import { LogOut, Wallet, AlertCircle, ChevronRight, Settings, Camera } from 'lucide-react-native';
+import { LogOut, Wallet, AlertCircle, ChevronRight, Settings, Camera, Shield } from 'lucide-react-native';
+import authService from '@/services/authService';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +11,7 @@ export default function ClientProfile() {
   const router = useRouter();
   const { user, logout, updateProfile, refreshUser } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
+  const [twoFALoading, setTwoFALoading] = useState(false);
 
   const avatarUri = user?.profileImage ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.userName || 'Client')}&background=444751&color=fff&size=200`;
@@ -42,6 +44,18 @@ export default function ClientProfile() {
   const handleLogout = async () => {
     await logout();
     router.replace('/login' as any);
+  };
+
+  const handleToggle2FA = async () => {
+    setTwoFALoading(true);
+    try {
+      await authService.toggle2FA();
+      await refreshUser();
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to update Two-Factor Authentication.');
+    } finally {
+      setTwoFALoading(false);
+    }
   };
 
   return (
@@ -110,6 +124,27 @@ export default function ClientProfile() {
                 </View>
                 <ChevronRight size={20} color="#C2C2C8" strokeWidth={2.5} />
               </TouchableOpacity>
+
+              <View style={styles.menuDivider} />
+              <View style={styles.menuItem}>
+                <View style={styles.menuLeft}>
+                  <View style={styles.menuIconBox}>
+                    <Shield size={20} color="#444751" strokeWidth={2.5} />
+                  </View>
+                  <Text style={styles.menuText}>Two-Factor Auth</Text>
+                </View>
+                {twoFALoading ? (
+                  <ActivityIndicator size="small" color="#C2C2C8" />
+                ) : (
+                  <TouchableOpacity
+                    onPress={handleToggle2FA}
+                    activeOpacity={0.8}
+                    style={[styles.toggleTrack, user?.twoFactorEnabled && styles.toggleTrackOn]}
+                  >
+                    <View style={[styles.toggleThumb, user?.twoFactorEnabled && styles.toggleThumbOn]} />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
 
@@ -144,6 +179,7 @@ export default function ClientProfile() {
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
+
     </View>
   );
 }
@@ -308,4 +344,44 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: 0.2,
   },
+  twoFABadge: {
+    backgroundColor: '#22c55e',
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
+  twoFABadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  toggleTrack: {
+    width: 46,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#E5E4EA',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  toggleTrackOn: {
+    backgroundColor: '#444751',
+  },
+  toggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
+    alignSelf: 'flex-start',
+  },
+  toggleThumbOn: {
+    alignSelf: 'flex-end',
+  },
 });
+

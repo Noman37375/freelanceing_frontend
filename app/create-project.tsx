@@ -409,7 +409,8 @@ export default function CreateProjectScreen() {
       // Step 1: Create PaymentIntent on backend
       const { clientSecret, paymentIntentId } = await stripeService.createPaymentIntent(
         budgetValue,
-        currency || "usd"
+        currency || "usd",
+        user?.email
       );
 
       // ── Web: show Stripe Elements modal ──────────────────────────────────

@@ -12,7 +12,8 @@ export const stripeService = {
    */
   createPaymentIntent: async (
     amount: number,
-    currency: string = 'usd'
+    currency: string = 'usd',
+    receiptEmail?: string
   ): Promise<{ clientSecret: string; paymentIntentId: string }> => {
     const token = await getAuthToken();
 
@@ -22,7 +23,7 @@ export const stripeService = {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ amount, currency: currency.toLowerCase() }),
+      body: JSON.stringify({ amount, currency: currency.toLowerCase(), receiptEmail }),
     });
 
     const data = await response.json();

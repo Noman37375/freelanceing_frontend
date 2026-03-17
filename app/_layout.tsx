@@ -1,3 +1,4 @@
+import { StripeProvider } from '@stripe/stripe-react-native';
 import { Slot, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreenNative from 'expo-splash-screen';
@@ -112,21 +113,23 @@ export default function RootLayout() {
   useFrameworkReady();
 
   return (
-    <AuthProvider>
-      <SocketProvider>
-        <CallProvider>
-          <WalletProvider>
-            <NotificationProvider>
-              <RootNavigation />
-              <CallModal />
-              <UpdateChecker />
-              <PushNotificationSetup />
-              <Toast />
-              <StatusBar style="auto" />
-            </NotificationProvider>
-          </WalletProvider>
-        </CallProvider>
-      </SocketProvider>
-    </AuthProvider>
+    <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ''} urlScheme="myapp">
+      <AuthProvider>
+        <SocketProvider>
+          <CallProvider>
+            <WalletProvider>
+              <NotificationProvider>
+                <RootNavigation />
+                <CallModal />
+                <UpdateChecker />
+                <PushNotificationSetup />
+                <Toast />
+                <StatusBar style="auto" />
+              </NotificationProvider>
+            </WalletProvider>
+          </CallProvider>
+        </SocketProvider>
+      </AuthProvider>
+    </StripeProvider>
   );
 }

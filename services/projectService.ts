@@ -100,6 +100,7 @@ export const projectService = {
     tags?: string[];
     category?: string;
     duration?: string;
+    paymentIntentId?: string;
   }): Promise<Project> => {
     const response = await apiCall('/api/v1/projects', {
       method: 'POST',

@@ -50,6 +50,7 @@ interface User {
   certifications?: Certification[];
   portfolio?: Portfolio[];
   profileImage?: string;
+  linkedinUrl?: string;
   rating?: number;
   reviewsCount?: number;
   projectsCompleted?: number;

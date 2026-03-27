@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -61,6 +61,8 @@ import SkillTag from "@/components/SkillTag";
 import SectionCard from "@/components/SectionCard";
 import { useWallet } from "@/contexts/WalletContext";
 import { notificationService } from "@/services/notificationService";
+import { badgeService } from "@/services/badgeService";
+import { Badge, BADGE_COLORS } from "@/models/Badge";
 import {
   fetchCurrencies,
   filterCurrencies,
@@ -93,6 +95,8 @@ export default function ProfileScreen() {
   const [isNotifLoading, setIsNotifLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [twoFALoading, setTwoFALoading] = useState(false);
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const [badgeScore, setBadgeScore] = useState(0);
 
   // Load unread count on mount and when user changes (real-time)
   useEffect(() => {
@@ -107,6 +111,22 @@ export default function ProfileScreen() {
     };
     loadUnreadCount();
   }, [user?.id]);
+
+  // Load badges on mount and when returning from verify-skill screen
+  const loadBadges = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const data = await badgeService.getMyBadges();
+      setBadges(data.badges.filter(b => b.status === 'active'));
+      setBadgeScore(data.totalBadgeScore);
+    } catch {
+      // silently fail — badges are non-critical
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    loadBadges();
+  }, [loadBadges]);
 
   // Load notifications when modal opens (real-time)
   useEffect(() => {
@@ -409,6 +429,49 @@ export default function ProfileScreen() {
 
           </View>
 
+
+          {/* VERIFIED SKILLS BADGES */}
+          <View style={styles.menuSection}>
+            <View style={styles.badgeSectionHeader}>
+              <Text style={styles.sectionTitle}>VERIFIED SKILLS</Text>
+              {badgeScore > 0 && (
+                <View style={styles.badgeScorePill}>
+                  <Text style={styles.badgeScoreText}>{badgeScore} pts</Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.menuCard}>
+              {badges.length > 0 ? (
+                <View style={styles.badgesGrid}>
+                  {badges.map((badge) => {
+                    const colors = BADGE_COLORS[badge.badgeLevel];
+                    return (
+                      <View key={badge.id} style={[styles.badgeChip, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                        <Award size={14} color={colors.icon} strokeWidth={2.5} />
+                        <View>
+                          <Text style={[styles.badgeChipSkill, { color: colors.text }]}>{badge.skill}</Text>
+                          <Text style={[styles.badgeChipLevel, { color: colors.icon }]}>{badge.badgeLevel} • {badge.provider}</Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : (
+                <View style={styles.noBadgeBox}>
+                  <Award size={28} color="#E5E4EA" strokeWidth={1.5} />
+                  <Text style={styles.noBadgeText}>No verified badges yet</Text>
+                </View>
+              )}
+              <TouchableOpacity
+                style={styles.verifyBtn}
+                onPress={() => router.push('/verify-skill' as any)}
+                activeOpacity={0.8}
+              >
+                <ShieldCheck size={18} color="#FFFFFF" strokeWidth={2.5} />
+                <Text style={styles.verifyBtnText}>Verify a Skill</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
           {/* Menu Sections */}
           <View style={styles.menuSection}>
@@ -1310,6 +1373,75 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#E5E4EA',
     marginHorizontal: 16,
+  },
+
+  // ── Badge section styles ─────────────────────────────────────
+  badgeSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  badgeScorePill: {
+    backgroundColor: '#444751',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  badgeScoreText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  badgesGrid: {
+    padding: 16,
+    gap: 10,
+  },
+  badgeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  badgeChipSkill: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  badgeChipLevel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 1,
+  },
+  noBadgeBox: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    gap: 8,
+  },
+  noBadgeText: {
+    fontSize: 14,
+    color: '#C2C2C8',
+    fontWeight: '500',
+  },
+  verifyBtn: {
+    margin: 16,
+    marginTop: 4,
+    backgroundColor: '#282A32',
+    borderRadius: 14,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  verifyBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
 
   // ========== LOGOUT BUTTON ==========

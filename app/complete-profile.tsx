@@ -75,6 +75,7 @@ export default function CompleteProfile() {
   const [countrySearch, setCountrySearch] = useState('');
   const [countriesLoading, setCountriesLoading] = useState(true);
 
+  const [linkedinUrl, setLinkedinUrl] = useState((user as any)?.linkedinUrl || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bioError, setBioError] = useState('');
   const [skillsError, setSkillsError] = useState('');
@@ -250,6 +251,7 @@ export default function CompleteProfile() {
         hourlyRate: rate,
         currency: currency || 'USD',
         phone: (selectedCountry?.dialCode ?? '') + ' ' + phoneNumber.trim().replace(/\D/g, ''),
+        ...(linkedinUrl ? { linkedinUrl } : {}),
       } as any);
 
       router.replace('/(tabs)' as any);
@@ -548,6 +550,23 @@ export default function CompleteProfile() {
             </View>
             {countryError ? <Text style={styles.fieldErrorText}>{countryError}</Text> : null}
             {phoneError ? <Text style={styles.fieldErrorText}>{phoneError}</Text> : null}
+          </View>
+        </View>
+
+        {/* LinkedIn URL */}
+        <View style={styles.section}>
+          <Text style={styles.label}>LinkedIn URL (optional)</Text>
+          <View style={styles.inputWithIcon}>
+            <Link size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
+            <TextInput
+              style={styles.inputFlex}
+              placeholder="https://linkedin.com/in/yourprofile"
+              placeholderTextColor={COLORS.textTertiary}
+              value={linkedinUrl}
+              onChangeText={setLinkedinUrl}
+              keyboardType="url"
+              autoCapitalize="none"
+            />
           </View>
         </View>
 

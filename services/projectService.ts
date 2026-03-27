@@ -251,6 +251,35 @@ export const proposalService = {
       method: 'DELETE',
     });
   },
+
+  /**
+   * Start JD quiz before applying (Freelancer only)
+   */
+  startProposalQuiz: async (projectId: string): Promise<{
+    sessionToken: string;
+    questions: { id: number; q: string; A: string; B: string; C: string; D: string }[];
+    total: number;
+    projectTitle: string;
+  }> => {
+    const response = await apiCall(`/api/v1/proposals/project/${projectId}/quiz/start`, {
+      method: 'POST',
+    });
+    return response.data;
+  },
+
+  /**
+   * Submit quiz + create proposal in one call (Freelancer only)
+   */
+  createProposalWithQuiz: async (
+    projectId: string,
+    data: { coverLetter: string; bidAmount: number; sessionToken: string; answers: string[] }
+  ): Promise<{ proposal: Proposal; quizResult: { score: number; correct: number; total: number } }> => {
+    const response = await apiCall(`/api/v1/proposals/project/${projectId}/apply`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.data;
+  },
 };
 
 export const milestoneService = {

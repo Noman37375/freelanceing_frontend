@@ -23,7 +23,8 @@ import {
     UserCheck,
     Briefcase,
     FileText,
-    Layers
+    Layers,
+    Award,
 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminService, DashboardStats } from '@/services/adminService';
@@ -127,6 +128,7 @@ export default function AdminDashboard() {
         { title: 'Notifications', icon: Bell, color: '#444751', route: '/(admin)/manage-notifications', count: 0 },
         { title: 'Projects', icon: Briefcase, color: '#444751', route: '/(admin)/manage-projects', count: stats?.activeProjects || 0 },
         { title: 'Disputes', icon: Activity, color: '#444751', route: '/(admin)/manage-disputes', count: stats?.totalDisputes ?? 0 },
+        { title: 'Badges', icon: Award, color: '#F59E0B', route: '/(admin)/manage-badges', count: 0 },
     ];
 
     // Dynamic styles based on screen size

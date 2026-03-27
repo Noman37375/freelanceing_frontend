@@ -51,8 +51,10 @@ export default function FindProjectsScreen() {
         filters.search = searchText.trim();
       }
       const fetchedProjects = await projectService.getProjects(filters);
-      setProjects(fetchedProjects);
-      setFilteredProjects(fetchedProjects);
+      // Hide projects created by this user (same userId, different role)
+      const visible = user ? fetchedProjects.filter(p => p.clientId !== user.id) : fetchedProjects;
+      setProjects(visible);
+      setFilteredProjects(visible);
     } catch (error: any) {
       console.error('Failed to fetch projects:', error);
       Alert.alert('Error', error.message || 'Failed to load projects');

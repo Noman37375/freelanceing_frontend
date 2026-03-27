@@ -49,6 +49,14 @@ const apiCall = async (endpoint: string, options: RequestInit = {}): Promise<any
   }
 };
 
+export interface FreelancerBadge {
+  id: string;
+  skill: string;
+  badgeLevel: 'Gold' | 'Silver' | 'Bronze';
+  badgePoints: number;
+  provider: string;
+}
+
 export interface Freelancer {
   id: string;
   name: string;
@@ -66,6 +74,8 @@ export interface Freelancer {
   education?: string;
   languages?: string[];
   memberSince?: string;
+  badges?: FreelancerBadge[];
+  totalBadgeScore?: number;
 }
 
 export const freelancerService = {
@@ -75,6 +85,8 @@ export const freelancerService = {
   getFreelancers: async (filters?: {
     search?: string;
     skills?: string | string[];
+    badge?: string;
+    badge_level?: string;
   }): Promise<Freelancer[]> => {
     const params = new URLSearchParams();
     if (filters?.search) params.append('search', filters.search);
@@ -82,6 +94,8 @@ export const freelancerService = {
       const skillsStr = Array.isArray(filters.skills) ? filters.skills.join(',') : filters.skills;
       params.append('skills', skillsStr);
     }
+    if (filters?.badge) params.append('badge', filters.badge);
+    if (filters?.badge_level) params.append('badge_level', filters.badge_level);
     
     const response = await apiCall(`/api/v1/freelancers?${params.toString()}`, {
       method: 'GET',

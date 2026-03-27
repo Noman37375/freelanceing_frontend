@@ -20,6 +20,7 @@ import { projectService } from "@/services/projectService";
 import { Project } from "@/models/Project";
 import { useRouter } from "expo-router";
 import { TYPOGRAPHY } from "@/constants/theme";
+import { useAuth } from "@/contexts/AuthContext";
 
 const SKELETON_CARD_COUNT = 4;
 
@@ -62,6 +63,7 @@ function ProjectsListSkeleton() {
 
 export default function ProjectsScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showFilter, setShowFilter] = useState(false);
@@ -113,6 +115,9 @@ export default function ProjectsScreen() {
   };
 
   const filteredProjects = projects.filter((project) => {
+    // Hide projects created by this user (same userId, different role)
+    if (user && project.clientId === user.id) return false;
+
     const matchesSearch = project.title
       .toLowerCase()
       .includes(searchQuery.toLowerCase());

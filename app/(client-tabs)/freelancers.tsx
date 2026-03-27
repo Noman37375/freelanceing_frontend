@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Platform, StatusBar, Animated } from 'react-native';
-import { Search, Filter, User, Star, MapPin, Briefcase, ChevronLeft, UserCheck, X } from 'lucide-react-native';
+import { Search, Filter, User, Star, MapPin, Briefcase, ChevronLeft, UserCheck, X, Award } from 'lucide-react-native';
 import { freelancerService, Freelancer } from '@/services/freelancerService';
+import { BADGE_COLORS } from '@/models/Badge';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -65,6 +66,7 @@ export default function Freelancers() {
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [activeBadgeFilter, setActiveBadgeFilter] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFreelancers();
@@ -75,7 +77,7 @@ export default function Freelancers() {
       fetchFreelancers();
     }, 500);
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, activeFilter]);
+  }, [searchQuery, activeFilter, activeBadgeFilter]);
 
   const fetchFreelancers = async () => {
     try {
@@ -83,6 +85,7 @@ export default function Freelancers() {
       setError(null);
       const data = await freelancerService.getFreelancers({
         search: searchQuery || undefined,
+        badge: activeBadgeFilter || undefined,
       });
       setFreelancers(data);
     } catch (error: any) {
@@ -151,6 +154,27 @@ export default function Freelancers() {
               </TouchableOpacity>
             ))}
           </View>
+          {/* Badge Filters */}
+          <View style={[styles.filtersRow, { marginTop: 8 }]}>
+            <TouchableOpacity
+              style={[styles.filterChip, !activeBadgeFilter && styles.activeChip]}
+              onPress={() => setActiveBadgeFilter(null)}
+            >
+              <Text style={[styles.chipText, !activeBadgeFilter && styles.activeChipText]}>All Skills</Text>
+            </TouchableOpacity>
+            {['Python', 'JavaScript', 'Java', 'Competitive Programming', 'UI/UX Design', 'Digital Marketing'].map((skill) => (
+              <TouchableOpacity
+                key={skill}
+                style={[styles.filterChip, activeBadgeFilter === skill && styles.badgeActiveChip]}
+                onPress={() => setActiveBadgeFilter(activeBadgeFilter === skill ? null : skill)}
+              >
+                <Award size={11} color={activeBadgeFilter === skill ? '#F59E0B' : '#C2C2C8'} strokeWidth={2.5} />
+                <Text style={[styles.chipText, activeBadgeFilter === skill && styles.badgeActiveChipText]}>
+                  {skill}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* FREELANCERS LIST */}
@@ -205,6 +229,23 @@ export default function Freelancers() {
                     <Text style={styles.moreText}>+{freelancer.skills.length - 3}</Text>
                   )}
                 </View>
+
+                {/* Verified Badges */}
+                {freelancer.badges && freelancer.badges.length > 0 && (
+                  <View style={styles.skillsRow}>
+                    {freelancer.badges.slice(0, 2).map((badge) => {
+                      const colors = BADGE_COLORS[badge.badgeLevel];
+                      return (
+                        <View key={badge.id} style={[styles.verifiedBadge, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                          <Award size={11} color={colors.icon} strokeWidth={2.5} />
+                          <Text style={[styles.verifiedBadgeText, { color: colors.text }]}>
+                            {badge.skill} {badge.badgeLevel}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
 
                 {/* Footer */}
                 <View style={styles.cardFooter}>
@@ -343,6 +384,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4F4F8',
     borderWidth: 1,
     borderColor: '#E5E4EA',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   activeChip: {
     backgroundColor: '#444751',
@@ -486,6 +530,27 @@ const styles = StyleSheet.create({
     color: '#C2C2C8',
     fontWeight: '600',
     alignSelf: 'center',
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  verifiedBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.1,
+  },
+  badgeActiveChip: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#F59E0B',
+  },
+  badgeActiveChipText: {
+    color: '#92400E',
   },
 
   // ========== FOOTER ==========

@@ -538,8 +538,8 @@ export default function VerifySkillScreen() {
     else if (step === 'coding_test') setStep('choose_skill_level');
     else if (step === 'quiz') setStep('choose_skill_level');
     else if (step === 'certificate') setStep('choose_skill');
-    else if (step === 'codeforces') setStep('choose_type');
-    else if (step === 'github')     setStep('choose_type');
+    else if (step === 'codeforces') verifyType === 'developer' ? setStep('choose_skill_level') : setStep('choose_type');
+    else if (step === 'github')     verifyType === 'developer' ? setStep('choose_skill_level') : setStep('choose_type');
     else if (step === 'youtube')    setStep('choose_type');
     else router.back();
   };
@@ -556,7 +556,7 @@ export default function VerifySkillScreen() {
         </View>
         <View style={styles.typeInfo}>
           <Text style={styles.typeTitle}>Developer / Programmer</Text>
-          <Text style={styles.typeDesc}>13 languages — Python, JS, Java, C++, Go, Rust & more</Text>
+          <Text style={styles.typeDesc}>13 languages — Python, JS, Java, C++ & more · also verify via GitHub or Codeforces</Text>
         </View>
       </TouchableOpacity>
 
@@ -567,26 +567,6 @@ export default function VerifySkillScreen() {
         <View style={styles.typeInfo}>
           <Text style={styles.typeTitle}>Designer / Marketer</Text>
           <Text style={styles.typeDesc}>Submit a certificate from Coursera, Google, Adobe & more</Text>
-        </View>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.typeCard} onPress={() => handleTypeSelect('competitive')} activeOpacity={0.8}>
-        <View style={[styles.typeIcon, { backgroundColor: '#FEF3C7' }]}>
-          <Trophy size={28} color="#F59E0B" strokeWidth={2} />
-        </View>
-        <View style={styles.typeInfo}>
-          <Text style={styles.typeTitle}>Competitive Programmer</Text>
-          <Text style={styles.typeDesc}>Link your Codeforces handle — rated instantly from your CF rating</Text>
-        </View>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.typeCard} onPress={() => handleTypeSelect('github')} activeOpacity={0.8}>
-        <View style={[styles.typeIcon, { backgroundColor: '#F0F0FF' }]}>
-          <Github size={28} color="#6E40C9" strokeWidth={2} />
-        </View>
-        <View style={styles.typeInfo}>
-          <Text style={styles.typeTitle}>GitHub Developer</Text>
-          <Text style={styles.typeDesc}>Auto-scored from your public repos, stars & activity</Text>
         </View>
       </TouchableOpacity>
 
@@ -743,6 +723,46 @@ export default function VerifySkillScreen() {
             </>
           )}
         </TouchableOpacity>
+
+        {/* ── Developer Achievement Badges ─────────── */}
+        <View style={{ marginTop: 32, marginBottom: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: '#E5E7EB' }} />
+            <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', letterSpacing: 1 }}>OR EARN DEVELOPER ACHIEVEMENT BADGES</Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: '#E5E7EB' }} />
+          </View>
+          <Text style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'center', marginBottom: 16 }}>
+            These appear on your profile as credibility signals — not a separate hireable skill
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.typeCard, { marginBottom: 10 }]}
+            onPress={() => { setGithubDone(false); setStep('github'); }}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.typeIcon, { backgroundColor: '#F0F0FF' }]}>
+              <Github size={24} color="#6E40C9" strokeWidth={2} />
+            </View>
+            <View style={styles.typeInfo}>
+              <Text style={styles.typeTitle}>GitHub Developer</Text>
+              <Text style={styles.typeDesc}>Auto-scored from your public repos, stars & activity</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.typeCard}
+            onPress={() => setStep('codeforces')}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.typeIcon, { backgroundColor: '#FEF3C7' }]}>
+              <Trophy size={24} color="#F59E0B" strokeWidth={2} />
+            </View>
+            <View style={styles.typeInfo}>
+              <Text style={styles.typeTitle}>Competitive Programmer</Text>
+              <Text style={styles.typeDesc}>Link your Codeforces handle — rated instantly from your CF rating</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
 
         {/* ── Language Modal ───────────────────────── */}
         <Modal visible={langModalOpen} transparent animationType="slide" onRequestClose={() => setLangModalOpen(false)}>

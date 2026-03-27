@@ -15,7 +15,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ArrowLeft, ChevronDown, ChevronUp, CheckCircle, Calendar,
-  ChevronLeft as ChevLeft, ChevronRight, Send, Award,
+  ChevronLeft as ChevLeft, ChevronRight, Send, Award, Clock, XCircle, ShieldAlert,
 } from "lucide-react-native";
 import { projectService, proposalService } from "@/services/projectService";
 import { useAuth } from "@/contexts/AuthContext";
@@ -70,8 +70,8 @@ export default function BidNow() {
   const [bidAmount, setBidAmount]           = useState<string>("");
   const [coverLetter, setCoverLetter]       = useState<string>("");
 
-  // ── Step: 'form' | 'quiz' ─────────────────────────────────────────────────
-  const [step, setStep] = useState<'form' | 'quiz'>('form');
+  // ── Step: 'form' | 'quiz' | 'blocked' ────────────────────────────────────
+  const [step, setStep] = useState<'form' | 'quiz' | 'blocked'>('form');
 
   // ── Quiz state ────────────────────────────────────────────────────────────
   const [quizSession, setQuizSession]       = useState<QuizSession | null>(null);
@@ -80,6 +80,31 @@ export default function BidNow() {
   const [quizLoading, setQuizLoading]       = useState(false);
   const [quizResult, setQuizResult]         = useState<{ score: number; correct: number; total: number } | null>(null);
   const quizStartedAt = useRef<number>(0);
+
+  // ── Block / fail state ────────────────────────────────────────────────────
+  type BlockInfo = { permanentlyBlocked: boolean; attemptNumber?: number; retryAfter?: string | null; badgeUnblockAvailable?: boolean };
+  type FailInfo  = { score: number; correct: number; total: number; threshold: number; attemptNumber: number; retryAfter: string | null; permanentlyBlocked: boolean };
+  const [blockInfo, setBlockInfo]     = useState<BlockInfo | null>(null);
+  const [failInfo, setFailInfo]       = useState<FailInfo | null>(null);
+  const [showFailModal, setShowFailModal] = useState(false);
+  const [retryCountdown, setRetryCountdown] = useState('');
+
+  // Live countdown for retry timer (block screen + fail modal)
+  useEffect(() => {
+    const retryAt = blockInfo?.retryAfter || failInfo?.retryAfter;
+    if (!retryAt) { setRetryCountdown(''); return; }
+    const tick = () => {
+      const remaining = new Date(retryAt).getTime() - Date.now();
+      if (remaining <= 0) { setRetryCountdown('Ready to retry'); return; }
+      const h = Math.floor(remaining / 3_600_000);
+      const m = Math.floor((remaining % 3_600_000) / 60_000);
+      const s = Math.floor((remaining % 60_000) / 1000);
+      setRetryCountdown(h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [blockInfo?.retryAfter, failInfo?.retryAfter]);
 
   // Fetch project
   useEffect(() => {
@@ -114,8 +139,13 @@ export default function BidNow() {
 
     try {
       setQuizLoading(true);
-      const session = await proposalService.startProposalQuiz(id);
-      setQuizSession(session);
+      const result = await proposalService.startProposalQuiz(id);
+      if (result.blocked) {
+        setBlockInfo(result);
+        setStep('blocked');
+        return;
+      }
+      setQuizSession(result);
       setQuizAnswers({});
       setQuizCurrentIdx(0);
       quizStartedAt.current = Date.now();
@@ -158,8 +188,13 @@ export default function BidNow() {
         sessionToken: quizSession.sessionToken,
         answers: answersArray,
       });
-      setQuizResult(result.quizResult);
-      setShowSuccess(true);
+      if (!result.passed) {
+        setFailInfo(result);
+        setShowFailModal(true);
+      } else {
+        setQuizResult(result.quizResult);
+        setShowSuccess(true);
+      }
     } catch (err: any) {
       Alert.alert("Error", err.message || "Unable to submit proposal");
     } finally {
@@ -173,6 +208,88 @@ export default function BidNow() {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#444751" />
+      </View>
+    );
+  }
+
+  // ── Blocked screen ────────────────────────────────────────────────────────
+
+  if (step === 'blocked' && blockInfo) {
+    const isPermanent = blockInfo.permanentlyBlocked;
+    const canRetry    = !isPermanent && retryCountdown === 'Ready to retry';
+
+    return (
+      <View style={styles.wrapper}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ArrowLeft size={24} color="#282A32" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Application Blocked</Text>
+          <View style={{ width: 40 }} />
+        </View>
+
+        <ScrollView contentContainerStyle={[styles.scrollContent, { alignItems: 'center', paddingTop: 40 }]}>
+          <View style={[styles.blockIconWrap, { backgroundColor: isPermanent ? '#FEF2F2' : '#FFFBEB' }]}>
+            {isPermanent
+              ? <ShieldAlert size={48} color="#EF4444" strokeWidth={1.5} />
+              : <Clock size={48} color="#F59E0B" strokeWidth={1.5} />}
+          </View>
+
+          <Text style={styles.blockTitle}>
+            {isPermanent ? 'Permanently Blocked' : 'Quiz on Cooldown'}
+          </Text>
+
+          {isPermanent ? (
+            <>
+              <Text style={styles.blockMsg}>
+                You have used all 3 quiz attempts for this project. You can no longer apply here.
+              </Text>
+              <View style={styles.blockBadgeTip}>
+                <Award size={16} color="#4F46E5" strokeWidth={2} />
+                <Text style={styles.blockBadgeTipText}>
+                  Earn a verified skill badge from your profile to unlock one final attempt on this project.
+                </Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.blockMsg}>
+                You failed attempt {blockInfo.attemptNumber} of 3. Please wait before trying again.
+              </Text>
+              <View style={styles.blockCountdownBox}>
+                <Clock size={18} color={canRetry ? '#10B981' : '#F59E0B'} strokeWidth={2} />
+                <Text style={[styles.blockCountdownText, { color: canRetry ? '#10B981' : '#F59E0B' }]}>
+                  {retryCountdown || 'Calculating…'}
+                </Text>
+              </View>
+              {blockInfo.attemptNumber === 2 && (
+                <View style={styles.blockWarning}>
+                  <Text style={styles.blockWarningText}>
+                    ⚠️  This is your last attempt. Failing again will permanently block you from this project.
+                  </Text>
+                </View>
+              )}
+            </>
+          )}
+
+          {!isPermanent && canRetry && (
+            <TouchableOpacity
+              style={styles.blockRetryBtn}
+              onPress={() => { setBlockInfo(null); setStep('form'); }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.blockRetryBtnText}>Try Again Now</Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            style={styles.blockBackBtn}
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.blockBackBtnText}>Back to Project</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
     );
   }
@@ -321,8 +438,9 @@ export default function BidNow() {
           <View style={{ height: 40 }} />
         </ScrollView>
 
-        {/* Success modal */}
+        {/* Modals */}
         {renderSuccessModal()}
+        {renderFailModal()}
       </KeyboardAvoidingView>
     );
   }
@@ -498,8 +616,112 @@ export default function BidNow() {
       </ScrollView>
 
       {renderSuccessModal()}
+      {renderFailModal()}
     </KeyboardAvoidingView>
   );
+
+  // ── Fail modal ─────────────────────────────────────────────────────────────
+
+  function renderFailModal() {
+    if (!failInfo) return null;
+    const isPermanent  = failInfo.permanentlyBlocked;
+    const attemptsLeft = 3 - failInfo.attemptNumber;
+    const canRetryNow  = !isPermanent && retryCountdown === 'Ready to retry';
+
+    const handleRetry = () => {
+      setShowFailModal(false);
+      setFailInfo(null);
+      setQuizSession(null);
+      setQuizAnswers({});
+      setQuizCurrentIdx(0);
+      setStep('form');
+    };
+
+    const handlePermanentBlock = () => {
+      setShowFailModal(false);
+      setBlockInfo({ permanentlyBlocked: true });
+      setStep('blocked');
+    };
+
+    return (
+      <Modal
+        visible={showFailModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => isPermanent ? handlePermanentBlock() : setShowFailModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { maxWidth: 360 }]}>
+            <XCircle size={52} color="#EF4444" style={{ marginBottom: 12 }} />
+            <Text style={styles.modalTitle}>Quiz Failed</Text>
+
+            {/* Score box */}
+            <View style={[styles.modalScoreBox, { borderColor: '#FCA5A5' }]}>
+              <Text style={styles.modalScoreLabel}>Your Score</Text>
+              <Text style={[styles.modalScoreValue, { color: '#EF4444' }]}>{failInfo.score}%</Text>
+              <Text style={styles.modalScoreSub}>
+                {failInfo.correct}/{failInfo.total} correct · needed {failInfo.threshold}% to pass
+              </Text>
+            </View>
+
+            {isPermanent ? (
+              <>
+                <Text style={[styles.modalMessage, { color: '#EF4444', fontWeight: '700' }]}>
+                  You have used all 3 attempts.{'\n'}You are permanently blocked from this project.
+                </Text>
+                <View style={[styles.blockBadgeTip, { marginBottom: 20 }]}>
+                  <Award size={16} color="#4F46E5" strokeWidth={2} />
+                  <Text style={styles.blockBadgeTipText}>
+                    Earn a verified skill badge to unlock one final attempt.
+                  </Text>
+                </View>
+                <TouchableOpacity style={styles.modalButton} onPress={handlePermanentBlock} activeOpacity={0.8}>
+                  <Text style={styles.modalButtonText}>View Block Details</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalMessage}>
+                  {attemptsLeft === 1
+                    ? '⚠️  1 attempt remaining — next fail is a permanent block.'
+                    : `You have ${attemptsLeft} attempt${attemptsLeft > 1 ? 's' : ''} remaining.`}
+                </Text>
+
+                {/* Countdown */}
+                {!canRetryNow && (
+                  <View style={styles.blockCountdownBox}>
+                    <Clock size={16} color="#F59E0B" strokeWidth={2} />
+                    <Text style={[styles.blockCountdownText, { color: '#F59E0B', fontSize: 15 }]}>
+                      Retry in: {retryCountdown || '…'}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={{ flexDirection: 'row', gap: 10, width: '100%', marginTop: 8 }}>
+                  <TouchableOpacity
+                    style={[styles.blockBackBtn, { flex: 1, marginTop: 0 }]}
+                    onPress={() => { setShowFailModal(false); router.back(); }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.blockBackBtnText}>Back</Text>
+                  </TouchableOpacity>
+                  {canRetryNow && (
+                    <TouchableOpacity
+                      style={[styles.blockRetryBtn, { flex: 1, marginTop: 0 }]}
+                      onPress={handleRetry}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={styles.blockRetryBtnText}>Try Again</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+    );
+  }
 
   // ── Success modal (shared between both steps) ──────────────────────────────
 
@@ -719,4 +941,40 @@ const styles = StyleSheet.create({
   modalMessage: { fontSize: 14, color: "#64748B", textAlign: "center", lineHeight: 22, marginBottom: 24 },
   modalButton: { backgroundColor: "#1E293B", paddingVertical: 14, paddingHorizontal: 32, borderRadius: 12, width: "100%", alignItems: "center" },
   modalButtonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
+
+  // ── Block screen ────────────────────────────────────────────────────────
+  blockIconWrap: {
+    width: 96, height: 96, borderRadius: 48,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 20,
+  },
+  blockTitle: { fontSize: 22, fontWeight: '800', color: '#1E293B', marginBottom: 10, textAlign: 'center' },
+  blockMsg: { fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 22, marginBottom: 20, paddingHorizontal: 8 },
+  blockCountdownBox: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#FFFBEB', borderRadius: 12, paddingHorizontal: 18, paddingVertical: 12,
+    borderWidth: 1, borderColor: '#FDE68A', marginBottom: 16,
+  },
+  blockCountdownText: { fontSize: 17, fontWeight: '800' },
+  blockWarning: {
+    backgroundColor: '#FFF7ED', borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: '#FED7AA', marginBottom: 20,
+  },
+  blockWarningText: { fontSize: 13, color: '#92400E', lineHeight: 20, textAlign: 'center' },
+  blockBadgeTip: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
+    backgroundColor: '#EEF2FF', borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: '#C7D2FE', marginBottom: 24, marginHorizontal: 4,
+  },
+  blockBadgeTipText: { flex: 1, fontSize: 13, color: '#3730A3', lineHeight: 19 },
+  blockRetryBtn: {
+    backgroundColor: '#1E293B', paddingVertical: 14, borderRadius: 12,
+    alignItems: 'center', width: '100%', marginTop: 8,
+  },
+  blockRetryBtnText: { color: '#FFF', fontSize: 15, fontWeight: '800' },
+  blockBackBtn: {
+    backgroundColor: '#F1F5F9', paddingVertical: 13, borderRadius: 12,
+    alignItems: 'center', width: '100%', marginTop: 8,
+    borderWidth: 1, borderColor: '#E2E8F0',
+  },
+  blockBackBtnText: { color: '#475569', fontSize: 15, fontWeight: '700' },
 });

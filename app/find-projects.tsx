@@ -64,10 +64,10 @@ export default function FindProjectsScreen() {
     }
   };
 
-  // Refetch when search or category changes (including from URL params)
+  // Refetch when search, category, or user changes (including from URL params)
   useEffect(() => {
     fetchProjects();
-  }, [searchText, filterType]);
+  }, [searchText, filterType, user?.id]);
 
   // Fetch saved project IDs when user is logged in
   const fetchSavedIds = useCallback(async () => {

@@ -39,6 +39,7 @@ const apiCall = async (endpoint: string, options: RequestInit = {}): Promise<any
       const errorMessage = data.message || data.error || `API Error: ${response.status}`;
       const err: any = new Error(errorMessage);
       err.status = response.status;
+      err.data = data.data ?? null;  // attach structured payload for caller to inspect
       throw err;
     }
 
@@ -254,32 +255,43 @@ export const proposalService = {
   },
 
   /**
-   * Start JD quiz before applying (Freelancer only)
+   * Start JD quiz before applying (Freelancer only).
+   * Returns quiz session OR block info if on cooldown / permanently blocked.
    */
-  startProposalQuiz: async (projectId: string): Promise<{
-    sessionToken: string;
-    questions: { id: number; q: string; A: string; B: string; C: string; D: string }[];
-    total: number;
-    projectTitle: string;
-  }> => {
-    const response = await apiCall(`/api/v1/proposals/project/${projectId}/quiz/start`, {
-      method: 'POST',
-    });
-    return response.data;
+  startProposalQuiz: async (projectId: string): Promise<
+    | { blocked: false; sessionToken: string; questions: { id: number; q: string; A: string; B: string; C: string; D: string }[]; total: number; projectTitle: string }
+    | { blocked: true; permanentlyBlocked: boolean; attemptNumber?: number; retryAfter?: string | null; badgeUnblockAvailable?: boolean }
+  > => {
+    try {
+      const response = await apiCall(`/api/v1/proposals/project/${projectId}/quiz/start`, { method: 'POST' });
+      return { blocked: false, ...response.data };
+    } catch (err: any) {
+      if (err.data?.blocked) return { blocked: true, ...err.data };
+      throw err;
+    }
   },
 
   /**
-   * Submit quiz + create proposal in one call (Freelancer only)
+   * Submit quiz + create proposal in one call (Freelancer only).
+   * Returns pass result with proposal OR fail result without proposal.
    */
   createProposalWithQuiz: async (
     projectId: string,
     data: { coverLetter: string; bidAmount: number; sessionToken: string; answers: string[] }
-  ): Promise<{ proposal: Proposal; quizResult: { score: number; correct: number; total: number } }> => {
-    const response = await apiCall(`/api/v1/proposals/project/${projectId}/apply`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    return response.data;
+  ): Promise<
+    | { passed: true; proposal: Proposal; quizResult: { score: number; correct: number; total: number } }
+    | { passed: false; score: number; correct: number; total: number; threshold: number; attemptNumber: number; retryAfter: string | null; permanentlyBlocked: boolean }
+  > => {
+    try {
+      const response = await apiCall(`/api/v1/proposals/project/${projectId}/apply`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return { passed: true, ...response.data };
+    } catch (err: any) {
+      if (err.data?.passed === false) return { passed: false, ...err.data };
+      throw err;
+    }
   },
 };
 

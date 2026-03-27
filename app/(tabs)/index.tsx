@@ -77,7 +77,7 @@ export default function HomeScreen() {
       ]);
       setCategories(servicesResult.status === 'fulfilled' ? (servicesResult.value || []) : []);
       const activeProjects = projectsResult.status === 'fulfilled' ? (projectsResult.value || []) : [];
-      setRecentProjects(activeProjects);
+      setRecentProjects(user ? activeProjects.filter((p: Project) => p.clientId !== user.id) : activeProjects);
       setInProgressCount(inProgressResult.status === 'fulfilled' ? (inProgressResult.value?.length ?? 0) : 0);
     } catch (error: any) {
       console.error('Failed to fetch data:', error);

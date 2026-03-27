@@ -27,6 +27,10 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      ["@stripe/stripe-react-native", {
+        "merchantIdentifier": "merchant.com.pakfreelance.app",
+        "enableGooglePay": false
+      }],
       "expo-router",
       "expo-font",
       "expo-web-browser",

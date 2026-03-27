@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -204,8 +204,11 @@ const dfStyles = StyleSheet.create({
   doneText: { fontSize: 15, fontWeight: "700", color: "#FFF" },
 });
 import ScreenHeader from "@/components/ScreenHeader";
+import StripeWebModal from "@/components/StripeWebModal";
 import { useRouter } from "expo-router";
+import { useStripe } from "@stripe/stripe-react-native";
 import { projectService } from "@/services/projectService";
+import { stripeService } from "@/services/stripeService";
 import { adminService } from "@/services/adminService";
 import { useAuth } from "@/contexts/AuthContext";
 import { COLORS } from "@/utils/constants";
@@ -222,9 +225,15 @@ import {
 export default function CreateProjectScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // Web-only Stripe modal state
+  const [webStripeVisible, setWebStripeVisible] = useState(false);
+  const [webClientSecret, setWebClientSecret] = useState("");
+  const pendingPaymentIntentId = useRef("");
 
   const descriptionRef = useRef<TextInput>(null);
   const budgetRef = useRef<TextInput>(null);
@@ -350,26 +359,8 @@ export default function CreateProjectScreen() {
     setShowCurrencyDropdown(false);
   };
 
-  const handleSubmit = async () => {
-    setAttemptedSubmit(true);
-    // Validation
-    if (!title.trim()) {
-      return Alert.alert("Error", "Please enter a project title");
-    }
-    if (!description.trim()) {
-      return Alert.alert("Error", "Please enter a project description");
-    }
-    if (!budget.trim() || isNaN(parseFloat(budget))) {
-      return Alert.alert("Error", "Please enter a valid budget amount");
-    }
-    if (parseFloat(budget) <= 0) {
-      return Alert.alert("Error", "Budget must be greater than 0");
-    }
-
-    if (user?.role !== "Client") {
-      return Alert.alert("Error", "Only clients can create projects");
-    }
-
+  // Called after payment succeeds on both web and native
+  const createProjectAfterPayment = useCallback(async (paymentIntentId: string) => {
     try {
       setLoading(true);
       const projectData = {
@@ -381,15 +372,80 @@ export default function CreateProjectScreen() {
         category: category || undefined,
         duration: (startDate && endDate) ? calcDuration(startDate, endDate) : undefined,
         tags: tagsArray.length > 0 ? tagsArray : undefined,
+        paymentIntentId,
       };
 
       const newProject = await projectService.createProject(projectData);
-
-// Navigate to Add Milestones screen with budget & currency for equal split
       const budgetParam = encodeURIComponent(String(budgetValue));
       const currencyParam = encodeURIComponent(currency || "USD");
       router.push(`/add-milestones?projectId=${newProject.id}&budget=${budgetParam}&currency=${currencyParam}`);
       setShowSuccessModal(true);
+    } catch (error: any) {
+      console.error("Failed to create project:", error);
+      Alert.alert("Error", error.message || "Failed to create project");
+    } finally {
+      setLoading(false);
+    }
+  }, [title, description, budgetValue, currency, location, category, startDate, endDate, tagsArray, router]);
+
+  // Called when web Stripe modal reports success
+  const handleWebPaymentSuccess = useCallback(() => {
+    setWebStripeVisible(false);
+    setWebClientSecret("");
+    createProjectAfterPayment(pendingPaymentIntentId.current);
+  }, [createProjectAfterPayment]);
+
+  const handleSubmit = async () => {
+    setAttemptedSubmit(true);
+    if (!title.trim()) return Alert.alert("Error", "Please enter a project title");
+    if (!description.trim()) return Alert.alert("Error", "Please enter a project description");
+    if (!budget.trim() || isNaN(parseFloat(budget))) return Alert.alert("Error", "Please enter a valid budget amount");
+    if (parseFloat(budget) <= 0) return Alert.alert("Error", "Budget must be greater than 0");
+    if (user?.role !== "Client") return Alert.alert("Error", "Only clients can create projects");
+
+    try {
+      setLoading(true);
+
+      // Step 1: Create PaymentIntent on backend
+      const { clientSecret, paymentIntentId } = await stripeService.createPaymentIntent(
+        budgetValue,
+        currency || "usd",
+        user?.email
+      );
+
+      // ── Web: show Stripe Elements modal ──────────────────────────────────
+      if (Platform.OS === "web") {
+        pendingPaymentIntentId.current = paymentIntentId;
+        setWebClientSecret(clientSecret);
+        setWebStripeVisible(true);
+        setLoading(false);
+        return;
+      }
+
+      // ── Native: use stripe-react-native payment sheet ─────────────────────
+      const { error: initError } = await initPaymentSheet({
+        paymentIntentClientSecret: clientSecret,
+        merchantDisplayName: "Freelancer App",
+        returnURL: "myapp://stripe-redirect",
+        defaultBillingDetails: { name: user?.name ?? "" },
+      });
+
+      if (initError) {
+        Alert.alert("Payment Error", initError.message);
+        return;
+      }
+
+      setLoading(false);
+      const { error: paymentError } = await presentPaymentSheet();
+
+      if (paymentError) {
+        if (paymentError.code !== "Canceled") {
+          Alert.alert("Payment Failed", paymentError.message);
+        }
+        return;
+      }
+
+      await createProjectAfterPayment(paymentIntentId);
     } catch (error: any) {
       console.error("Failed to create project:", error);
       Alert.alert("Error", error.message || "Failed to create project");
@@ -651,7 +707,7 @@ export default function CreateProjectScreen() {
             {loading ? (
               <ActivityIndicator color={COLORS.white} />
             ) : (
-              <Text style={styles.submitButtonText}>Create Project</Text>
+              <Text style={styles.submitButtonText}>Pay & Create Project</Text>
             )}
           </TouchableOpacity>
 
@@ -662,6 +718,22 @@ export default function CreateProjectScreen() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Web Stripe payment modal */}
+      <StripeWebModal
+        visible={webStripeVisible}
+        clientSecret={webClientSecret}
+        amount={budgetValue}
+        currency={currency || "USD"}
+        customerName={user?.userName ?? ""}
+        customerEmail={user?.email ?? ""}
+        onSuccess={handleWebPaymentSuccess}
+        onCancel={() => {
+          setWebStripeVisible(false);
+          setWebClientSecret("");
+          pendingPaymentIntentId.current = "";
+        }}
+      />
 
       {/* Success popup */}
       <Modal

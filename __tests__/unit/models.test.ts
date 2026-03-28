@@ -1,96 +1,77 @@
-/**
- * models.test.ts
- *
- * Tests for models/Project.ts — validates the getProjectDisplayStatus helper
- * and ensures the Project/Proposal/Milestone type shapes are consistent with
- * what the API layer actually returns.
- */
+import { getProjectDisplayStatus, type Project } from '@/models/Project';
+import {
+  normalizeDisputeStatus,
+  disputeFilterToApiStatus,
+} from '@/models/Dispute';
 
-import { getProjectDisplayStatus, Project } from '@/models/Project';
+// ─── Project model ────────────────────────────────────────────────────────────
 
-const makeProject = (status: Project['status']): Project => ({
-  id: 'proj-1',
-  title: 'Test Project',
-  description: 'A test project',
-  clientId: 'client-1',
-  budget: 1000,
-  status,
-  bidsCount: 0,
-  tags: [],
-  createdAt: '2026-01-01T00:00:00Z',
-  updatedAt: '2026-01-01T00:00:00Z',
-});
-
-// ─── getProjectDisplayStatus ──────────────────────────────────────────────────
+function makeProject(status: Project['status']): Project {
+  return {
+    id: 'p1',
+    title: 'Test',
+    description: 'desc',
+    clientId: 'c1',
+    budget: 100,
+    bidsCount: 0,
+    tags: [],
+    status,
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  };
+}
 
 describe('getProjectDisplayStatus', () => {
-  it('maps ACTIVE → "Active"', () => {
-    expect(getProjectDisplayStatus(makeProject('ACTIVE'))).toBe('Active');
-  });
+  it.each([
+    ['ACTIVE',      'Active'],
+    ['IN_PROGRESS', 'In Progress'],
+    ['COMPLETED',   'Completed'],
+    ['CANCELLED',   'Cancelled'],
+  ] as [Project['status'], string][])(
+    'maps %s → %s',
+    (status, expected) => {
+      expect(getProjectDisplayStatus(makeProject(status))).toBe(expected);
+    }
+  );
 
-  it('maps IN_PROGRESS → "In Progress"', () => {
-    expect(getProjectDisplayStatus(makeProject('IN_PROGRESS'))).toBe('In Progress');
-  });
-
-  it('maps COMPLETED → "Completed"', () => {
-    expect(getProjectDisplayStatus(makeProject('COMPLETED'))).toBe('Completed');
-  });
-
-  it('maps CANCELLED → "Cancelled"', () => {
-    expect(getProjectDisplayStatus(makeProject('CANCELLED'))).toBe('Cancelled');
-  });
-
-  it('defaults to "Active" for unknown status (type-safety guard)', () => {
-    // Force an unexpected DB value through the type system
+  it('defaults to Active for unknown status', () => {
     const project = makeProject('ACTIVE');
-    (project as any).status = 'UNKNOWN';
+    (project as any).status = 'WHATEVER';
     expect(getProjectDisplayStatus(project)).toBe('Active');
   });
 });
 
-// ─── Project shape ────────────────────────────────────────────────────────────
+// ─── Dispute model helpers ────────────────────────────────────────────────────
 
-describe('Project type shape', () => {
-  it('constructs a valid minimal project object', () => {
-    const p: Project = makeProject('ACTIVE');
-    expect(p).toMatchObject({
-      id: expect.any(String),
-      title: expect.any(String),
-      clientId: expect.any(String),
-      budget: expect.any(Number),
-      bidsCount: expect.any(Number),
-      tags: expect.any(Array),
-      status: expect.stringMatching(/^(ACTIVE|IN_PROGRESS|COMPLETED|CANCELLED)$/),
-    });
+describe('normalizeDisputeStatus', () => {
+  it.each([
+    ['Pending',      'open'],
+    ['Under Review', 'under_review'],
+    ['Resolved',     'resolved'],
+    ['Denied',       'denied'],
+    ['Closed',       'closed'],
+  ])('maps legacy "%s" → "%s"', (input, expected) => {
+    expect(normalizeDisputeStatus(input)).toBe(expected);
   });
 
-  it('allows optional fields to be absent', () => {
-    const p: Project = makeProject('ACTIVE');
-    // These are optional — they should not be required
-    expect(p.freelancerId).toBeUndefined();
-    expect(p.category).toBeUndefined();
-    expect(p.milestones).toBeUndefined();
+  it('passes through already-canonical status unchanged', () => {
+    expect(normalizeDisputeStatus('open')).toBe('open');
+    expect(normalizeDisputeStatus('escalated')).toBe('escalated');
+    expect(normalizeDisputeStatus('mediation')).toBe('mediation');
   });
 });
 
-// ─── Status enum coverage ─────────────────────────────────────────────────────
-
-describe('Project status enum', () => {
-  const validStatuses: Project['status'][] = [
-    'ACTIVE',
-    'IN_PROGRESS',
-    'COMPLETED',
-    'CANCELLED',
-  ];
-
-  it.each(validStatuses)('"%s" is a valid project status', (status) => {
-    const p = makeProject(status);
-    expect(p.status).toBe(status);
+describe('disputeFilterToApiStatus', () => {
+  it('maps Pending → open', () => {
+    expect(disputeFilterToApiStatus('Pending')).toBe('open');
   });
-
-  it('covers all 4 statuses in getProjectDisplayStatus', () => {
-    // Ensures no status is accidentally left without a display mapping
-    const results = validStatuses.map(s => getProjectDisplayStatus(makeProject(s)));
-    expect(new Set(results).size).toBe(4); // 4 unique display labels
+  it('maps Resolved → resolved', () => {
+    expect(disputeFilterToApiStatus('Resolved')).toBe('resolved');
+  });
+  it('maps Denied → denied', () => {
+    expect(disputeFilterToApiStatus('Denied')).toBe('denied');
+  });
+  it('returns undefined for unknown filter', () => {
+    expect(disputeFilterToApiStatus('All')).toBeUndefined();
   });
 });

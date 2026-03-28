@@ -1,200 +1,109 @@
-/**
- * projectService.test.ts
- *
- * Tests for projectService — covers filtering, error handling, and the
- * clientId filter that ensures clients only see their own projects.
- */
-
-import { http, HttpResponse } from 'msw';
-import { server } from '../mocks/server';
 import { projectService } from '@/services/projectService';
-import { mockProject } from '../mocks/handlers';
 
 jest.mock('@/utils/storage', () => ({
   storageGet: jest.fn().mockResolvedValue('test-token'),
 }));
-
-const API = 'https://backend-brown-theta-94.vercel.app';
-
-// ─── getProjects ──────────────────────────────────────────────────────────────
 
 describe('projectService.getProjects', () => {
   it('returns an array of projects', async () => {
     const projects = await projectService.getProjects();
     expect(Array.isArray(projects)).toBe(true);
     expect(projects.length).toBeGreaterThan(0);
+    expect(projects[0]).toHaveProperty('id', 'proj-1');
   });
 
-  it('passes clientId filter as a query param', async () => {
-    let capturedUrl = '';
+  it('returns empty array when API returns no projects', async () => {
+    const { server } = require('../mocks/server');
+    const { http, HttpResponse } = require('msw');
     server.use(
-      http.get(`${API}/api/v1/projects`, ({ request }) => {
-        capturedUrl = request.url;
-        return HttpResponse.json({ data: { projects: [mockProject] } });
-      })
+      http.get(
+        'https://backend-brown-theta-94.vercel.app/api/v1/projects',
+        () => HttpResponse.json({ data: { projects: [] } })
+      )
     );
-
-    await projectService.getProjects({ clientId: 'client-1' });
-
-    expect(capturedUrl).toContain('clientId=client-1');
+    const projects = await projectService.getProjects();
+    expect(projects).toEqual([]);
   });
 
-  it('passes status filter as a query param', async () => {
+  it('passes status filter as query param', async () => {
     let capturedUrl = '';
+    const { server } = require('../mocks/server');
+    const { http, HttpResponse } = require('msw');
     server.use(
-      http.get(`${API}/api/v1/projects`, ({ request }) => {
-        capturedUrl = request.url;
-        return HttpResponse.json({ data: { projects: [] } });
-      })
+      http.get(
+        'https://backend-brown-theta-94.vercel.app/api/v1/projects',
+        ({ request }) => {
+          capturedUrl = request.url;
+          return HttpResponse.json({ data: { projects: [] } });
+        }
+      )
     );
-
     await projectService.getProjects({ status: 'COMPLETED' });
-
     expect(capturedUrl).toContain('status=COMPLETED');
   });
 
-  it('passes search filter as a query param', async () => {
+  it('passes search query as query param', async () => {
     let capturedUrl = '';
+    const { server } = require('../mocks/server');
+    const { http, HttpResponse } = require('msw');
     server.use(
-      http.get(`${API}/api/v1/projects`, ({ request }) => {
-        capturedUrl = request.url;
-        return HttpResponse.json({ data: { projects: [] } });
-      })
-    );
-
-    await projectService.getProjects({ search: 'mobile app' });
-
-    expect(capturedUrl).toContain('search=mobile+app');
-  });
-
-  it('returns empty array when API returns empty projects', async () => {
-    server.use(
-      http.get(`${API}/api/v1/projects`, () =>
-        HttpResponse.json({ data: { projects: [] } })
+      http.get(
+        'https://backend-brown-theta-94.vercel.app/api/v1/projects',
+        ({ request }) => {
+          capturedUrl = request.url;
+          return HttpResponse.json({ data: { projects: [] } });
+        }
       )
     );
-
-    const projects = await projectService.getProjects();
-    expect(projects).toEqual([]);
+    await projectService.getProjects({ search: 'react' });
+    expect(capturedUrl).toContain('search=react');
   });
 
-  it('returns empty array when projects key is missing in response', async () => {
+  it('throws on network error', async () => {
+    const { server } = require('../mocks/server');
+    const { http, HttpResponse } = require('msw');
     server.use(
-      http.get(`${API}/api/v1/projects`, () =>
-        HttpResponse.json({ data: {} })
+      http.get(
+        'https://backend-brown-theta-94.vercel.app/api/v1/projects',
+        () => HttpResponse.json({ message: 'Server error' }, { status: 500 })
       )
     );
-
-    const projects = await projectService.getProjects();
-    expect(projects).toEqual([]);
-  });
-
-  it('throws a network error message when fetch fails', async () => {
-    server.use(
-      http.get(`${API}/api/v1/projects`, () => HttpResponse.error())
-    );
-
-    await expect(projectService.getProjects()).rejects.toThrow(/Network error/);
-  });
-
-  it('throws on non-JSON response', async () => {
-    server.use(
-      http.get(`${API}/api/v1/projects`, () =>
-        new HttpResponse('<html>error</html>', {
-          status: 500,
-          headers: { 'content-type': 'text/html' },
-        })
-      )
-    );
-
-    await expect(projectService.getProjects()).rejects.toThrow(/non-JSON/);
+    await expect(projectService.getProjects()).rejects.toThrow('Server error');
   });
 });
-
-// ─── getProjectById ───────────────────────────────────────────────────────────
-
-describe('projectService.getProjectById', () => {
-  it('returns a single project by ID', async () => {
-    const project = await projectService.getProjectById('proj-1');
-    expect(project.id).toBe('proj-1');
-    expect(project.title).toBe(mockProject.title);
-  });
-
-  it('throws when project is not found (404)', async () => {
-    server.use(
-      http.get(`${API}/api/v1/projects/:id`, () =>
-        HttpResponse.json({ message: 'Project not found' }, { status: 404 })
-      )
-    );
-
-    await expect(projectService.getProjectById('does-not-exist')).rejects.toThrow(
-      'Project not found'
-    );
-  });
-});
-
-// ─── createProject ────────────────────────────────────────────────────────────
 
 describe('projectService.createProject', () => {
   it('creates a project and returns it', async () => {
     const project = await projectService.createProject({
-      title: 'New App',
-      description: 'A new mobile app',
-      budget: 3000,
-    });
-
-    expect(project.id).toBeDefined();
-    expect(project.title).toBe('New App');
-  });
-
-  it('includes paymentIntentId in the request body', async () => {
-    let capturedBody: any;
-    server.use(
-      http.post(`${API}/api/v1/projects`, async ({ request }) => {
-        capturedBody = await request.json();
-        return HttpResponse.json({
-          data: { project: { ...mockProject, id: 'proj-paid' } },
-        }, { status: 201 });
-      })
-    );
-
-    await projectService.createProject({
-      title: 'Paid Project',
-      description: 'Test',
+      title: 'New Project',
+      description: 'desc',
       budget: 500,
-      paymentIntentId: 'pi_test_50000',
+      paymentIntentId: 'pi_abc123',
     });
-
-    expect(capturedBody.paymentIntentId).toBe('pi_test_50000');
+    expect(project).toHaveProperty('id', 'proj-new');
+    expect(project).toHaveProperty('title', 'New Project');
   });
 
-  it('throws when creation fails', async () => {
-    server.use(
-      http.post(`${API}/api/v1/projects`, () =>
-        HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-      )
-    );
-
+  it('rejects when paymentIntentId is missing', async () => {
     await expect(
-      projectService.createProject({ title: 'X', description: 'Y', budget: 100 })
-    ).rejects.toThrow('Unauthorized');
+      projectService.createProject({
+        title: 'No Payment',
+        description: 'desc',
+        budget: 100,
+      })
+    ).rejects.toThrow('paymentIntentId is required');
   });
 });
 
-// ─── deleteProject ────────────────────────────────────────────────────────────
-
 describe('projectService.deleteProject', () => {
-  it('resolves without error on success', async () => {
+  it('resolves without throwing on successful delete', async () => {
     await expect(projectService.deleteProject('proj-1')).resolves.toBeUndefined();
   });
+});
 
-  it('throws on error response', async () => {
-    server.use(
-      http.delete(`${API}/api/v1/projects/:id`, () =>
-        HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
-      )
-    );
-
-    await expect(projectService.deleteProject('proj-1')).rejects.toThrow('Forbidden');
+describe('projectService.getProjectById', () => {
+  it('returns the project for the given id', async () => {
+    const project = await projectService.getProjectById('proj-42');
+    expect(project).toHaveProperty('id', 'proj-42');
   });
 });

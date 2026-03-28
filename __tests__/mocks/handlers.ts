@@ -1,101 +1,149 @@
 import { http, HttpResponse } from 'msw';
 
-// The API base URL used by services in the test (Node) environment:
-// config.js falls back to vercel URL when window is undefined.
-const API = 'https://backend-brown-theta-94.vercel.app';
+const BASE = 'https://backend-brown-theta-94.vercel.app';
 
-// ─── Fixture data ────────────────────────────────────────────────────────────
+// ─── Shared fixture data ───────────────────────────────────────────────────────
 
-export const mockProject = {
+const mockProject = {
   id: 'proj-1',
-  title: 'Build a mobile app',
-  description: 'React Native project',
+  title: 'Test Project',
+  description: 'A test project',
   clientId: 'client-1',
-  budget: 2000,
+  budget: 500,
   currency: 'USD',
+  bidsCount: 2,
+  tags: ['react', 'node'],
   status: 'ACTIVE' as const,
-  bidsCount: 3,
-  tags: ['react-native', 'typescript'],
-  category: 'Mobile Development',
-  createdAt: '2026-01-15T10:00:00Z',
-  updatedAt: '2026-01-15T10:00:00Z',
-};
-
-export const mockWallet = {
-  id: 'wallet-1',
-  userId: 'client-1',
-  balance: 500,
-  escrowBalance: 200,
-  total: 700,
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
 };
 
-export const mockTransaction = {
-  id: 'txn-1',
-  walletId: 'wallet-1',
-  userId: 'client-1',
-  type: 'deposit' as const,
-  amount: 500,
-  status: 'completed' as const,
-  createdAt: '2026-01-15T10:00:00Z',
+const mockWallet = {
+  id: 'wallet-1',
+  userId: 'user-1',
+  balance: 1000,
+  escrowBalance: 200,
+  total: 1200,
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
 };
 
-// ─── Handlers ────────────────────────────────────────────────────────────────
+const mockTransaction = {
+  id: 'txn-1',
+  walletId: 'wallet-1',
+  userId: 'user-1',
+  type: 'deposit' as const,
+  amount: 100,
+  status: 'completed' as const,
+  createdAt: '2026-01-01T00:00:00Z',
+};
+
+const mockDispute = {
+  id: 'dispute-1',
+  projectId: 'proj-1',
+  contractId: 'contract-1',
+  initiatorId: 'user-1',
+  respondentId: 'user-2',
+  initiator: { name: 'Alice', role: 'client' as const },
+  respondent: { name: 'Bob', role: 'freelancer' as const },
+  reason: 'quality_issues' as const,
+  title: 'Work not delivered',
+  description: 'The deliverable was not up to standard.',
+  amount: 150,
+  currency: 'USD',
+  evidence: [],
+  status: 'open' as const,
+  priority: 'medium' as const,
+  messages: [],
+  timeline: [],
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
+};
+
+// ─── Handlers ─────────────────────────────────────────────────────────────────
 
 export const handlers = [
-  // Projects
-  http.get(`${API}/api/v1/projects`, () =>
+  // Projects – list
+  http.get(`${BASE}/api/v1/projects`, () =>
     HttpResponse.json({ data: { projects: [mockProject] } })
   ),
 
-  http.get(`${API}/api/v1/projects/:id`, ({ params }) =>
-    HttpResponse.json({ data: { project: { ...mockProject, id: params.id as string } } })
-  ),
-
-  http.post(`${API}/api/v1/projects`, async ({ request }) => {
-    const body = await request.json() as Record<string, unknown>;
-    return HttpResponse.json({
-      data: { project: { ...mockProject, ...body, id: 'proj-new' } },
-    }, { status: 201 });
-  }),
-
-  http.delete(`${API}/api/v1/projects/:id`, () =>
-    HttpResponse.json({ message: 'Project deleted' })
-  ),
-
-  // Wallet
-  http.get(`${API}/api/v1/wallet`, () =>
-    HttpResponse.json({ data: { wallet: mockWallet } })
-  ),
-
-  http.get(`${API}/api/v1/wallet/transactions`, () =>
-    HttpResponse.json({ data: { transactions: [mockTransaction] } })
-  ),
-
-  http.post(`${API}/api/v1/wallet/add-funds`, async ({ request }) => {
-    const body = await request.json() as Record<string, unknown>;
+  // Projects – create
+  http.post(`${BASE}/api/v1/projects`, async ({ request }) => {
+    const body = await request.json() as Record<string, any>;
     if (!body.paymentIntentId) {
       return HttpResponse.json({ message: 'paymentIntentId is required' }, { status: 400 });
     }
-    const updated = { ...mockWallet, balance: mockWallet.balance + (body.amount as number) };
-    return HttpResponse.json({ data: { wallet: updated, transaction: mockTransaction } });
+    return HttpResponse.json({ data: { project: { ...mockProject, ...body, id: 'proj-new' } } }, { status: 201 });
   }),
 
-  http.post(`${API}/api/v1/wallet/withdraw`, async ({ request }) => {
-    const body = await request.json() as Record<string, unknown>;
-    const updated = { ...mockWallet, balance: mockWallet.balance - (body.amount as number) };
-    return HttpResponse.json({ data: { wallet: updated, transaction: mockTransaction } });
+  // Projects – delete
+  http.delete(`${BASE}/api/v1/projects/:id`, () =>
+    HttpResponse.json({ message: 'Project deleted' })
+  ),
+
+  // Projects – get by id
+  http.get(`${BASE}/api/v1/projects/:id`, ({ params }) =>
+    HttpResponse.json({ data: { project: { ...mockProject, id: params.id } } })
+  ),
+
+  // Wallet – get
+  http.get(`${BASE}/api/v1/wallet`, () =>
+    HttpResponse.json({ data: { wallet: mockWallet } })
+  ),
+
+  // Wallet – transactions
+  http.get(`${BASE}/api/v1/wallet/transactions`, () =>
+    HttpResponse.json({ data: { transactions: [mockTransaction] } })
+  ),
+
+  // Wallet – add funds
+  http.post(`${BASE}/api/v1/wallet/add-funds`, async ({ request }) => {
+    const body = await request.json() as Record<string, any>;
+    if (!body.paymentIntentId) {
+      return HttpResponse.json({ message: 'paymentIntentId is required' }, { status: 400 });
+    }
+    const updated = { ...mockWallet, balance: mockWallet.balance + Number(body.amount) };
+    return HttpResponse.json({ data: { wallet: updated, transaction: { ...mockTransaction, amount: body.amount } } });
   }),
 
-  // Stripe
-  http.post(`${API}/api/v1/stripe/create-payment-intent`, async ({ request }) => {
-    const body = await request.json() as { amount: number; currency: string; receiptEmail?: string };
+  // Wallet – withdraw
+  http.post(`${BASE}/api/v1/wallet/withdraw`, async ({ request }) => {
+    const body = await request.json() as Record<string, any>;
+    const updated = { ...mockWallet, balance: mockWallet.balance - Number(body.amount) };
+    return HttpResponse.json({ data: { wallet: updated, transaction: { ...mockTransaction, type: 'withdrawal', amount: body.amount } } });
+  }),
+
+  // Stripe – create payment intent
+  http.post(`${BASE}/api/v1/stripe/create-payment-intent`, async ({ request }) => {
+    const body = await request.json() as Record<string, any>;
     return HttpResponse.json({
       data: {
-        clientSecret: `pi_test_secret_${body.amount}`,
-        paymentIntentId: `pi_test_${body.amount}`,
+        clientSecret: `pi_${body.amount}_secret`,
+        paymentIntentId: `pi_${body.amount}`,
       },
     });
+  }),
+
+  // Disputes – list
+  http.get(`${BASE}/api/v1/disputes`, () =>
+    HttpResponse.json({ data: { disputes: [mockDispute] } })
+  ),
+
+  // Disputes – get by id
+  http.get(`${BASE}/api/v1/disputes/:id`, ({ params }) =>
+    HttpResponse.json({ data: { dispute: { ...mockDispute, id: params.id } } })
+  ),
+
+  // Disputes – create
+  http.post(`${BASE}/api/v1/disputes`, async ({ request }) => {
+    const body = await request.json() as Record<string, any>;
+    return HttpResponse.json({ data: { dispute: { ...mockDispute, ...body, id: 'dispute-new' } } }, { status: 201 });
+  }),
+
+  // Disputes – update status
+  http.put(`${BASE}/api/v1/disputes/:id/status`, async ({ params, request }) => {
+    const body = await request.json() as Record<string, any>;
+    return HttpResponse.json({ data: { dispute: { ...mockDispute, id: params.id, status: body.status } } });
   }),
 ];

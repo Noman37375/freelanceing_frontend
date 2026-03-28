@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, Alert, Modal, TextInput,
+  ActivityIndicator, Alert, Modal, TextInput, Platform,
 } from 'react-native';
 import {
   Wallet as WalletIcon, ArrowDownToLine, ArrowUpFromLine,
@@ -9,18 +9,25 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useStripe } from '@stripe/stripe-react-native';
 import { walletService, Transaction } from '@/services/walletService';
+import { stripeService } from '@/services/stripeService';
+import StripeWebModal from '@/components/StripeWebModal';
 import { useAuth } from '@/contexts/AuthContext';
 
 const QUICK_AMOUNTS = [50, 100, 250, 500];
 
-function txnIsCredit(type: string) {
-  return type === 'deposit' || type === 'refund';
+// Returns 'credit', 'debit', or 'escrow' (neutral hold — not a real debit)
+function txnSign(type: string): 'credit' | 'debit' | 'escrow' {
+  if (type === 'deposit' || type === 'refund') return 'credit';
+  if (type === 'escrow') return 'escrow';
+  return 'debit';
 }
 
 export default function ClientWallet() {
   const router = useRouter();
   const { user } = useAuth();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -30,19 +37,25 @@ export default function ClientWallet() {
     }
   };
 
-  const [balance, setBalance]           = useState(0);
+  const [balance, setBalance]             = useState(0);
   const [escrowBalance, setEscrowBalance] = useState(0);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading]           = useState(true);
+  const [transactions, setTransactions]   = useState<Transaction[]>([]);
+  const [loading, setLoading]             = useState(true);
 
   // Filter / search
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
 
   // Add Funds modal
-  const [showAddModal, setShowAddModal]   = useState(false);
-  const [addAmount, setAddAmount]         = useState('');
-  const [addLoading, setAddLoading]       = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addAmount, setAddAmount]       = useState('');
+  const [addLoading, setAddLoading]     = useState(false);
+
+  // Web Stripe modal state for Add Funds
+  const [webStripeVisible, setWebStripeVisible]   = useState(false);
+  const [webClientSecret, setWebClientSecret]     = useState('');
+  const pendingPaymentIntentId                    = useRef('');
+  const pendingAddAmountRef                       = useRef(0);
 
   // Withdraw modal
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -77,7 +90,30 @@ export default function ClientWallet() {
     }
   };
 
-  // ── Add Funds ──────────────────────────────────────────────────────────
+  // ── Called after Stripe payment confirmed — credits the wallet ──────────
+  const creditWalletAfterPayment = async (paymentIntentId: string, amount: number) => {
+    try {
+      setAddLoading(true);
+      await walletService.addFunds(amount, paymentIntentId);
+      await fetchWalletData();
+      setShowAddModal(false);
+      setAddAmount('');
+      Alert.alert('Success', `$${amount.toFixed(2)} added to your wallet.`);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to credit wallet');
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
+  // ── Web: Stripe modal success callback ───────────────────────────────────
+  const handleWebPaymentSuccess = () => {
+    setWebStripeVisible(false);
+    setWebClientSecret('');
+    creditWalletAfterPayment(pendingPaymentIntentId.current, pendingAddAmountRef.current);
+  };
+
+  // ── Add Funds — creates Stripe PaymentIntent first, then charges card ───
   const handleAddFunds = async () => {
     const parsed = parseFloat(addAmount);
     if (!addAmount || isNaN(parsed) || parsed <= 0) {
@@ -90,11 +126,48 @@ export default function ClientWallet() {
     }
     try {
       setAddLoading(true);
-      await walletService.addFunds(parsed);
-      await fetchWalletData();
-      setShowAddModal(false);
-      setAddAmount('');
-      Alert.alert('Success', `$${parsed.toFixed(2)} added to your wallet.`);
+
+      // Step 1: Create PaymentIntent on backend (amount in cents)
+      const { clientSecret, paymentIntentId } = await stripeService.createPaymentIntent(
+        parsed,
+        'usd',
+        user?.email,
+      );
+
+      // Step 2a — Web: show Stripe Elements modal
+      if (Platform.OS === 'web') {
+        pendingPaymentIntentId.current = paymentIntentId;
+        pendingAddAmountRef.current    = parsed;
+        setWebClientSecret(clientSecret);
+        setWebStripeVisible(true);
+        setAddLoading(false);
+        return;
+      }
+
+      // Step 2b — Native: use stripe-react-native PaymentSheet
+      const { error: initError } = await initPaymentSheet({
+        paymentIntentClientSecret: clientSecret,
+        merchantDisplayName: 'Freelancer App',
+        returnURL: 'myapp://stripe-redirect',
+        defaultBillingDetails: { name: user?.userName ?? '' },
+      });
+
+      if (initError) {
+        Alert.alert('Payment Error', initError.message);
+        return;
+      }
+
+      const { error: paymentError } = await presentPaymentSheet();
+
+      if (paymentError) {
+        if (paymentError.code !== 'Canceled') {
+          Alert.alert('Payment Failed', paymentError.message);
+        }
+        return;
+      }
+
+      // Step 3: Payment confirmed — credit the wallet
+      await creditWalletAfterPayment(paymentIntentId, parsed);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to add funds');
     } finally {
@@ -150,8 +223,6 @@ export default function ClientWallet() {
     );
   }
 
-  const total = balance + escrowBalance;
-
   return (
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
@@ -169,9 +240,10 @@ export default function ClientWallet() {
 
         {/* ── BALANCE CARD ── */}
         <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Total Balance</Text>
+          {/* Available balance is what the user can actually spend */}
+          <Text style={styles.balanceLabel}>Available Balance</Text>
           <Text style={styles.balanceAmount}>
-            ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </Text>
 
           <View style={styles.balanceBreakdown}>
@@ -259,13 +331,18 @@ export default function ClientWallet() {
             </View>
           ) : (
             filteredTxns.map((txn) => {
-              const isCredit = txnIsCredit(txn.type);
+              const sign = txnSign(txn.type);
               return (
                 <View key={txn.id} style={styles.transactionCard}>
-                  <View style={[styles.txnIcon, isCredit ? styles.txnIconCredit : txn.type === 'escrow' ? styles.txnIconEscrow : styles.txnIconDebit]}>
-                    {isCredit && <ArrowDownToLine size={18} color="#10B981" strokeWidth={2} />}
-                    {txn.type === 'escrow' && <Lock size={18} color="#0891B2" strokeWidth={2} />}
-                    {!isCredit && txn.type !== 'escrow' && <ArrowUpFromLine size={18} color="#EF4444" strokeWidth={2} />}
+                  <View style={[
+                    styles.txnIcon,
+                    sign === 'credit' ? styles.txnIconCredit
+                    : sign === 'escrow' ? styles.txnIconEscrow
+                    : styles.txnIconDebit,
+                  ]}>
+                    {sign === 'credit'  && <ArrowDownToLine size={18} color="#10B981" strokeWidth={2} />}
+                    {sign === 'escrow'  && <Lock size={18} color="#0891B2" strokeWidth={2} />}
+                    {sign === 'debit'   && <ArrowUpFromLine size={18} color="#EF4444" strokeWidth={2} />}
                   </View>
                   <View style={styles.txnInfo}>
                     <Text style={styles.txnTitle} numberOfLines={1}>
@@ -278,16 +355,20 @@ export default function ClientWallet() {
                         <Text style={[
                           styles.txnStatus,
                           txn.status === 'completed' && { color: '#10B981' },
-                          txn.status === 'pending' && { color: '#F59E0B' },
-                          txn.status === 'failed' && { color: '#EF4444' },
+                          txn.status === 'pending'   && { color: '#F59E0B' },
+                          txn.status === 'failed'    && { color: '#EF4444' },
                         ]}>
                           · {txn.status}
                         </Text>
                       )}
                     </View>
                   </View>
-                  <Text style={[styles.txnAmount, { color: isCredit ? '#10B981' : '#1F2937' }]}>
-                    {isCredit ? '+' : '-'}${Number(txn.amount).toFixed(2)}
+                  {/* Escrow shows neutral color — it's a hold, not a debit */}
+                  <Text style={[
+                    styles.txnAmount,
+                    { color: sign === 'credit' ? '#10B981' : sign === 'escrow' ? '#0891B2' : '#1F2937' },
+                  ]}>
+                    {sign === 'credit' ? '+' : sign === 'escrow' ? '' : '-'}${Number(txn.amount).toFixed(2)}
                   </Text>
                 </View>
               );
@@ -353,6 +434,22 @@ export default function ClientWallet() {
           </View>
         </View>
       </Modal>
+
+      {/* ── STRIPE WEB PAYMENT MODAL (web only) ── */}
+      <StripeWebModal
+        visible={webStripeVisible}
+        clientSecret={webClientSecret}
+        amount={pendingAddAmountRef.current}
+        currency="usd"
+        customerName={user?.userName}
+        customerEmail={user?.email}
+        onSuccess={handleWebPaymentSuccess}
+        onCancel={() => {
+          setWebStripeVisible(false);
+          setWebClientSecret('');
+          setAddLoading(false);
+        }}
+      />
 
       {/* ── WITHDRAW MODAL ── */}
       <Modal visible={showWithdrawModal} transparent animationType="slide" onRequestClose={() => setShowWithdrawModal(false)}>

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Clock, CheckCircle2, XCircle, ChevronRight, ArrowLeft, Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { disputeService } from '@/services/disputeService';
 import type { Dispute } from '@/models/Dispute';
+import { normalizeDisputeStatus } from '@/models/Dispute';
 
 type TabKey = 'open' | 'resolved' | 'closed';
 
@@ -13,17 +15,8 @@ const TAB_LABELS: Record<TabKey, string> = {
   closed: 'Closed',
 };
 
-// Normalize legacy PascalCase statuses from DB
-const normalizeStatus = (status: string): string => {
-  const map: Record<string, string> = {
-    Pending: 'open',
-    'Under Review': 'open',
-    Resolved: 'resolved',
-    Denied: 'closed',
-    Closed: 'closed',
-  };
-  return map[status] || status;
-};
+// Alias the shared helper so nothing else in this file needs to change
+const normalizeStatus = normalizeDisputeStatus;
 
 export default function Disputes() {
   const router = useRouter();
@@ -87,7 +80,7 @@ export default function Disputes() {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={24} color="#1F2937" strokeWidth={2} />
@@ -169,7 +162,7 @@ export default function Disputes() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, paddingTop: 60, backgroundColor: '#FFFFFF', borderBottomLeftRadius: 24, borderBottomRightRadius: 24, elevation: 3 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, backgroundColor: '#FFFFFF', borderBottomLeftRadius: 24, borderBottomRightRadius: 24, elevation: 3 },
   backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 22, fontWeight: '700', color: '#1F2937', textAlign: 'center', flex: 1 },
   newDisputeButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#282A32', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },

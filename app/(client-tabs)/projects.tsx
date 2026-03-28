@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Animated, RefreshControl, Platform, StatusBar } from 'react-native';
 import { Search, Filter, Plus, ChevronLeft, Calendar, DollarSign, Briefcase, X, TrendingUp, CheckCircle2, Clock } from 'lucide-react-native';
 import ProjectCard from '@/components/ClientProjectCard';
@@ -55,14 +55,15 @@ export default function Projects() {
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async (query?: string) => {
     if (!user?.id) return;
     try {
       setLoading(true);
       setError(null);
       const filters: any = { clientId: user.id };
-      if (searchQuery) {
-        filters.search = searchQuery;
+      // Only pass search filter if query is non-empty
+      if (query) {
+        filters.search = query;
       }
       const fetchedProjects = await projectService.getProjects(filters);
       setProjects(fetchedProjects);
@@ -73,24 +74,29 @@ export default function Projects() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    fetchProjects();
   }, [user?.id]);
 
+  // Initial load
   useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
+
+  // Debounced search — always re-fetch (handles clear/empty string correctly)
+  const isFirstSearchRender = useRef(true);
+  useEffect(() => {
+    if (isFirstSearchRender.current) {
+      isFirstSearchRender.current = false;
+      return;
+    }
     const timeoutId = setTimeout(() => {
-      if (searchQuery !== '') {
-        fetchProjects();
-      }
+      fetchProjects(searchQuery);
     }, 500);
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchProjects();
+    fetchProjects(searchQuery);
   };
 
   const stats = {
@@ -337,7 +343,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     borderWidth: 0,
     borderColor: 'transparent',
-    outlineStyle: 'none',
+    outlineStyle: 'none' as any
   },
 
   // ========== STATS SECTION ==========

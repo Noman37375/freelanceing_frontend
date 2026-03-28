@@ -36,17 +36,20 @@ export default function ClientHome() {
     try {
       setLoading(true);
       const fetchedProjects = await projectService.getProjects({ clientId: user.id });
-      setProjects(fetchedProjects);
+      // Client-side guard: only show projects that belong to the logged-in client
+      const myProjects = fetchedProjects.filter(p => p.clientId === user.id);
+      setProjects(myProjects);
 
       const disputes = await disputeService.getMyDisputes();
 
-      const total = fetchedProjects.length;
-      const totalSpent = fetchedProjects
-        .filter(p => p.status === 'COMPLETED')
+      // Compute stats from filtered (own) projects only
+      const total = myProjects.length;
+      // Count budget of ALL projects — payment is made at creation time, not on completion
+      const totalSpent = myProjects
         .reduce((sum, p) => sum + (p.budget || 0), 0);
-      const active = fetchedProjects.filter(p => p.status === 'ACTIVE').length;
-      const inProgress = fetchedProjects.filter(p => p.status === 'IN_PROGRESS').length;
-      const completed = fetchedProjects.filter(p => p.status === 'COMPLETED').length;
+      const active = myProjects.filter(p => p.status === 'ACTIVE').length;
+      const inProgress = myProjects.filter(p => p.status === 'IN_PROGRESS').length;
+      const completed = myProjects.filter(p => p.status === 'COMPLETED').length;
 
       setStats({
         total,
@@ -139,7 +142,7 @@ export default function ClientHome() {
                 <View style={styles.statIconBox}>
                   <Wallet size={20} color="#444751" strokeWidth={2.5} />
                 </View>
-                <Text style={styles.statValue}>${(stats.totalSpent / 1000).toFixed(1)}K</Text>
+                <Text style={styles.statValue}>{(stats.totalSpent / 1000).toFixed(1)}K</Text>
                 <Text style={styles.statLabel}>Spent</Text>
               </TouchableOpacity>
 
@@ -150,7 +153,8 @@ export default function ClientHome() {
                 <View style={styles.statIconBox}>
                   <TrendingUp size={20} color="#444751" strokeWidth={2.5} />
                 </View>
-                <Text style={styles.statValue}>{stats.inProgress}</Text>
+                {/* Use stats.active (ACTIVE status) to match "Active" shown on project cards */}
+                <Text style={styles.statValue}>{stats.active}</Text>
                 <Text style={styles.statLabel}>Active</Text>
               </TouchableOpacity>
 

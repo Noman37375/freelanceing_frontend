@@ -220,7 +220,8 @@ export default function Proposals() {
                   <Text style={styles.freelancerName}>
                     {getFreelancerDisplayName(proposal)}
                   </Text>
-                  {proposal.freelancerId && (
+                  {/* Chat icon only shown for accepted proposals */}
+                  {proposal.freelancerId && proposal.status === 'ACCEPTED' && (
                     <TouchableOpacity
                       style={styles.chatIconButton}
                       onPress={(e) => {

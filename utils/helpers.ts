@@ -350,36 +350,3 @@ export const formatPhoneNumber = (phone: string): string => {
   return phone;
 };
 
-/**
- * Check if device is mobile
- */
-export const isMobile = (): boolean => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  );
-};
-
-/**
- * Copy text to clipboard
- */
-export const copyToClipboard = async (text: string): Promise<boolean> => {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch (error) {
-    console.error('Failed to copy text:', error);
-    return false;
-  }
-};
-
-/**
- * Download file
- */
-export const downloadFile = (url: string, filename: string): void => {
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};

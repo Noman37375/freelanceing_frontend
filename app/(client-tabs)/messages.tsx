@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     color: "#444751",
     borderWidth: 0,
     borderColor: "transparent",
-    outlineStyle: "none",
+    outlineStyle: "none" as any 
   },
   listContent: {
     paddingHorizontal: SPACING.l,

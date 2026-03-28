@@ -21,6 +21,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { disputeService } from '@/services/disputeService';
 import type { Dispute } from '@/models/Dispute';
+import { normalizeDisputeStatus, disputeFilterToApiStatus } from '@/models/Dispute';
 
 export default function FDisputes() {
   const router = useRouter();
@@ -35,7 +36,8 @@ export default function FDisputes() {
   const fetchDisputes = async () => {
     try {
       setLoading(true);
-      const status = activeFilter === 'All' ? undefined : activeFilter;
+      // Normalize filter label → API status value (e.g. 'Pending' → 'open')
+      const status = activeFilter === 'All' ? undefined : disputeFilterToApiStatus(activeFilter);
       const data = await disputeService.getMyDisputes(status);
       setDisputes(data);
     } catch (error: any) {
@@ -60,20 +62,19 @@ export default function FDisputes() {
   };
 
   const getStatusStyles = (status: Dispute['status']) => {
-    switch (status) {
-      case 'Pending':
+    const n = normalizeDisputeStatus(status);
+    switch (n) {
       case 'open':
       case 'under_review':
       case 'awaiting_response':
       case 'mediation':
         return { color: '#F59E0B', bg: '#FFFBEB', icon: <Clock size={16} color="#F59E0B" /> };
 
-      case 'Resolved':
       case 'resolved':
       case 'closed':
         return { color: '#10B981', bg: '#ECFDF5', icon: <CheckCircle2 size={16} color="#10B981" /> };
 
-      case 'Denied':
+      case 'denied':
       case 'escalated':
         return { color: '#EF4444', bg: '#FEF2F2', icon: <XCircle size={16} color="#EF4444" /> };
 
@@ -85,10 +86,10 @@ export default function FDisputes() {
   const filteredDisputes = activeFilter === 'All'
     ? disputes
     : disputes.filter(d => {
-      const s = d.status.toLowerCase();
-      if (activeFilter === 'Pending') return s === 'open' || s === 'under_review' || s === 'pending';
-      if (activeFilter === 'Resolved') return s === 'resolved' || s === 'closed';
-      if (activeFilter === 'Denied') return s === 'denied' || s === 'escalated';
+      const n = normalizeDisputeStatus(d.status);
+      if (activeFilter === 'Pending') return ['open', 'under_review', 'awaiting_response', 'mediation'].includes(n);
+      if (activeFilter === 'Resolved') return n === 'resolved' || n === 'closed';
+      if (activeFilter === 'Denied') return n === 'denied' || n === 'escalated';
       return false;
     });
 

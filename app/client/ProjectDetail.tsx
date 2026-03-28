@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, Animated } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft,
   User,
   Calendar,
   DollarSign,
-  CheckCircle2,
   Clock,
-  AlertCircle,
   MessageSquare,
+  MapPin,
+  CheckCircle,
+  Circle,
+  ChevronRight,
+  Briefcase,
+  Tag,
 } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { projectService } from '@/services/projectService';
@@ -24,6 +29,7 @@ export default function ProjectDetail() {
   const [loading, setLoading] = useState(true);
   const [milestones, setMilestones] = useState<any[]>([]);
   const [milestonesLoading, setMilestonesLoading] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -48,9 +54,6 @@ export default function ProjectDetail() {
       try {
         setMilestonesLoading(true);
         const fetchedMilestones = await milestoneService.getMilestonesByProjectId(id);
-        
-        console.log('Fetched milestones:', fetchedMilestones);
-
         setMilestones(fetchedMilestones || []);
       } catch (err) {
         console.error('Failed to fetch milestones:', err);
@@ -62,188 +65,321 @@ export default function ProjectDetail() {
     fetchMilestones();
   }, [id]);
 
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active':
+      case 'in progress':
+        return { bg: '#E8F5E9', text: '#2E7D32', border: '#4CAF50' };
+      case 'completed':
+        return { bg: '#E3F2FD', text: '#1565C0', border: '#2196F3' };
+      case 'pending':
+        return { bg: '#FFF3E0', text: '#E65100', border: '#FF9800' };
+      default:
+        return { bg: '#F5F5F5', text: '#616161', border: '#9E9E9E' };
+    }
+  };
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading project...</Text>
-      </View>
+      <SafeAreaView style={styles.loadingContainer}>
+        <View style={styles.loadingContent}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Loading project details...</Text>
+          <Text style={styles.loadingSubtext}>Please wait</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!project) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <ArrowLeft size={24} color="#1F2937" strokeWidth={2} />
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+          >
+            <ArrowLeft size={24} color="#1F2937" strokeWidth={2.5} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Project Details</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Project not found</Text>
-          <TouchableOpacity style={styles.backButtonStyle} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>Go Back</Text>
+          <Text style={styles.errorSubtext}>The project you're looking for doesn't exist</Text>
+          <TouchableOpacity 
+            style={styles.primaryButton} 
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+          >
+            <ArrowLeft size={18} color="#FFFFFF" strokeWidth={2.5} />
+            <Text style={styles.primaryButtonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
+  const statusColors = getStatusColor(getProjectDisplayStatus(project));
+
   return (
-    <View style={styles.container}>
-      {/* HEADER */}
+    <SafeAreaView style={styles.container}>
+      {/* ENHANCED HEADER WITH BETTER AFFORDANCE */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#1F2937" strokeWidth={2} />
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <ArrowLeft size={24} color="#1F2937" strokeWidth={2.5} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Project Details</Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Project Details</Text>
+          <Text style={styles.headerSubtitle}>#{project.id?.slice(0, 8)}</Text>
+        </View>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* TITLE */}
-        <View style={styles.titleCard}>
-          <Text style={styles.projectTitle}>{project.title}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: COLORS.primary }]}>
-            <Text style={styles.statusText}>{project.status}</Text>
-          </View>
-        </View>
-
-        {/* INFO */}
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <DollarSign size={18} color="#6B7280" strokeWidth={2} />
-              <View>
-                <Text style={styles.infoLabel}>Budget</Text>
-                <Text style={styles.infoValue}>{formatCurrency(project.budget, project.currency || 'USD')}</Text>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* HERO CARD - CLEAR VISUAL HIERARCHY */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroHeader}>
+            <View style={styles.heroLeft}>
+              <View style={[styles.statusPill, { 
+                backgroundColor: statusColors.bg,
+                borderColor: statusColors.border,
+              }]}>
+                <View style={[styles.statusDot, { backgroundColor: statusColors.border }]} />
+                <Text style={[styles.statusPillText, { color: statusColors.text }]}>
+                  {getProjectDisplayStatus(project)}
+                </Text>
               </View>
             </View>
-
-            {project.duration && (
-              <View style={styles.infoItem}>
-                <Calendar size={18} color="#6B7280" strokeWidth={2} />
-                <View>
-                  <Text style={styles.infoLabel}>Duration</Text>
-                  <Text style={styles.infoValue}>{project.duration}</Text>
-                </View>
-              </View>
-            )}
-
-            {project.location && (
-              <View style={styles.infoItem}>
-                <Clock size={18} color="#6B7280" strokeWidth={2} />
-                <View>
-                  <Text style={styles.infoLabel}>Location</Text>
-                  <Text style={styles.infoValue}>{project.location}</Text>
-                </View>
-              </View>
-            )}
+            <View style={styles.bidsContainer}>
+              <Text style={styles.bidsLabel}>Bids</Text>
+              <Text style={styles.bidsValue}>{project.bidsCount || 0}</Text>
+            </View>
           </View>
-        </View>
-
-        {/* IMPROVED TIMELINE MILESTONES */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Project Milestones</Text>
-          {milestonesLoading ? (
-            <ActivityIndicator size="small" color={COLORS.primary} />
-          ) : milestones.length === 0 ? (
-            <Text style={{ color: COLORS.gray500, fontStyle: 'italic' }}>No milestones added yet.</Text>
-          ) : (
-            <View style={styles.timelineContainer}>
-              {milestones.map((m, index) => (
-                <View key={m.id || index} style={styles.timelineItem}>
-                  {/* Timeline Visuals */}
-                  <View style={styles.timelineLeftColumn}>
-                    <View style={[styles.timelineDot, { backgroundColor: COLORS.primary }]} />
-                    {index !== milestones.length - 1 && <View style={styles.timelineConnector} />}
-                  </View>
-                  
-                  {/* Milestone Content Card */}
-                  <View style={styles.milestoneDisplayCard}>
-                    <View style={styles.milestoneHeaderRow}>
-                      <Text style={styles.milestoneTitleText}>{m.title}</Text>
-                      {m.amount && (
-                        <View style={styles.amountBadge}>
-                          <Text style={styles.amountBadgeText}>${m.amount}</Text>
-                        </View>
-                      )}
-                    </View>
-                    
-                    {m.description && <Text style={styles.milestoneDescriptionText}>{m.description}</Text>}
-                    
-                    {m.dueDate && (
-                      <View style={styles.dateRow}>
-                        <Calendar size={12} color={COLORS.gray400} />
-                        <Text style={styles.dateText}>Due: {m.dueDate}</Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              ))}
+          
+          <Text style={styles.projectTitle}>{project.title}</Text>
+          
+          {project.category && (
+            <View style={styles.categoryRow}>
+              <Briefcase size={16} color={COLORS.gray500} strokeWidth={2} />
+              <Text style={styles.categoryText}>{project.category}</Text>
             </View>
           )}
         </View>
 
-        {/* STATUS INFO */}
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Status</Text>
-              <View style={[styles.statusBadge, { 
-                backgroundColor: getProjectDisplayStatus(project) === 'Active' ? COLORS.primary : 
-                                 getProjectDisplayStatus(project) === 'Completed' ? COLORS.success :
-                                 getProjectDisplayStatus(project) === 'In Progress' ? COLORS.primaryDark : COLORS.gray500 
-              }]}>
-                <Text style={styles.statusText}>{getProjectDisplayStatus(project)}</Text>
-              </View>
+        {/* KEY METRICS - SCANNABLE INFO GRID */}
+        <View style={styles.metricsGrid}>
+          {/* Budget Card */}
+          <View style={styles.metricCard}>
+            <View style={[styles.metricIconContainer, { backgroundColor: '#E8F5E9' }]}>
+              <DollarSign size={24} color="#2E7D32" strokeWidth={2.5} />
             </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Bids</Text>
-              <Text style={styles.infoValue}>{project.bidsCount || 0}</Text>
-            </View>
+            <Text style={styles.metricLabel}>Budget</Text>
+            <Text style={styles.metricValue}>
+              {formatCurrency(project.budget, project.currency || 'USD')}
+            </Text>
           </View>
+
+          {/* Duration Card */}
+          {project.duration && (
+            <View style={styles.metricCard}>
+              <View style={[styles.metricIconContainer, { backgroundColor: '#E3F2FD' }]}>
+                <Clock size={24} color="#1565C0" strokeWidth={2.5} />
+              </View>
+              <Text style={styles.metricLabel}>Duration</Text>
+              <Text style={styles.metricValue}>{project.duration}</Text>
+            </View>
+          )}
+
+          {/* Location Card */}
+          {project.location && (
+            <View style={styles.metricCard}>
+              <View style={[styles.metricIconContainer, { backgroundColor: '#FFF3E0' }]}>
+                <MapPin size={24} color="#E65100" strokeWidth={2.5} />
+              </View>
+              <Text style={styles.metricLabel}>Location</Text>
+              <Text style={styles.metricValue} numberOfLines={1}>
+                {project.location}
+              </Text>
+            </View>
+          )}
         </View>
 
-        {/* FREELANCER */}
+        {/* ENHANCED TIMELINE WITH BETTER SIGNIFIERS */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Calendar size={22} color={COLORS.primary} strokeWidth={2.5} />
+              <Text style={styles.sectionTitle}>Project Milestones</Text>
+            </View>
+            {milestones.length > 0 && (
+              <Text style={styles.milestoneCount}>{milestones.length}</Text>
+            )}
+          </View>
+          
+          {milestonesLoading ? (
+            <View style={styles.loadingState}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+              <Text style={styles.loadingStateText}>Loading milestones...</Text>
+            </View>
+          ) : milestones.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Calendar size={48} color={COLORS.gray300} strokeWidth={1.5} />
+              <Text style={styles.emptyStateTitle}>No milestones yet</Text>
+              <Text style={styles.emptyStateText}>
+                Milestones will appear here once added
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.timelineContainer}>
+              {milestones.map((milestone, index) => {
+                const isLast = index === milestones.length - 1;
+                const isCompleted = milestone.status === 'completed';
+                
+                return (
+                  <View key={milestone.id || index} style={styles.timelineItem}>
+                    {/* Enhanced Timeline Visual */}
+                    <View style={styles.timelineLeftColumn}>
+                      <View style={[
+                        styles.timelineDot,
+                        isCompleted && styles.timelineDotCompleted
+                      ]}>
+                        {isCompleted ? (
+                          <CheckCircle size={20} color="#FFFFFF" fill={COLORS.primary} strokeWidth={2.5} />
+                        ) : (
+                          <Circle size={20} color={COLORS.primary} strokeWidth={2.5} />
+                        )}
+                      </View>
+                      {!isLast && <View style={styles.timelineConnector} />}
+                    </View>
+                    
+                    {/* Enhanced Milestone Card */}
+                    <TouchableOpacity 
+                      style={[
+                        styles.milestoneCard,
+                        isCompleted && styles.milestoneCardCompleted
+                      ]}
+                      activeOpacity={0.7}
+                      onPress={() => setActiveSection(milestone.id)}
+                    >
+                      <View style={styles.milestoneHeader}>
+                        <View style={styles.milestoneHeaderLeft}>
+                          <Text style={styles.milestoneNumber}>
+                            {String(index + 1).padStart(2, '0')}
+                          </Text>
+                          <Text style={styles.milestoneTitle} numberOfLines={2}>
+                            {milestone.title}
+                          </Text>
+                        </View>
+                        
+                        {milestone.amount && (
+                          <View style={styles.amountBadge}>
+                            <DollarSign size={14} color={COLORS.primary} strokeWidth={2.5} />
+                            <Text style={styles.amountText}>{milestone.amount}</Text>
+                          </View>
+                        )}
+                      </View>
+                      
+                      {milestone.description && (
+                        <Text style={styles.milestoneDescription} numberOfLines={2}>
+                          {milestone.description}
+                        </Text>
+                      )}
+                      
+                      {milestone.dueDate && (
+                        <View style={styles.milestoneDateRow}>
+                          <Calendar size={14} color={COLORS.gray400} strokeWidth={2} />
+                          <Text style={styles.milestoneDateText}>
+                            Due {milestone.dueDate}
+                          </Text>
+                        </View>
+                      )}
+                      
+                      <View style={styles.milestoneFooter}>
+                        <ChevronRight size={18} color={COLORS.gray400} strokeWidth={2} />
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </View>
+
+        {/* FREELANCER CARD - CLEAR CALL TO ACTION */}
         {project.freelancer && (
-          <View style={styles.freelancerCard}>
-            <View style={styles.freelancerHeader}>
-              <View style={styles.avatarContainer}>
-                <User size={24} color="#282A32" strokeWidth={2} />
-              </View>
-              <View style={styles.freelancerInfo}>
-                <Text style={styles.freelancerName}>{project.freelancer.userName || 'Freelancer'}</Text>
-                {project.freelancer.email && (
-                  <Text style={styles.freelancerStats}>{project.freelancer.email}</Text>
-                )}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>
+                <User size={22} color={COLORS.primary} strokeWidth={2.5} />
+                <Text style={styles.sectionTitle}>Assigned Freelancer</Text>
               </View>
             </View>
+            
+            <View style={styles.freelancerCard}>
+              <View style={styles.freelancerHeader}>
+                <View style={styles.avatarContainer}>
+                  <User size={28} color={COLORS.primary} strokeWidth={2.5} />
+                </View>
+                <View style={styles.freelancerInfo}>
+                  <Text style={styles.freelancerName}>
+                    {project.freelancer.userName || 'Freelancer'}
+                  </Text>
+                  {project.freelancer.email && (
+                    <Text style={styles.freelancerEmail}>{project.freelancer.email}</Text>
+                  )}
+                </View>
+              </View>
 
-            <TouchableOpacity style={styles.messageButton} onPress={() => {
-              router.push({
-                pathname: '/active-details' as any,
-                params: { id: project.id },
-              } as any);
-            }}>
-              <MessageSquare size={18} color={COLORS.primary} strokeWidth={2} />
-              <Text style={styles.messageButtonText}>View Milestones & Progress</Text>
-            </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.actionButton} 
+                onPress={() => {
+                  router.push({
+                    pathname: '/active-details' as any,
+                    params: { id: project.id },
+                  } as any);
+                }}
+                activeOpacity={0.8}
+              >
+                <MessageSquare size={20} color="#FFFFFF" strokeWidth={2.5} />
+                <Text style={styles.actionButtonText}>View Progress & Milestones</Text>
+                <ChevronRight size={20} color="#FFFFFF" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
-        {/* DESCRIPTION */}
+        {/* DESCRIPTION - IMPROVED READABILITY */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.description}>{project.description}</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionTitle}>Project Description</Text>
+            </View>
+          </View>
+          <View style={styles.descriptionCard}>
+            <Text style={styles.descriptionText}>{project.description}</Text>
+          </View>
         </View>
 
-        {/* TAGS */}
+        {/* TAGS - BETTER VISUAL GROUPING */}
         {project.tags && project.tags.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Skills/Tags</Text>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>
+                <Tag size={22} color={COLORS.primary} strokeWidth={2.5} />
+                <Text style={styles.sectionTitle}>Required Skills</Text>
+              </View>
+              <Text style={styles.tagCount}>{project.tags.length}</Text>
+            </View>
             <View style={styles.tagsContainer}>
               {project.tags.map((tag, index) => (
                 <View key={index} style={styles.tag}>
@@ -253,77 +389,557 @@ export default function ProjectDetail() {
             </View>
           </View>
         )}
-
-        {/* CATEGORY */}
-        {project.category && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Category</Text>
-            <Text style={styles.categoryText}>{project.category}</Text>
-          </View>
-        )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.gray100 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60, backgroundColor: COLORS.white, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, elevation: 3 },
-  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.gray100, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: COLORS.gray800 },
-  content: { flex: 1 },
-  titleCard: { margin: 20, padding: 20, backgroundColor: COLORS.white, borderRadius: 16, elevation: 3 },
-  projectTitle: { fontSize: 22, fontWeight: '700', color: COLORS.gray800 },
-  statusBadge: { marginTop: 12, padding: 6, borderRadius: 8, alignSelf: 'flex-start' },
-  statusText: { color: '#FFF', fontWeight: '600', fontSize: 12 },
-  infoCard: { marginHorizontal: 20, marginBottom: 20, padding: 20, backgroundColor: COLORS.white, borderRadius: 16 },
-  infoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 24 },
-  infoItem: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  infoLabel: { fontSize: 12, color: COLORS.gray500 },
-  infoValue: { fontSize: 16, fontWeight: '700' },
-  
-  /* Timeline Specific Styles */
-  timelineContainer: { marginTop: 5, paddingLeft: 5 },
-  timelineItem: { flexDirection: 'row', minHeight: 70 },
-  timelineLeftColumn: { alignItems: 'center', width: 20, marginRight: 15 },
-  timelineDot: { width: 12, height: 12, borderRadius: 6, marginTop: 6, zIndex: 2 },
-  timelineConnector: { width: 2, flex: 1, backgroundColor: COLORS.gray300, marginTop: -2 },
-  milestoneDisplayCard: {
+  container: {
     flex: 1,
-    backgroundColor: COLORS.white,
-    padding: 16,
-    borderRadius: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.gray200,
+    backgroundColor: '#F8F9FA',
   },
-  milestoneHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  milestoneTitleText: { fontSize: 16, fontWeight: '700', color: COLORS.gray800, flex: 1, marginRight: 8 },
-  amountBadge: { backgroundColor: COLORS.gray100, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  amountBadgeText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
-  milestoneDescriptionText: { fontSize: 14, color: COLORS.gray500, lineHeight: 20, marginBottom: 10 },
-  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dateText: { fontSize: 12, color: COLORS.gray400, fontWeight: '500' },
   
-  freelancerCard: { marginHorizontal: 20, marginBottom: 20, padding: 20, backgroundColor: COLORS.white, borderRadius: 16 },
-  freelancerHeader: { flexDirection: 'row', marginBottom: 16 },
-  avatarContainer: { width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.gray100, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  freelancerInfo: { flex: 1 },
-  freelancerName: { fontSize: 18, fontWeight: '700' },
-  freelancerStats: { color: COLORS.gray500 },
-  messageButton: { flexDirection: 'row', justifyContent: 'center', gap: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.primary },
-  messageButtonText: { color: COLORS.primary, fontWeight: '600' },
-  section: { marginHorizontal: 20, marginBottom: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
-  description: { backgroundColor: COLORS.white, padding: 16, borderRadius: 12, color: COLORS.gray600, lineHeight: 22 },
-  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tag: { backgroundColor: COLORS.gray200, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
-  tagText: { fontSize: 12, color: COLORS.primaryDark, fontWeight: '500' },
-  categoryText: { backgroundColor: COLORS.white, padding: 16, borderRadius: 12, color: COLORS.gray700, fontSize: 16, fontWeight: '500' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.gray100 },
-  loadingText: { marginTop: 12, color: COLORS.gray500, fontSize: 14 },
-  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  errorText: { fontSize: 18, color: COLORS.gray700, marginBottom: 20 },
-  backButtonStyle: { backgroundColor: COLORS.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
-  backButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+  // HEADER STYLES - IMPROVED AFFORDANCE
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    letterSpacing: -0.3,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#9CA3AF',
+    marginTop: 2,
+  },
+  
+  // CONTENT STYLES
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  
+  // HERO CARD - CLEAR VISUAL HIERARCHY
+  heroCard: {
+    margin: 20,
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  heroHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  heroLeft: {
+    flex: 1,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  statusPillText: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  bidsContainer: {
+    alignItems: 'flex-end',
+  },
+  bidsLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    marginBottom: 4,
+  },
+  bidsValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: COLORS.primary,
+    letterSpacing: -0.5,
+  },
+  projectTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#111827',
+    lineHeight: 32,
+    marginBottom: 12,
+    letterSpacing: -0.5,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  categoryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  
+  // METRICS GRID - SCANNABLE LAYOUT
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 20,
+    gap: 12,
+    marginBottom: 24,
+  },
+  metricCard: {
+    flex: 1,
+    minWidth: '30%',
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+  },
+  metricIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  metricLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  metricValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#111827',
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  
+  // SECTION STYLES
+  section: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#111827',
+    letterSpacing: -0.3,
+  },
+  milestoneCount: {
+    backgroundColor: COLORS.primary,
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  tagCount: {
+    backgroundColor: '#F3F4F6',
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '700',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  
+  // TIMELINE STYLES - ENHANCED SIGNIFIERS
+  timelineContainer: {
+    marginTop: 8,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  timelineLeftColumn: {
+    alignItems: 'center',
+    width: 32,
+    marginRight: 16,
+    paddingTop: 4,
+  },
+  timelineDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+  },
+  timelineDotCompleted: {
+    borderColor: COLORS.primary,
+  },
+  timelineConnector: {
+    width: 2,
+    flex: 1,
+    backgroundColor: '#E5E7EB',
+    marginTop: 4,
+  },
+  
+  // MILESTONE CARD - BETTER FEEDBACK
+  milestoneCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    padding: 18,
+    borderRadius: 16,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+  },
+  milestoneCardCompleted: {
+    backgroundColor: '#F9FAFB',
+    borderColor: COLORS.primary,
+    borderStyle: 'dashed',
+  },
+  milestoneHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  milestoneHeaderLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginRight: 12,
+  },
+  milestoneNumber: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: COLORS.primary,
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  milestoneTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+    lineHeight: 22,
+  },
+  amountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#86EFAC',
+  },
+  amountText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  milestoneDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  milestoneDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  milestoneDateText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#9CA3AF',
+  },
+  milestoneFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  
+  // FREELANCER CARD - CLEAR ACTION
+  freelancerCard: {
+    backgroundColor: '#FFFFFF',
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  freelancerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatarContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#F0FDF4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  },
+  freelancerInfo: {
+    flex: 1,
+  },
+  freelancerName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 4,
+    letterSpacing: -0.3,
+  },
+  freelancerEmail: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  actionButtonText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
+  
+  // DESCRIPTION CARD
+  descriptionCard: {
+    backgroundColor: '#FFFFFF',
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  descriptionText: {
+    fontSize: 15,
+    color: '#4B5563',
+    lineHeight: 24,
+    letterSpacing: 0.1,
+  },
+  
+  // TAGS
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  tag: {
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#86EFAC',
+  },
+  tagText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.primary,
+    letterSpacing: 0.2,
+  },
+  
+  // LOADING STATES - BETTER FEEDBACK
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+  },
+  loadingContent: {
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  loadingSubtext: {
+    marginTop: 6,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#9CA3AF',
+  },
+  loadingState: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 24,
+  },
+  loadingStateText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  
+  // EMPTY STATE - CLEAR SIGNIFIERS
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+    marginTop: 16,
+    marginBottom: 6,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#9CA3AF',
+    textAlign: 'center',
+  },
+  
+  // ERROR STATE
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  errorText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 8,
+    letterSpacing: -0.3,
+  },
+  errorSubtext: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  primaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  primaryButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
 });

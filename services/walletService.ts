@@ -100,12 +100,12 @@ export const walletService = {
   },
 
   /**
-   * Add funds to wallet
+   * Add funds to wallet — requires a confirmed Stripe paymentIntentId
    */
-  addFunds: async (amount: number): Promise<{ wallet: Wallet; transaction: Transaction }> => {
+  addFunds: async (amount: number, paymentIntentId: string): Promise<{ wallet: Wallet; transaction: Transaction }> => {
     const response = await apiCall('/api/v1/wallet/add-funds', {
       method: 'POST',
-      body: JSON.stringify({ amount }),
+      body: JSON.stringify({ amount, paymentIntentId }),
     });
     return {
       wallet: response.data.wallet,

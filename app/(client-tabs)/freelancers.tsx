@@ -66,7 +66,6 @@ export default function Freelancers() {
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState('All');
-  const [activeBadgeFilter, setActiveBadgeFilter] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFreelancers();
@@ -77,17 +76,30 @@ export default function Freelancers() {
       fetchFreelancers();
     }, 500);
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, activeFilter, activeBadgeFilter]);
+  }, [searchQuery, activeFilter]);
 
   const fetchFreelancers = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await freelancerService.getFreelancers({
-        search: searchQuery || undefined,
-        badge: activeBadgeFilter || undefined,
-      });
-      setFreelancers(data);
+      const data = await freelancerService.getFreelancers();
+      let filtered = data;
+
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        filtered = data.filter((freelancer) => {
+          const skillMatch = freelancer.skills.some(skill =>
+            skill.toLowerCase().includes(query)
+          );
+          const rateMatch = freelancer.hourlyRate
+            ?.toString()
+            .toLowerCase()
+            .includes(query);
+
+          return skillMatch || rateMatch;
+        });
+      }
+      setFreelancers(filtered);
     } catch (error: any) {
       console.error('Failed to fetch freelancers:', error);
       setError(error?.message || 'Failed to load freelancers');
@@ -96,11 +108,15 @@ export default function Freelancers() {
     }
   };
 
-  const getAvailabilityColor = (availability: string) => {
-    switch (availability) {
-      case 'Available': return '#444751';
-      case 'Busy': return '#C2C2C8';
-      default: return '#E5E4EA';
+  // Case-insensitive — API may return 'available', 'AVAILABLE', etc.
+  const getAvailabilityStyle = (availability: string) => {
+    switch (availability?.toLowerCase()) {
+      case 'available':
+        return { dot: '#22C55E', text: '#16A34A', bg: '#F0FDF4', label: 'Available' };
+      case 'busy':
+        return { dot: '#F97316', text: '#C2410C', bg: '#FFF7ED', label: 'Busy' };
+      default:
+        return { dot: '#C2C2C8', text: '#9CA3AF', bg: '#F4F4F8', label: availability || 'Unknown' };
     }
   };
 
@@ -129,7 +145,7 @@ export default function Freelancers() {
             <Search size={20} color="#C2C2C8" strokeWidth={2.5} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search by skills, name..."
+              placeholder="Search by skills, hourly rate..."
               placeholderTextColor="#C2C2C8"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -150,27 +166,6 @@ export default function Freelancers() {
               >
                 <Text style={[styles.chipText, activeFilter === filter && styles.activeChipText]}>
                   {filter}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          {/* Badge Filters */}
-          <View style={[styles.filtersRow, { marginTop: 8 }]}>
-            <TouchableOpacity
-              style={[styles.filterChip, !activeBadgeFilter && styles.activeChip]}
-              onPress={() => setActiveBadgeFilter(null)}
-            >
-              <Text style={[styles.chipText, !activeBadgeFilter && styles.activeChipText]}>All Skills</Text>
-            </TouchableOpacity>
-            {['Python', 'JavaScript', 'Java', 'Competitive Programming', 'UI/UX Design', 'Digital Marketing'].map((skill) => (
-              <TouchableOpacity
-                key={skill}
-                style={[styles.filterChip, activeBadgeFilter === skill && styles.badgeActiveChip]}
-                onPress={() => setActiveBadgeFilter(activeBadgeFilter === skill ? null : skill)}
-              >
-                <Award size={11} color={activeBadgeFilter === skill ? '#F59E0B' : '#C2C2C8'} strokeWidth={2.5} />
-                <Text style={[styles.chipText, activeBadgeFilter === skill && styles.badgeActiveChipText]}>
-                  {skill}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -201,7 +196,16 @@ export default function Freelancers() {
                     <Text style={styles.nameText}>{freelancer.name}</Text>
                     <Text style={styles.titleText}>{freelancer.title}</Text>
                   </View>
-                  <View style={[styles.statusDot, { backgroundColor: getAvailabilityColor(freelancer.availability) }]} />
+                  {/* Availability badge with dot + label */}
+                  {(() => {
+                    const avail = getAvailabilityStyle(freelancer.availability);
+                    return (
+                      <View style={[styles.availabilityBadge, { backgroundColor: avail.bg }]}>
+                        <View style={[styles.statusDot, { backgroundColor: avail.dot }]} />
+                        <Text style={[styles.availabilityText, { color: avail.text }]}>{avail.label}</Text>
+                      </View>
+                    );
+                  })()}
                 </View>
 
                 {/* Stats Row */}
@@ -304,7 +308,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 14,
     backgroundColor: '#FFFFFF',
@@ -322,6 +325,7 @@ const styles = StyleSheet.create({
   headerCenter: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center', 
   },
   headerTitle: {
     fontSize: 18,
@@ -359,11 +363,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F4F4F8',
     borderRadius: 14,
-    paddingHorizontal: 16,
-    height: 48,
+    paddingHorizontal: 14,
+    height: 50,   
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E5E4EA',
   },
   searchInput: {
     flex: 1,
@@ -371,8 +373,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#282A32',
     fontWeight: '600',
+    borderWidth: 0,
+    borderColor: 'transparent',
+    outlineStyle: 'none' as any
   },
-
   filtersRow: {
     flexDirection: 'row',
     gap: 8,
@@ -419,15 +423,15 @@ const styles = StyleSheet.create({
   freelancerCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
-    padding: 18,
-    marginBottom: 14,
+    padding: 16, // 🔥 reduce from 18 → tighter
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#E5E4EA',
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 12,
   },
   avatarBox: {
     width: 52,
@@ -454,26 +458,38 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  availabilityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  availabilityText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.1,
   },
 
   // ========== STATS ROW ==========
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
-    paddingBottom: 14,
+    marginBottom: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E4EA',
   },
+
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
   },
   statValue: {
     fontSize: 14,
@@ -488,7 +504,7 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    height: 14,
+    height: 16,
     backgroundColor: '#E5E4EA',
     marginHorizontal: 12,
   },
@@ -509,7 +525,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   skillBadge: {
     backgroundColor: '#F4F4F8',
@@ -545,20 +561,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.1,
   },
-  badgeActiveChip: {
-    backgroundColor: '#FEF3C7',
-    borderColor: '#F59E0B',
-  },
-  badgeActiveChipText: {
-    color: '#92400E',
-  },
-
   // ========== FOOTER ==========
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 14,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#E5E4EA',
   },
@@ -566,6 +574,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    flexWrap: 'wrap', // 🔥 prevents overflow issues
   },
   footerItem: {
     flexDirection: 'row',
@@ -587,7 +596,7 @@ const styles = StyleSheet.create({
   },
   viewBtn: {
     backgroundColor: '#444751',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 10,
   },

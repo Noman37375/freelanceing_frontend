@@ -464,7 +464,7 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
     return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: d.getFullYear() !== today.getFullYear() ? 'numeric' : undefined });
   }
 
-  const listWithDates: { type: 'date'; label: string } | { type: 'msg'; item: ChatMessage }[] = [];
+  const listWithDates: Array<{ type: 'date'; label: string } | { type: 'msg'; item: ChatMessage }> = [];
   let lastDate = '';
   list.forEach((item) => {
     const dateLabel = getDateLabel(item.createdAt);
@@ -619,9 +619,6 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7} onPress={handleVoiceCall}>
               <Feather name="phone" size={20} color={COLORS.white} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7}>
-              <Feather name="more-vertical" size={22} color={COLORS.white} />
             </TouchableOpacity>
           </View>
         </View>

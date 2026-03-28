@@ -32,6 +32,21 @@ export interface Dispute {
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string;
+  // Populated relations returned by the API
+  project?: {
+    id: string;
+    title: string;
+  };
+  client?: {
+    id: string;
+    userName?: string;
+    user_name?: string;
+  };
+  freelancer?: {
+    id: string;
+    userName?: string;
+    user_name?: string;
+  };
 }
 
 export type DisputeReason = 
@@ -115,4 +130,32 @@ export interface DisputeStatistics {
     count: number;
     percentage: number;
   }>;
+}
+
+/**
+ * Normalizes legacy PascalCase DB status values to the canonical lowercase form.
+ * Use this everywhere a status value is displayed or filtered.
+ */
+export function normalizeDisputeStatus(status: string): string {
+  const map: Record<string, string> = {
+    Pending: 'open',
+    'Under Review': 'under_review',
+    Resolved: 'resolved',
+    Denied: 'denied',
+    Closed: 'closed',
+  };
+  return map[status] ?? status;
+}
+
+/**
+ * Maps a user-facing filter label (Pending / Resolved / Denied) to the set of
+ * canonical status values it covers. Used when passing a filter to the API.
+ */
+export function disputeFilterToApiStatus(filter: string): string | undefined {
+  const map: Record<string, string> = {
+    Pending: 'open',
+    Resolved: 'resolved',
+    Denied: 'denied',
+  };
+  return map[filter];
 }

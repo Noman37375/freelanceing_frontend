@@ -378,8 +378,9 @@ export default function CreateProjectScreen() {
       const newProject = await projectService.createProject(projectData);
       const budgetParam = encodeURIComponent(String(budgetValue));
       const currencyParam = encodeURIComponent(currency || "USD");
-      router.push(`/add-milestones?projectId=${newProject.id}&budget=${budgetParam}&currency=${currencyParam}`);
+      // Show success modal BEFORE navigating away so it actually renders
       setShowSuccessModal(true);
+      router.push(`/add-milestones?projectId=${newProject.id}&budget=${budgetParam}&currency=${currencyParam}`);
     } catch (error: any) {
       console.error("Failed to create project:", error);
       Alert.alert("Error", error.message || "Failed to create project");
@@ -427,7 +428,7 @@ export default function CreateProjectScreen() {
         paymentIntentClientSecret: clientSecret,
         merchantDisplayName: "Freelancer App",
         returnURL: "myapp://stripe-redirect",
-        defaultBillingDetails: { name: user?.name ?? "" },
+        defaultBillingDetails: { name: user?.userName ?? "" },
       });
 
       if (initError) {
@@ -435,7 +436,7 @@ export default function CreateProjectScreen() {
         return;
       }
 
-      setLoading(false);
+      // Keep loading=true through presentPaymentSheet so button stays disabled
       const { error: paymentError } = await presentPaymentSheet();
 
       if (paymentError) {
@@ -445,11 +446,13 @@ export default function CreateProjectScreen() {
         return;
       }
 
+      // createProjectAfterPayment manages its own loading state internally
       await createProjectAfterPayment(paymentIntentId);
     } catch (error: any) {
       console.error("Failed to create project:", error);
       Alert.alert("Error", error.message || "Failed to create project");
     } finally {
+      // Always reset loading — covers all early-return paths
       setLoading(false);
     }
   };

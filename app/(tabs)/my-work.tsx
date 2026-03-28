@@ -192,7 +192,10 @@ export default function MyWorkScreen() {
                   styles.tabChip,
                   isActive && styles.tabChipActive,
                 ]}
-                onPress={() => setActiveTab(key)}
+                onPress={() => {
+                  setActiveTab(key);
+                  if (key !== 'Proposals') setProposalFilter('All');
+                }}
               >
                 <Text
                   style={[

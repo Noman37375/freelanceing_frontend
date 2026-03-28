@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Platform, StatusBar } from 'react-native';
-import { Trash2, Edit2, X, Check, ChevronLeft, Calendar, DollarSign, User, Briefcase, MapPin, Clock } from 'lucide-react-native';
+import { Edit2, X, Check, ChevronLeft, Calendar, DollarSign, User, Briefcase, MapPin, Clock } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
 import { Project } from '@/models/Project';
 import { formatCurrency } from '@/utils/helpers';
@@ -16,8 +16,7 @@ export default function ManageProjects() {
     const [editTitle, setEditTitle] = useState('');
     const [editBudget, setEditBudget] = useState('');
     const [editStatus, setEditStatus] = useState<'ACTIVE' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'>('ACTIVE');
-    const [isActionLoading, setIsLoadingAction] = useState(false);
-    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     const loadProjects = useCallback(async () => {
         try {
@@ -35,46 +34,6 @@ export default function ManageProjects() {
         loadProjects();
     }, [loadProjects]);
 
-    // const handleDelete = async (id: string, title: string) => {
-    //     if (Platform.OS === 'web') {
-    //         const confirmed = window.confirm(`Are you sure you want to delete "${title}"?`);
-    //         if (confirmed) {
-    //             try {
-    //                 setDeletingId(id);
-    //                 await adminService.deleteProject(id);
-    //                 setProjects(prev => prev.filter(p => p.id !== id));
-    //             } catch (error) {
-    //                 Alert.alert('Error', 'Failed to delete project');
-    //             } finally {
-    //                 setDeletingId(null);
-    //             }
-    //         }
-    //     } else {
-    //         Alert.alert(
-    //             'Delete Project',
-    //             `Are you sure you want to delete "${title}"?`,
-    //             [
-    //                 { text: 'Cancel', style: 'cancel' },
-    //                 {
-    //                     text: 'Delete',
-    //                     style: 'destructive',
-    //                     onPress: async () => {
-    //                         try {
-    //                             setDeletingId(id);
-    //                             await adminService.deleteProject(id);
-    //                             setProjects(prev => prev.filter(p => p.id !== id));
-    //                         } catch (error) {
-    //                             Alert.alert('Error', 'Failed to delete project');
-    //                         } finally {
-    //                             setDeletingId(null);
-    //                         }
-    //                     }
-    //                 },
-    //             ]
-    //         );
-    //     }
-    // };
-
     const handleEdit = (project: Project) => {
         setEditingProject(project);
         setEditTitle(project.title);
@@ -86,7 +45,7 @@ export default function ManageProjects() {
     const handleUpdate = async () => {
         if (!editingProject) return;
         try {
-            setIsLoadingAction(true);
+            setIsActionLoading(true);
             const updatedProject = await adminService.updateProject(editingProject.id, {
                 title: editTitle,
                 budget: parseFloat(editBudget),
@@ -99,7 +58,7 @@ export default function ManageProjects() {
         } catch (error) {
             Alert.alert('Error', 'Failed to update project');
         } finally {
-            setIsLoadingAction(false);
+            setIsActionLoading(false);
         }
     };
 
@@ -145,9 +104,8 @@ export default function ManageProjects() {
                         <TouchableOpacity
                             onPress={() => handleEdit(item)}
                             style={styles.iconButton}
-                            disabled={!!deletingId}
                         >
-                            <Edit2 size={18} color={deletingId ? "#CBD5E1" : "#282A32"} />
+                            <Edit2 size={18} color="#282A32" />
                         </TouchableOpacity>
                     </View>
                 </View>

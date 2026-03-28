@@ -134,15 +134,41 @@ export const disputeService = {
   },
 
   /**
-   * Upload evidence for a dispute
+   * Upload evidence for a dispute.
+   * fileData must be a { uri, name, type } object from expo-image-picker or expo-document-picker.
    */
-  uploadEvidence: async (disputeId: string, fileData: any): Promise<any> => {
-    // Note: Actual implementation depends on file handling (Form Data vs Base64)
-    const response = await apiCall(`/api/v1/disputes/${disputeId}/evidence`, {
+  uploadEvidence: async (disputeId: string, fileData: { uri: string; name: string; type: string }): Promise<any> => {
+    const token = await getAuthToken();
+
+    const form = new FormData();
+    form.append('file', {
+      uri: fileData.uri,
+      name: fileData.name,
+      type: fileData.type,
+    } as any);
+
+    const response = await fetch(`${API_BASE_URL}/api/v1/disputes/${disputeId}/evidence`, {
       method: 'POST',
-      body: JSON.stringify(fileData),
+      headers: {
+        // Do NOT set Content-Type here — the browser/RN sets it automatically
+        // with the correct multipart boundary when using FormData.
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: 'include',
+      body: form,
     });
-    return response?.data?.evidence;
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      const text = await response.text();
+      throw new Error(`Server returned non-JSON response: ${text}`);
+    }
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || data.error || `Upload failed: ${response.status}`);
+    }
+    return data?.data?.evidence;
   },
 
   /**

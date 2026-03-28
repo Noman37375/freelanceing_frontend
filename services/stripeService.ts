@@ -23,7 +23,8 @@ export const stripeService = {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ amount, currency: currency.toLowerCase(), receiptEmail }),
+      // Stripe requires amount in smallest currency unit (cents for USD)
+      body: JSON.stringify({ amount: Math.round(amount * 100), currency: currency.toLowerCase(), receiptEmail }),
     });
 
     const data = await response.json();

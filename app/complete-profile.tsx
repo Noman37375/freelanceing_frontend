@@ -82,6 +82,11 @@ export default function CompleteProfile() {
   const [hourlyRateError, setHourlyRateError] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [countryError, setCountryError] = useState('');
+  const [linkedinUrlError, setLinkedinUrlError] = useState('');
+  const [portfolioLinkError, setPortfolioLinkError] = useState('');
+
+  const BIO_MAX_CHARS = 500;
+  const URL_REGEX = /^https?:\/\/.+/;
 
   useEffect(() => {
     if (!authLoading && !user && !params.email) {
@@ -200,6 +205,8 @@ export default function CompleteProfile() {
     setHourlyRateError('');
     setPhoneError('');
     setCountryError('');
+    setLinkedinUrlError('');
+    setPortfolioLinkError('');
   };
 
   const handleSubmit = async () => {
@@ -208,6 +215,8 @@ export default function CompleteProfile() {
     setHourlyRateError('');
     setPhoneError('');
     setCountryError('');
+    setLinkedinUrlError('');
+    setPortfolioLinkError('');
 
     if (!user) {
       Toast.show({ type: 'error', text1: 'Session loading.', text2: 'Please wait a moment and try again.' });
@@ -217,6 +226,17 @@ export default function CompleteProfile() {
     let hasError = false;
     if (!bio.trim()) {
       setBioError('Please add a short bio.');
+      hasError = true;
+    } else if (bio.trim().length > BIO_MAX_CHARS) {
+      setBioError(`Bio must be ${BIO_MAX_CHARS} characters or less.`);
+      hasError = true;
+    }
+    if (portfolioLink.trim() && !URL_REGEX.test(portfolioLink.trim())) {
+      setPortfolioLinkError('Please enter a valid URL starting with http:// or https://');
+      hasError = true;
+    }
+    if (linkedinUrl.trim() && !URL_REGEX.test(linkedinUrl.trim())) {
+      setLinkedinUrlError('Please enter a valid URL starting with http:// or https://');
       hasError = true;
     }
     if (skills.length === 0) {
@@ -328,11 +348,15 @@ export default function CompleteProfile() {
             placeholder="Tell clients about yourself and your experience..."
             placeholderTextColor={COLORS.textTertiary}
             value={bio}
-            onChangeText={(t) => { setBio(t); clearFieldErrors(); }}
+            onChangeText={(t) => { if (t.length <= BIO_MAX_CHARS) { setBio(t); clearFieldErrors(); } }}
             multiline
             numberOfLines={4}
             textAlignVertical="top"
+            maxLength={BIO_MAX_CHARS}
           />
+          <Text style={[styles.charCounter, bio.length >= BIO_MAX_CHARS ? styles.charCounterLimit : undefined]}>
+            {bio.length}/{BIO_MAX_CHARS}
+          </Text>
           {bioError ? <Text style={styles.fieldErrorText}>{bioError}</Text> : null}
         </View>
 
@@ -418,18 +442,19 @@ export default function CompleteProfile() {
         {/* Portfolio link */}
         <View style={styles.section}>
           <Text style={styles.label}>Portfolio link (optional)</Text>
-          <View style={styles.inputWithIcon}>
+          <View style={[styles.inputWithIcon, portfolioLinkError ? styles.inputError : undefined]}>
             <Link size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
             <TextInput
               style={styles.inputFlex}
               placeholder="https://yourportfolio.com"
               placeholderTextColor={COLORS.textTertiary}
               value={portfolioLink}
-              onChangeText={setPortfolioLink}
+              onChangeText={(t) => { setPortfolioLink(t); setPortfolioLinkError(''); }}
               keyboardType="url"
               autoCapitalize="none"
             />
           </View>
+          {portfolioLinkError ? <Text style={styles.fieldErrorText}>{portfolioLinkError}</Text> : null}
         </View>
 
         {/* Hourly rate & Phone - same row on small screens stacked */}
@@ -556,18 +581,19 @@ export default function CompleteProfile() {
         {/* LinkedIn URL */}
         <View style={styles.section}>
           <Text style={styles.label}>LinkedIn URL (optional)</Text>
-          <View style={styles.inputWithIcon}>
+          <View style={[styles.inputWithIcon, linkedinUrlError ? styles.inputError : undefined]}>
             <Link size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
             <TextInput
               style={styles.inputFlex}
               placeholder="https://linkedin.com/in/yourprofile"
               placeholderTextColor={COLORS.textTertiary}
               value={linkedinUrl}
-              onChangeText={setLinkedinUrl}
+              onChangeText={(t) => { setLinkedinUrl(t); setLinkedinUrlError(''); }}
               keyboardType="url"
               autoCapitalize="none"
             />
           </View>
+          {linkedinUrlError ? <Text style={styles.fieldErrorText}>{linkedinUrlError}</Text> : null}
         </View>
 
         <TouchableOpacity
@@ -649,6 +675,15 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.sm,
     color: COLORS.error,
     fontWeight: '600',
+  },
+  charCounter: {
+    marginTop: 4,
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: COLORS.textTertiary,
+    textAlign: 'right',
+  },
+  charCounterLimit: {
+    color: COLORS.error,
   },
   avatarSection: {
     alignItems: 'center',

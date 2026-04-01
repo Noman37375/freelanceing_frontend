@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { MapPin } from 'lucide-react-native';
+import { MapPin, CheckCircle } from 'lucide-react-native';
 import { Project } from '@/models/Project';
 import { formatCurrency } from '@/utils/helpers';
 
@@ -24,9 +24,11 @@ interface ProjectListCardProps {
   onPress: () => void;
   /** When true, no horizontal margin (e.g. freelancer projects route) */
   noHorizontalMargin?: boolean;
+  /** When true, shows a "Proposal Submitted" badge on the card */
+  proposalSubmitted?: boolean;
 }
 
-export default function ProjectListCard({ project, onPress, noHorizontalMargin }: ProjectListCardProps) {
+export default function ProjectListCard({ project, onPress, noHorizontalMargin, proposalSubmitted }: ProjectListCardProps) {
   const location = project.location || 'Remote';
   const budget = project.budget != null ? formatCurrency(project.budget, project.currency || 'USD') : 'Fixed-price';
   const duration = project.duration || project.projectDuration || 'Not specified';
@@ -37,6 +39,12 @@ export default function ProjectListCard({ project, onPress, noHorizontalMargin }
       <View style={styles.locationRow}>
         <MapPin size={14} color="#64748B" />
         <Text style={styles.locationText}>{location}</Text>
+        {proposalSubmitted && (
+          <View style={styles.submittedBadge}>
+            <CheckCircle size={11} color="#16A34A" />
+            <Text style={styles.submittedBadgeText}>Proposal Submitted</Text>
+          </View>
+        )}
       </View>
       <Text style={styles.title} numberOfLines={2}>{project.title || 'Untitled'}</Text>
       <Text style={styles.posted}>{timeAgo(project.createdAt)}</Text>
@@ -152,5 +160,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#475569',
     fontWeight: '600',
+  },
+  submittedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+    marginLeft: 'auto',
+  },
+  submittedBadgeText: {
+    fontSize: 10,
+    color: '#16A34A',
+    fontWeight: '700',
   },
 });

@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Search, MapPin, X, SlidersHorizontal, ChevronLeft, MoreHorizontal } from "lucide-react-native";
 import ProjectListCard from "@/components/ProjectListCard";
-import { projectService } from "@/services/projectService";
+import { projectService, proposalService } from "@/services/projectService";
 import { Project } from "@/models/Project";
 import { useRouter } from "expo-router";
 import { TYPOGRAPHY } from "@/constants/theme";
@@ -70,6 +70,8 @@ export default function ProjectsScreen() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [appliedProjectIds, setAppliedProjectIds] = useState<Set<string>>(new Set());
+  const [hideApplied, setHideApplied] = useState(false);
 
   // Filter states
   const [location, setLocation] = useState("");
@@ -87,8 +89,12 @@ export default function ProjectsScreen() {
       if (searchQuery) {
         filters.search = searchQuery;
       }
-      const fetchedProjects = await projectService.getProjects(filters);
+      const [fetchedProjects, myProposals] = await Promise.all([
+        projectService.getProjects(filters),
+        proposalService.getMyProposals().catch(() => []),
+      ]);
       setProjects(fetchedProjects);
+      setAppliedProjectIds(new Set(myProposals.map((p: any) => p.projectId)));
     } catch (error: any) {
       console.error('Failed to fetch projects:', error);
       Alert.alert('Error', error.message || 'Failed to load projects');
@@ -117,6 +123,8 @@ export default function ProjectsScreen() {
   const filteredProjects = projects.filter((project) => {
     // Hide projects created by this user (same userId, different role)
     if (user && project.clientId === user.id) return false;
+
+    if (hideApplied && appliedProjectIds.has(project.id)) return false;
 
     const matchesSearch = project.title
       .toLowerCase()
@@ -190,6 +198,16 @@ export default function ProjectsScreen() {
                 </Text>
               </TouchableOpacity>
             ))}
+            {appliedProjectIds.size > 0 && (
+              <TouchableOpacity
+                style={[styles.categoryChip, hideApplied && styles.hideAppliedChipActive]}
+                onPress={() => setHideApplied((v) => !v)}
+              >
+                <Text style={[styles.chipText, hideApplied && styles.hideAppliedChipTextActive]}>
+                  Hide Applied ({appliedProjectIds.size})
+                </Text>
+              </TouchableOpacity>
+            )}
           </ScrollView>
         </View>
 
@@ -221,6 +239,7 @@ export default function ProjectsScreen() {
                   project={project}
                   onPress={() => router.push(`/project-details?id=${project.id}` as any)}
                   noHorizontalMargin
+                  proposalSubmitted={appliedProjectIds.has(project.id)}
                 />
               ))
             )}
@@ -262,7 +281,7 @@ export default function ProjectsScreen() {
               <View style={styles.modalFooter}>
                 <TouchableOpacity
                   style={styles.resetBtn}
-                  onPress={() => { setLocation(""); setSelectedCategory("All"); }}
+                  onPress={() => { setLocation(""); setSelectedCategory("All"); setHideApplied(false); }}
                 >
                   <Text style={styles.resetBtnText}>Reset</Text>
                 </TouchableOpacity>
@@ -395,6 +414,13 @@ const styles = StyleSheet.create({
   },
   activeChipText: {
     color: "#FFFFFF"
+  },
+  hideAppliedChipActive: {
+    backgroundColor: "#DCFCE7",
+    borderColor: '#16A34A',
+  },
+  hideAppliedChipTextActive: {
+    color: '#16A34A',
   },
   listContainer: {
     flex: 1,

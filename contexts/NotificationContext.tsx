@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { notificationService } from '@/services/notificationService';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -17,36 +17,21 @@ const NotificationContext = createContext<NotificationContextType>({
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Only called on-demand (when bell is tapped) — no polling, no auto-fetch
   const refreshUnreadCount = useCallback(async () => {
     if (!user?.id) return;
     try {
       const count = await notificationService.getUnreadCount();
       setUnreadCount(count);
     } catch {
-      // Silently fail — badge just won't update
+      // Silently fail
     }
   }, [user?.id]);
 
   const clearUnreadCount = useCallback(() => {
     setUnreadCount(0);
   }, []);
-
-  useEffect(() => {
-    if (!user?.id) {
-      setUnreadCount(0);
-      return;
-    }
-
-    refreshUnreadCount();
-
-    // Poll every 60 seconds
-    intervalRef.current = setInterval(refreshUnreadCount, 60_000);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [user?.id, refreshUnreadCount]);
 
   return (
     <NotificationContext.Provider value={{ unreadCount, refreshUnreadCount, clearUnreadCount }}>

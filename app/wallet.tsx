@@ -18,6 +18,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useWallet } from '@/contexts/WalletContext';
 import { walletService } from '@/services/walletService';
+import { useAuth } from '@/contexts/AuthContext';
 
 const QUICK_AMOUNTS = [50, 100, 250, 500];
 
@@ -42,6 +43,7 @@ function TxnIcon({ type }: { type: string }) {
 // ── component ──────────────────────────────────────────────────────────────
 export default function WalletScreen() {
   const router = useRouter();
+  const { user } = useAuth();
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -135,6 +137,39 @@ export default function WalletScreen() {
     const matchesSearch = !search || txn.description?.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+
+  // Freelancers do not have a platform wallet — payments are handled by admin
+  if (user?.role === 'Freelancer') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <ArrowLeft size={22} color="#282A32" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Payments</Text>
+          <View style={{ width: 38 }} />
+        </View>
+        <View style={styles.freelancerInfoContainer}>
+          <View style={styles.freelancerInfoCard}>
+            <View style={styles.freelancerInfoIconCircle}>
+              <Lock size={28} color="#4F46E5" />
+            </View>
+            <Text style={styles.freelancerInfoTitle}>Payments Managed by Admin</Text>
+            <Text style={styles.freelancerInfoDesc}>
+              Your earnings are processed manually by the platform admin.{'\n\n'}
+              When a client approves your milestone, an email is automatically sent to the admin to release your payment.{'\n\n'}
+              You will be contacted directly once payment has been processed.
+            </Text>
+            <View style={styles.freelancerInfoBanner}>
+              <Text style={styles.freelancerInfoBannerText}>
+                For payment enquiries, contact the admin at alberuni167@gmail.com
+              </Text>
+            </View>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -529,4 +564,27 @@ const styles = StyleSheet.create({
   withdrawConfirmBtn: { backgroundColor: '#282A32' },
   confirmBtnDisabled: { opacity: 0.45 },
   confirmBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+
+  // Freelancer payment info screen
+  freelancerInfoContainer: { flex: 1, justifyContent: 'center', padding: 24 },
+  freelancerInfoCard: {
+    backgroundColor: '#FFF', borderRadius: 20, padding: 28,
+    alignItems: 'center',
+    borderWidth: 1, borderColor: '#E2E8F0',
+  },
+  freelancerInfoIconCircle: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center', alignItems: 'center',
+    marginBottom: 18,
+  },
+  freelancerInfoTitle: { fontSize: 18, fontWeight: '800', color: '#282A32', marginBottom: 14, textAlign: 'center' },
+  freelancerInfoDesc: { fontSize: 14, color: '#64748B', lineHeight: 22, textAlign: 'center', marginBottom: 20 },
+  freelancerInfoBanner: {
+    backgroundColor: '#EEF2FF', borderRadius: 12,
+    paddingVertical: 12, paddingHorizontal: 16,
+    borderWidth: 1, borderColor: '#818CF8',
+    width: '100%',
+  },
+  freelancerInfoBannerText: { fontSize: 13, color: '#4F46E5', fontWeight: '600', textAlign: 'center' },
 });

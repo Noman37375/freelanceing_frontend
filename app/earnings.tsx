@@ -13,6 +13,7 @@ import { LineChart } from 'react-native-chart-kit';
 import { ArrowLeft, TrendingUp, Calendar, Lock, DollarSign } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useWallet } from '@/contexts/WalletContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 const SCREEN_W = Dimensions.get('window').width;
 
@@ -32,7 +33,9 @@ function getLastNMonths(n: number) {
 
 export default function EarningsScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { transactions, escrowBalance, isLoading } = useWallet();
+  const isFreelancer = (user?.role || '').toLowerCase() === 'freelancer';
 
   // Payments credited to this freelancer
   const earnedTxns = useMemo(
@@ -76,6 +79,30 @@ export default function EarningsScreen() {
     });
     return Object.values(map).sort((a, b) => b.total - a.total);
   }, [earnedTxns]);
+
+  if (isFreelancer) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ArrowLeft size={22} color="#444751" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Earnings</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.freelancerInfoWrap}>
+          <Lock size={40} color="#4F46E5" />
+          <Text style={styles.freelancerInfoTitle}>Payments managed by admin</Text>
+          <Text style={styles.freelancerInfoBody}>
+            The platform does not credit a freelancer wallet. When you submit a milestone, the admin is emailed; after the client accepts, arrange payment with the admin outside the app.
+          </Text>
+          <Text style={styles.freelancerInfoBody}>
+            Track milestone and payment status under My Work and in each active project.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -319,4 +346,26 @@ const styles = StyleSheet.create({
   txnDesc: { fontSize: 14, fontWeight: '600', color: '#282A32' },
   txnDate: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
   txnAmount: { fontSize: 15, fontWeight: '800', color: '#10B981' },
+
+  freelancerInfoWrap: {
+    flex: 1,
+    paddingHorizontal: 28,
+    paddingTop: 32,
+    alignItems: 'center',
+  },
+  freelancerInfoTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginTop: 16,
+    marginBottom: 14,
+    textAlign: 'center',
+  },
+  freelancerInfoBody: {
+    fontSize: 15,
+    color: '#64748B',
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
 });

@@ -1,9 +1,38 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { Calendar, DollarSign, User, TrendingUp } from "lucide-react-native";
+import { Calendar, DollarSign, User, TrendingUp, ListChecks } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS, SHADOWS, BORDER_RADIUS, SPACING, TYPOGRAPHY, GRADIENTS } from "@/constants/theme";
+import { getProjectDisplayStatus, type Project } from "@/models/Project";
+
+function milestonePhaseLabel(status: string) {
+  const s = (status || "").toLowerCase();
+  if (s === "pending") return "Open";
+  if (s === "funded") return "Funded";
+  if (s === "in_progress") return "In progress";
+  if (s === "in_review" || s === "submitted") return "Submitted · awaiting client";
+  if (s === "approved" || s === "released") return "Accepted";
+  if (s === "disputed") return "Disputed";
+  return status || "—";
+}
+
+function milestonePaymentLine(status: string) {
+  const s = (status || "").toLowerCase();
+  if (s === "released" || s === "approved") {
+    return "Accepted — platform pays freelancer";
+  }
+  if (s === "in_review" || s === "submitted") {
+    return "Awaiting client accept or reject";
+  }
+  if (s === "pending") {
+    return "Open — submit milestone from project";
+  }
+  if (s === "funded" || s === "in_progress") {
+    return "Submit milestone when ready";
+  }
+  return "—";
+}
 
 export default function WorkCard({ project, type }: { project: any, type: string }) {
   const router = useRouter();
@@ -68,6 +97,12 @@ export default function WorkCard({ project, type }: { project: any, type: string
             <User size={12} color="#94A3B8" />
             <Text style={styles.client}>{project.client}</Text>
           </View>
+          {(type === "active" || type === "completed") && project.projectStatus ? (
+            <Text style={styles.projectStatusLine}>
+              Project status:{" "}
+              {getProjectDisplayStatus({ status: project.projectStatus } as Project)}
+            </Text>
+          ) : null}
         </View>
         <LinearGradient
           colors={statusGradient}
@@ -115,6 +150,27 @@ export default function WorkCard({ project, type }: { project: any, type: string
           </View>
         </View>
       )}
+
+      {project.milestones?.length > 0 && (type === "active" || type === "completed") && (
+        <View style={styles.milestoneSection}>
+          <View style={styles.milestoneSectionHeader}>
+            <ListChecks size={14} color="#64748B" />
+            <Text style={styles.milestoneSectionTitle}>Milestones</Text>
+          </View>
+          {project.milestones.slice(0, 6).map((m: { id: string; title: string; status: string; amount?: number | null }) => (
+            <View key={m.id} style={styles.milestoneRow}>
+              <Text style={styles.milestoneTitle} numberOfLines={1}>
+                {m.title}
+              </Text>
+              <Text style={styles.milestonePhase}>{milestonePhaseLabel(m.status)}</Text>
+              <Text style={styles.milestonePayment}>{milestonePaymentLine(m.status)}</Text>
+              {m.amount != null && m.amount > 0 ? (
+                <Text style={styles.milestoneAmount}>${Number(m.amount).toFixed(2)}</Text>
+              ) : null}
+            </View>
+          ))}
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
@@ -144,6 +200,12 @@ const styles = StyleSheet.create({
   },
   clientRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   client: { fontSize: TYPOGRAPHY.fontSize.sm, color: "#64748B" },
+  projectStatusLine: {
+    marginTop: 6,
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#475569",
+  },
 
   badge: {
     paddingHorizontal: SPACING.m,
@@ -205,5 +267,56 @@ const styles = StyleSheet.create({
   progressBarFill: {
     height: "100%",
     borderRadius: BORDER_RADIUS.s,
+  },
+
+  milestoneSection: {
+    marginTop: SPACING.m,
+    paddingTop: SPACING.m,
+    borderTopWidth: 1,
+    borderTopColor: "#F1F5F9",
+  },
+  milestoneSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: SPACING.s,
+  },
+  milestoneSectionTitle: {
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: "#64748B",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  milestoneRow: {
+    backgroundColor: "#F8FAFC",
+    borderRadius: BORDER_RADIUS.m,
+    padding: SPACING.s,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#EEF2F6",
+  },
+  milestoneTitle: {
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: "#334155",
+    marginBottom: 4,
+  },
+  milestonePhase: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#4F46E5",
+    marginBottom: 2,
+  },
+  milestonePayment: {
+    fontSize: 11,
+    color: "#64748B",
+    lineHeight: 15,
+  },
+  milestoneAmount: {
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#15803D",
   },
 });

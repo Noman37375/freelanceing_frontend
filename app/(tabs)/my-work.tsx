@@ -13,9 +13,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Briefcase, Bell, LayoutDashboard } from "lucide-react-native";
 import WorkCard from "@/components/WorkCard";
-import { projectService, proposalService } from "@/services/projectService";
+import { projectService, proposalService, milestoneService } from "@/services/projectService";
 import { useAuth } from "@/contexts/AuthContext";
-import { Project, Proposal } from "@/models/Project";
+import { Project, Proposal, Milestone } from "@/models/Project";
 import { useRouter } from "expo-router";
 import { SPACING, TYPOGRAPHY, BORDER_RADIUS } from "@/constants/theme";
 
@@ -89,8 +89,18 @@ export default function MyWorkScreen() {
           freelancerId: user?.id,
           status: status as any,
         });
-        console.log("[MyWork] Projects fetched:", projectsData.length, projectsData);
-        setProjects(projectsData);
+        const withMilestones = await Promise.all(
+          (projectsData || []).map(async (p) => {
+            try {
+              const milestones = await milestoneService.getMilestonesByProjectId(p.id);
+              return { ...p, milestones };
+            } catch {
+              return { ...p, milestones: [] as Milestone[] };
+            }
+          })
+        );
+        console.log("[MyWork] Projects fetched:", withMilestones.length, withMilestones);
+        setProjects(withMilestones);
         setProposals([]);
       }
     } catch (error: any) {
@@ -126,23 +136,29 @@ export default function MyWorkScreen() {
           deadline: p.duration || "N/A",
           location: p.location || "Remote",
           progress: p.progress || 0,
+          projectStatus: p.status,
           status:
             p.status?.toUpperCase() === "IN_PROGRESS"
               ? "inProgress"
               : p.status?.toUpperCase() === "COMPLETED"
                 ? "completed"
                 : "available",
-          milestones: [],
+          milestones: (p.milestones || []).map((m) => ({
+            id: m.id,
+            title: m.title,
+            status: m.status,
+            amount: m.amount ?? null,
+          })),
         }));
 
   const getStats = () => {
     if (activeTab === "Active") {
       const total = projects.reduce((sum, p) => sum + Number(p.budget || 0), 0);
-      return { label: "Current Earnings", value: `$${total.toLocaleString()}`, color: "#4F46E5" };
+      return { label: "Active contract value", value: `$${total.toLocaleString()}`, color: "#4F46E5" };
     }
     if (activeTab === "Completed") {
       const total = projects.reduce((sum, p) => sum + Number(p.budget || 0), 0);
-      return { label: "Lifetime Earnings", value: `$${total.toLocaleString()}`, color: "#10B981" };
+      return { label: "Completed project value", value: `$${total.toLocaleString()}`, color: "#10B981" };
     }
     const accepted = proposals.filter((p) => p.status === "ACCEPTED").length;
     const rejected = proposals.filter((p) => p.status === "REJECTED").length;

@@ -11,6 +11,7 @@ import {
   RefreshControl,
   Modal,
   TextInput,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatCurrency } from "@/utils/helpers";
@@ -32,6 +33,8 @@ import {
   ShieldCheck,
   Ban,
   Star,
+  Github,
+  ExternalLink,
 } from "lucide-react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -42,13 +45,13 @@ import { Project, Milestone } from "@/models/Project";
 
 // ── Status display config ────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  pending:     { label: "Not Funded",          color: "#94A3B8", bg: "#F8FAFC", border: "#CBD5E1" },
+  pending:     { label: "Open",                color: "#475569", bg: "#F8FAFC", border: "#CBD5E1" },
   funded:      { label: "Funded",              color: "#0891B2", bg: "#ECFEFF", border: "#67E8F9" },
   in_progress: { label: "In Progress",         color: "#4F46E5", bg: "#EEF2FF", border: "#818CF8" },
   in_review:   { label: "In Review",           color: "#D97706", bg: "#FFFBEB", border: "#FCD34D" },
   submitted:   { label: "Awaiting Approval",   color: "#D97706", bg: "#FFFBEB", border: "#FCD34D" },
-  approved:    { label: "Approved",            color: "#16A34A", bg: "#F0FDF4", border: "#86EFAC" },
-  released:    { label: "Released",            color: "#16A34A", bg: "#F0FDF4", border: "#86EFAC" },
+  approved:    { label: "Accepted",            color: "#16A34A", bg: "#F0FDF4", border: "#86EFAC" },
+  released:    { label: "Accepted",            color: "#16A34A", bg: "#F0FDF4", border: "#86EFAC" },
   disputed:    { label: "Disputed",            color: "#DC2626", bg: "#FEF2F2", border: "#FCA5A5" },
 };
 
@@ -64,9 +67,16 @@ function formatCountdown(deadlineIso: string): string {
   return `${mins}m remaining`;
 }
 
+function normalizeRouteId(raw: string | string[] | undefined): string | undefined {
+  if (raw == null) return undefined;
+  if (Array.isArray(raw)) return raw[0];
+  return raw;
+}
+
 export default function ActiveDetailsScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const id = normalizeRouteId(params.id);
   const { user } = useAuth();
 
   const [project, setProject] = useState<Project | null>(null);
@@ -96,6 +106,12 @@ export default function ActiveDetailsScreen() {
   const [changesMessage, setChangesMessage] = useState("");
   const [sendingChanges, setSendingChanges] = useState(false);
 
+  // Submit modal (Freelancer)
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [submitMilestoneId, setSubmitMilestoneId] = useState<string | null>(null);
+  const [submitGithubUrl, setSubmitGithubUrl] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
   // Review modal (Client, shown after milestone approval)
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
@@ -103,11 +119,16 @@ export default function ActiveDetailsScreen() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewFreelancerId, setReviewFreelancerId] = useState<string | null>(null);
 
-  const isClient = user?.role === "Client";
-  const isFreelancer = user?.role === "Freelancer";
+  const roleLower = (user?.role || "").toLowerCase();
+  const isClient = roleLower === "client";
+  const isFreelancer = roleLower === "freelancer";
 
   const fetchData = useCallback(async () => {
-    if (!id) return;
+    if (!id) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
     try {
       const [projectData, milestonesData] = await Promise.all([
         projectService.getProjectById(id),
@@ -127,54 +148,45 @@ export default function ActiveDetailsScreen() {
 
   const onRefresh = () => { setRefreshing(true); fetchData(); };
 
-  // ── Client: Fund milestone ─────────────────────────────────────
-  const handleFund = async (milestoneId: string, title: string, amount: number) => {
-    Alert.alert(
-      "Fund Milestone",
-      `Lock $${amount.toFixed(2)} into escrow for "${title}"? The funds will be released to the freelancer once you approve their work.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Fund Escrow",
-          onPress: async () => {
-            try {
-              setActionLoading(milestoneId + "_fund");
-              const updated = await milestoneService.fundMilestone(milestoneId);
-              setMilestones((prev) => prev.map((m) => (m.id === milestoneId ? updated : m)));
-            } catch (error: any) {
-              Alert.alert("Error", error.message || "Failed to fund milestone");
-            } finally {
-              setActionLoading(null);
-            }
-          },
-        },
-      ]
-    );
+  // ── Freelancer: Open submit modal ─────────────────────────────
+  const handleSubmit = (milestoneId: string) => {
+    setSubmitMilestoneId(milestoneId);
+    setSubmitGithubUrl("");
+    setShowSubmitModal(true);
   };
 
-  // ── Freelancer: Start ──────────────────────────────────────────
-  const handleStart = async (milestoneId: string) => {
-    try {
-      setActionLoading(milestoneId + "_start");
-      const updated = await milestoneService.startMilestone(milestoneId);
-      setMilestones((prev) => prev.map((m) => (m.id === milestoneId ? updated : m)));
-    } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to start milestone");
-    } finally {
-      setActionLoading(null);
+  /** Submit allowed for pending / funded / in_progress (client already paid platform). */
+  const handleBeginSubmitWork = (milestoneId: string) => {
+    const m = milestones.find((x) => x.id === milestoneId);
+    if (!m) return;
+    if (m.status === "pending" || m.status === "funded" || m.status === "in_progress") {
+      handleSubmit(milestoneId);
+      return;
     }
+    if (m.status === "in_review" || m.status === "submitted") {
+      Alert.alert("Already submitted", "Wait for the client to accept or reject.");
+      return;
+    }
+    Alert.alert("Cannot submit", "This milestone cannot be submitted in its current state.");
   };
 
-  // ── Freelancer: Submit ─────────────────────────────────────────
-  const handleSubmit = async (milestoneId: string) => {
+  // ── Freelancer: Confirm submit with GitHub URL ─────────────────
+  const handleConfirmSubmit = async () => {
+    if (!submitMilestoneId) return;
+    const url = submitGithubUrl.trim();
+    if (url && !/^https?:\/\/(www\.)?github\.com\/.+/.test(url)) {
+      Alert.alert("Invalid URL", "Please enter a valid GitHub URL (https://github.com/...)");
+      return;
+    }
     try {
-      setActionLoading(milestoneId + "_submit");
-      const updated = await milestoneService.submitMilestone(milestoneId);
-      setMilestones((prev) => prev.map((m) => (m.id === milestoneId ? updated : m)));
+      setSubmitting(true);
+      const updated = await milestoneService.submitMilestone(submitMilestoneId, url || undefined);
+      setMilestones((prev) => prev.map((m) => (m.id === submitMilestoneId ? updated : m)));
+      setShowSubmitModal(false);
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to submit milestone");
     } finally {
-      setActionLoading(null);
+      setSubmitting(false);
     }
   };
 
@@ -193,7 +205,7 @@ export default function ActiveDetailsScreen() {
         setShowReviewModal(true);
       }
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to approve milestone");
+      Alert.alert("Error", error.message || "Failed to accept milestone");
     } finally {
       setActionLoading(null);
     }
@@ -302,6 +314,20 @@ export default function ActiveDetailsScreen() {
     );
   }
 
+  if (!id) {
+    return (
+      <View style={styles.centered}>
+        <AlertCircle size={40} color="#CBD5E1" />
+        <Text style={{ color: "#64748B", marginTop: 12, textAlign: "center", paddingHorizontal: 24 }}>
+          Missing project id. Use a link like /active-details?id=YOUR_PROJECT_ID
+        </Text>
+        <TouchableOpacity style={styles.goBackBtn} onPress={() => router.back()}>
+          <Text style={styles.goBackText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   if (!project) {
     return (
       <View style={styles.centered}>
@@ -332,7 +358,7 @@ export default function ActiveDetailsScreen() {
       <View style={styles.darkHeader}>
         <SafeAreaView>
           <View style={styles.navRow}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.push("/(tabs)/my-work")}>
               <ArrowLeft color="#F8FAFC" size={22} />
             </TouchableOpacity>
             <Text style={styles.headerTitle} numberOfLines={1}>{project.title}</Text>
@@ -410,6 +436,10 @@ export default function ActiveDetailsScreen() {
           )}
         </View>
 
+        {user && !isClient && !isFreelancer ? (
+          <Text style={styles.roleHintPlain}>Sign in as the freelancer or client for this project.</Text>
+        ) : null}
+
         {milestones.length === 0 ? (
           <View style={styles.emptyBox}>
             <AlertCircle size={30} color="#CBD5E1" />
@@ -442,9 +472,9 @@ export default function ActiveDetailsScreen() {
                     {/* Escrow amount badge */}
                     {milestone.amount ? (
                       <View style={styles.amountRow}>
-                        <Lock size={11} color="#0891B2" />
+                        <DollarSign size={11} color="#0891B2" />
                         <Text style={styles.amountText}>
-                          ${milestone.amount.toFixed(2)} escrow
+                          ${milestone.amount.toFixed(2)} milestone amount
                         </Text>
                       </View>
                     ) : null}
@@ -470,6 +500,19 @@ export default function ActiveDetailsScreen() {
                   <Text style={styles.milestoneDesc}>{milestone.description}</Text>
                 ) : null}
 
+                {/* GitHub link (shown when submitted) */}
+                {milestone.submissionGithubUrl && isInReview(milestone.status) && (
+                  <TouchableOpacity
+                    style={styles.githubLinkRow}
+                    onPress={() => Linking.openURL(milestone.submissionGithubUrl!)}
+                    activeOpacity={0.7}
+                  >
+                    <Github size={13} color="#1E293B" />
+                    <Text style={styles.githubLinkText} numberOfLines={1}>{milestone.submissionGithubUrl}</Text>
+                    <ExternalLink size={12} color="#94A3B8" />
+                  </TouchableOpacity>
+                )}
+
                 {/* Review countdown (for in_review milestones) */}
                 {isInReview(milestone.status) && milestone.reviewDeadline ? (
                   <View style={styles.countdownBadge}>
@@ -488,33 +531,12 @@ export default function ActiveDetailsScreen() {
                   </View>
                 )}
 
-                {/* ── Client: Fund button (pending, amount set) ── */}
-                {isClient && milestone.status === "pending" && milestone.amount && milestone.amount > 0 && (
-                  <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: "#0891B2" }]}
-                    onPress={() => handleFund(milestone.id, milestone.title, milestone.amount!)}
-                    disabled={isLoadingAction("fund")}
-                    activeOpacity={0.8}
-                  >
-                    {isLoadingAction("fund") ? (
-                      <ActivityIndicator size="small" color="#FFF" />
-                    ) : (
-                      <>
-                        <Lock size={15} color="#FFF" />
-                        <Text style={styles.actionBtnText}>Fund Escrow — ${milestone.amount.toFixed(2)}</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                )}
-
-                {/* ── Client: pending but no amount — nudge ── */}
+                {/* ── Client: pending but no amount — optional nudge ── */}
                 {isClient && milestone.status === "pending" && (!milestone.amount || milestone.amount <= 0) && (
-                  <Text style={styles.noAmountHint}>
-                    Set an amount on this milestone to enable escrow funding.
-                  </Text>
+                  <Text style={styles.noAmountHint}>Optional: set a milestone amount for reference.</Text>
                 )}
 
-                {/* ── Client: Approve + Request Changes (in_review) ── */}
+                {/* ── Client: Accept / Reject (submitted work) ── */}
                 {isClient && isInReview(milestone.status) && (
                   <View style={styles.clientActionRow}>
                     <TouchableOpacity
@@ -528,7 +550,7 @@ export default function ActiveDetailsScreen() {
                       ) : (
                         <>
                           <ShieldCheck size={14} color="#FFF" />
-                          <Text style={styles.clientBtnText}>Approve & Release</Text>
+                          <Text style={styles.clientBtnText}>Accept</Text>
                         </>
                       )}
                     </TouchableOpacity>
@@ -538,48 +560,25 @@ export default function ActiveDetailsScreen() {
                       activeOpacity={0.8}
                     >
                       <AlertCircle size={14} color="#444751" />
-                      <Text style={[styles.clientBtnText, { color: "#444751" }]}>
-                        Request Changes
-                      </Text>
+                      <Text style={[styles.clientBtnText, { color: "#444751" }]}>Reject</Text>
                     </TouchableOpacity>
                   </View>
                 )}
 
-                {/* ── Freelancer: Start (funded) ── */}
-                {isFreelancer && milestone.status === "funded" && (
-                  <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: "#444751" }]}
-                    onPress={() => handleStart(milestone.id)}
-                    disabled={isLoadingAction("start")}
-                    activeOpacity={0.8}
-                  >
-                    {isLoadingAction("start") ? (
-                      <ActivityIndicator size="small" color="#FFF" />
-                    ) : (
-                      <>
-                        <PlayCircle size={15} color="#FFF" />
-                        <Text style={styles.actionBtnText}>Start Working</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                )}
-
-                {/* ── Freelancer: Submit (in_progress) ── */}
-                {isFreelancer && milestone.status === "in_progress" && (
+                {/* ── Freelancer: submit milestone (client already paid platform) ── */}
+                {isFreelancer &&
+                  (milestone.status === "pending" ||
+                    milestone.status === "funded" ||
+                    milestone.status === "in_progress") && (
                   <TouchableOpacity
                     style={[styles.actionBtn, { backgroundColor: "#4F46E5" }]}
-                    onPress={() => handleSubmit(milestone.id)}
-                    disabled={isLoadingAction("submit")}
+                    onPress={() => handleBeginSubmitWork(milestone.id)}
                     activeOpacity={0.8}
                   >
-                    {isLoadingAction("submit") ? (
-                      <ActivityIndicator size="small" color="#FFF" />
-                    ) : (
-                      <>
-                        <Send size={15} color="#FFF" />
-                        <Text style={styles.actionBtnText}>Submit for Review</Text>
-                      </>
-                    )}
+                    <>
+                      <Send size={15} color="#FFF" />
+                      <Text style={styles.actionBtnText}>Submit milestone</Text>
+                    </>
                   </TouchableOpacity>
                 )}
 
@@ -588,6 +587,17 @@ export default function ActiveDetailsScreen() {
                   <View style={styles.awaitingBadge}>
                     <Clock size={14} color="#D97706" />
                     <Text style={styles.awaitingText}>Submitted — awaiting client review</Text>
+                  </View>
+                )}
+
+                {/* ── Freelancer: payment pending admin release ── */}
+                {isFreelancer && (milestone.status === "released" || milestone.status === "approved") && (
+                  <View style={styles.adminPendingBadge}>
+                    <DollarSign size={14} color="#4F46E5" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.adminPendingTitle}>Payment Pending Admin Release</Text>
+                      <Text style={styles.adminPendingDesc}>Email sent to admin — you will be contacted once payment is processed.</Text>
+                    </View>
                   </View>
                 )}
 
@@ -606,6 +616,47 @@ export default function ActiveDetailsScreen() {
           })
         )}
       </ScrollView>
+
+      {/* ── SUBMIT MILESTONE MODAL (Freelancer) ── */}
+      <Modal visible={showSubmitModal} transparent animationType="slide" onRequestClose={() => setShowSubmitModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Submit milestone</Text>
+            <Text style={styles.modalSubtitle}>
+              Optional GitHub link. The client will accept or reject. The platform owner is emailed to pay you.
+            </Text>
+
+            <Text style={styles.inputLabel}>GitHub URL (optional)</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="https://github.com/your-repo/..."
+              placeholderTextColor="#94A3B8"
+              value={submitGithubUrl}
+              onChangeText={setSubmitGithubUrl}
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: "#F1F5F9" }]}
+                onPress={() => setShowSubmitModal(false)}
+              >
+                <Text style={{ color: "#475569", fontWeight: "700" }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: "#4F46E5" }]}
+                onPress={handleConfirmSubmit}
+                disabled={submitting}
+              >
+                {submitting
+                  ? <ActivityIndicator size="small" color="#FFF" />
+                  : <Text style={{ color: "#FFF", fontWeight: "700" }}>Submit</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* ── ADD MILESTONE MODAL (Client) ── */}
       <Modal visible={showAddModal} transparent animationType="slide" onRequestClose={() => setShowAddModal(false)}>
@@ -728,18 +779,18 @@ export default function ActiveDetailsScreen() {
         </View>
       </Modal>
 
-      {/* ── REQUEST CHANGES MODAL (Client) ── */}
+      {/* ── REJECT MILESTONE MODAL (Client) ── */}
       <Modal visible={showChangesModal} transparent animationType="slide" onRequestClose={() => setShowChangesModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Request Changes</Text>
+            <Text style={styles.modalTitle}>Reject milestone</Text>
             <Text style={styles.modalSubtitle}>
-              Describe what changes are needed. A message will be sent to the freelancer automatically.
+              Tell the freelancer why this submission is rejected. They can submit again after making updates.
             </Text>
 
             <TextInput
               style={[styles.textInput, { height: 110, textAlignVertical: "top" }]}
-              placeholder="e.g. Please update the color scheme…"
+              placeholder="Reason for rejection…"
               placeholderTextColor="#94A3B8"
               value={changesMessage}
               onChangeText={setChangesMessage}
@@ -755,13 +806,13 @@ export default function ActiveDetailsScreen() {
                 <Text style={{ color: "#475569", fontWeight: "700" }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalBtn, { backgroundColor: "#0F172A", opacity: !changesMessage.trim() ? 0.5 : 1 }]}
+                style={[styles.modalBtn, { backgroundColor: "#B91C1C", opacity: !changesMessage.trim() ? 0.5 : 1 }]}
                 onPress={handleRequestChanges}
                 disabled={sendingChanges || !changesMessage.trim()}
               >
                 {sendingChanges
                   ? <ActivityIndicator size="small" color="#FFF" />
-                  : <Text style={{ color: "#FFF", fontWeight: "700" }}>Send Request</Text>}
+                  : <Text style={{ color: "#FFF", fontWeight: "700" }}>Confirm reject</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -777,6 +828,7 @@ const styles = StyleSheet.create({
   loadingText: { color: "#94A3B8", fontSize: 14, marginTop: 8 },
   goBackBtn: { marginTop: 16, backgroundColor: "#282A32", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
   goBackText: { color: "#FFF", fontWeight: "700" },
+  roleHintPlain: { color: "#64748B", fontSize: 14, textAlign: "center", lineHeight: 20, paddingHorizontal: 24 },
 
   // Header
   darkHeader: { paddingHorizontal: 20, paddingBottom: 22, backgroundColor: "#282A32" },
@@ -852,6 +904,15 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 11, fontWeight: "700" },
   milestoneDesc: { fontSize: 13, color: "#64748B", lineHeight: 19, marginBottom: 10, marginTop: 4 },
 
+  // GitHub link
+  githubLinkRow: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    marginTop: 8, paddingVertical: 8, paddingHorizontal: 12,
+    backgroundColor: "#F8FAFC", borderRadius: 10,
+    borderWidth: 1, borderColor: "#E2E8F0",
+  },
+  githubLinkText: { flex: 1, fontSize: 12, color: "#1E293B", fontWeight: "600" },
+
   // Countdown
   countdownBadge: {
     flexDirection: "row", alignItems: "center", gap: 6,
@@ -887,6 +948,15 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "#FDE68A",
   },
   awaitingText: { color: "#D97706", fontSize: 13, fontWeight: "600" },
+
+  adminPendingBadge: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    marginTop: 10, paddingVertical: 10, paddingHorizontal: 12,
+    backgroundColor: "#EEF2FF", borderRadius: 10,
+    borderWidth: 1, borderColor: "#818CF8",
+  },
+  adminPendingTitle: { color: "#4F46E5", fontSize: 13, fontWeight: "700", marginBottom: 2 },
+  adminPendingDesc: { color: "#6366F1", fontSize: 11, lineHeight: 16 },
 
   // Client buttons
   clientActionRow: { flexDirection: "row", gap: 10, marginTop: 10 },

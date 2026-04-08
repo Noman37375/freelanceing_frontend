@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft,
@@ -7,29 +7,33 @@ import {
   Calendar,
   DollarSign,
   Clock,
-  MessageSquare,
   MapPin,
   CheckCircle,
   Circle,
-  ChevronRight,
   Briefcase,
   Tag,
 } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { projectService } from '@/services/projectService';
-import { Project, getProjectDisplayStatus } from '@/models/Project';
+import { Project, Milestone, getProjectDisplayStatus } from '@/models/Project';
 import { formatCurrency } from '@/utils/helpers';
 import { COLORS } from '@/utils/constants';
 import { milestoneService } from '@/services/projectService';
 
+function normalizeRouteId(raw: string | string[] | undefined): string | undefined {
+  if (raw == null) return undefined;
+  if (Array.isArray(raw)) return raw[0];
+  return raw;
+}
+
 export default function ProjectDetail() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const id = normalizeRouteId(params.id);
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  const [milestones, setMilestones] = useState<any[]>([]);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [milestonesLoading, setMilestonesLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -64,6 +68,20 @@ export default function ProjectDetail() {
 
     fetchMilestones();
   }, [id]);
+
+  const getMilestoneStatusConfig = (status: string) => {
+    switch (status) {
+      case 'funded':      return { label: 'Funded',      color: '#0891B2', bg: '#ECFEFF', border: '#67E8F9' };
+      case 'in_progress': return { label: 'In Progress', color: '#4F46E5', bg: '#EEF2FF', border: '#818CF8' };
+      case 'in_review':
+      case 'submitted':   return { label: 'In Review',   color: '#D97706', bg: '#FFFBEB', border: '#FCD34D' };
+      case 'approved':
+      case 'released':    return { label: 'Accepted',     color: '#16A34A', bg: '#F0FDF4', border: '#86EFAC' };
+      case 'disputed':    return { label: 'Disputed',    color: '#DC2626', bg: '#FEF2F2', border: '#FCA5A5' };
+      case 'pending':     return { label: 'Open',        color: '#475569', bg: '#F8FAFC', border: '#CBD5E1' };
+      default:            return { label: 'Open',        color: '#94A3B8', bg: '#F8FAFC', border: '#CBD5E1' };
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -225,7 +243,14 @@ export default function ProjectDetail() {
               <Text style={styles.milestoneCount}>{milestones.length}</Text>
             )}
           </View>
-          
+
+          <View style={styles.workspaceHint}>
+            <Text style={styles.workspaceHintTitle}>Milestones</Text>
+            <Text style={styles.workspaceHintText}>
+              Tap a milestone to accept or reject submitted work. Payment to the platform is handled separately.
+            </Text>
+          </View>
+
           {milestonesLoading ? (
             <View style={styles.loadingState}>
               <ActivityIndicator size="small" color={COLORS.primary} />
@@ -243,17 +268,15 @@ export default function ProjectDetail() {
             <View style={styles.timelineContainer}>
               {milestones.map((milestone, index) => {
                 const isLast = index === milestones.length - 1;
-                const isCompleted = milestone.status === 'completed';
-                
+                const isDone = milestone.status === 'released' || milestone.status === 'approved';
+                const statusCfg = getMilestoneStatusConfig(milestone.status);
+
                 return (
                   <View key={milestone.id || index} style={styles.timelineItem}>
-                    {/* Enhanced Timeline Visual */}
+                    {/* Timeline Visual */}
                     <View style={styles.timelineLeftColumn}>
-                      <View style={[
-                        styles.timelineDot,
-                        isCompleted && styles.timelineDotCompleted
-                      ]}>
-                        {isCompleted ? (
+                      <View style={[styles.timelineDot, isDone && styles.timelineDotCompleted]}>
+                        {isDone ? (
                           <CheckCircle size={20} color="#FFFFFF" fill={COLORS.primary} strokeWidth={2.5} />
                         ) : (
                           <Circle size={20} color={COLORS.primary} strokeWidth={2.5} />
@@ -261,15 +284,14 @@ export default function ProjectDetail() {
                       </View>
                       {!isLast && <View style={styles.timelineConnector} />}
                     </View>
-                    
-                    {/* Enhanced Milestone Card */}
-                    <TouchableOpacity 
-                      style={[
-                        styles.milestoneCard,
-                        isCompleted && styles.milestoneCardCompleted
-                      ]}
-                      activeOpacity={0.7}
-                      onPress={() => setActiveSection(milestone.id)}
+
+                    {/* Milestone Card — tap opens active-details (submit work / approvals) */}
+                    <TouchableOpacity
+                      style={[styles.milestoneCard, isDone && styles.milestoneCardCompleted]}
+                      activeOpacity={0.92}
+                      onPress={() =>
+                        router.push({ pathname: '/active-details' as any, params: { id: project.id } } as any)
+                      }
                     >
                       <View style={styles.milestoneHeader}>
                         <View style={styles.milestoneHeaderLeft}>
@@ -280,32 +302,30 @@ export default function ProjectDetail() {
                             {milestone.title}
                           </Text>
                         </View>
-                        
-                        {milestone.amount && (
-                          <View style={styles.amountBadge}>
-                            <DollarSign size={14} color={COLORS.primary} strokeWidth={2.5} />
-                            <Text style={styles.amountText}>{milestone.amount}</Text>
-                          </View>
-                        )}
+                        <View style={[styles.mStatusBadge, { backgroundColor: statusCfg.bg, borderColor: statusCfg.border }]}>
+                          <Text style={[styles.mStatusText, { color: statusCfg.color }]}>{statusCfg.label}</Text>
+                        </View>
                       </View>
-                      
-                      {milestone.description && (
+
+                      {milestone.description ? (
                         <Text style={styles.milestoneDescription} numberOfLines={2}>
                           {milestone.description}
                         </Text>
-                      )}
-                      
-                      {milestone.dueDate && (
-                        <View style={styles.milestoneDateRow}>
-                          <Calendar size={14} color={COLORS.gray400} strokeWidth={2} />
-                          <Text style={styles.milestoneDateText}>
-                            Due {milestone.dueDate}
-                          </Text>
-                        </View>
-                      )}
-                      
-                      <View style={styles.milestoneFooter}>
-                        <ChevronRight size={18} color={COLORS.gray400} strokeWidth={2} />
+                      ) : null}
+
+                      <View style={styles.milestoneMetaRow}>
+                        {milestone.amount && milestone.amount > 0 ? (
+                          <View style={styles.amountBadge}>
+                            <DollarSign size={13} color={COLORS.primary} strokeWidth={2.5} />
+                            <Text style={styles.amountText}>${Number(milestone.amount).toFixed(2)}</Text>
+                          </View>
+                        ) : null}
+                        {milestone.dueDate ? (
+                          <View style={styles.milestoneDateRow}>
+                            <Calendar size={13} color="#9CA3AF" strokeWidth={2} />
+                            <Text style={styles.milestoneDateText}>Due {milestone.dueDate}</Text>
+                          </View>
+                        ) : null}
                       </View>
                     </TouchableOpacity>
                   </View>
@@ -339,21 +359,6 @@ export default function ProjectDetail() {
                   )}
                 </View>
               </View>
-
-              <TouchableOpacity 
-                style={styles.actionButton} 
-                onPress={() => {
-                  router.push({
-                    pathname: '/active-details' as any,
-                    params: { id: project.id },
-                  } as any);
-                }}
-                activeOpacity={0.8}
-              >
-                <MessageSquare size={20} color="#FFFFFF" strokeWidth={2.5} />
-                <Text style={styles.actionButtonText}>View Progress & Milestones</Text>
-                <ChevronRight size={20} color="#FFFFFF" strokeWidth={2.5} />
-              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -737,13 +742,47 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#9CA3AF',
   },
-  milestoneFooter: {
+  milestoneMetaRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     alignItems: 'center',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    gap: 10,
+    marginTop: 6,
+    flexWrap: 'wrap',
+  },
+  mStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  mStatusText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  workspaceHint: {
+    backgroundColor: '#EEF2FF',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+  },
+  workspaceHintTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#3730A3',
+    marginBottom: 6,
+  },
+  workspaceHintText: {
+    fontSize: 13,
+    color: '#4F46E5',
+    lineHeight: 18,
+  },
+  noAmountHint: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontStyle: 'italic',
+    marginTop: 8,
   },
   
   // FREELANCER CARD - CLEAR ACTION

@@ -56,10 +56,10 @@ import {
 import { useRouter } from "expo-router";
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/contexts/NotificationContext";
 import authService from '@/services/authService';
 import SkillTag from "@/components/SkillTag";
 import SectionCard from "@/components/SectionCard";
-import { useWallet } from "@/contexts/WalletContext";
 import { notificationService } from "@/services/notificationService";
 import { badgeService } from "@/services/badgeService";
 import { Badge, BADGE_COLORS } from "@/models/Badge";
@@ -84,14 +84,12 @@ const { width } = Dimensions.get('window');
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout, isLoading, updateProfile, refreshUser } = useAuth();
-  const { balance } = useWallet();
+  const { unreadCount, refreshUnreadCount, clearUnreadCount: clearNotifCount } = useNotifications();
 
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [walletModalVisible, setWalletModalVisible] = useState(false);
   const [disputeModalVisible, setDisputeModalVisible] = useState(false);
   const [notifModalVisible, setNotifModalVisible] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifLoading, setIsNotifLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [twoFALoading, setTwoFALoading] = useState(false);
@@ -99,18 +97,6 @@ export default function ProfileScreen() {
   const [badgeScore, setBadgeScore] = useState(0);
 
   // Load unread count on mount and when user changes (real-time)
-  useEffect(() => {
-    if (!user?.id) return;
-    const loadUnreadCount = async () => {
-      try {
-        const count = await notificationService.getUnreadCount();
-        setUnreadCount(count);
-      } catch {
-        setUnreadCount(0);
-      }
-    };
-    loadUnreadCount();
-  }, [user?.id]);
 
   // Load badges on mount and when returning from verify-skill screen
   const loadBadges = useCallback(async () => {
@@ -353,7 +339,7 @@ export default function ProfileScreen() {
               <TouchableOpacity style={styles.settingsBtn} onPress={() => setEditModalVisible(true)}>
                 <Settings size={22} color="#282A32" strokeWidth={2.5} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.notifBtn} onPress={() => setNotifModalVisible(true)}>
+              <TouchableOpacity style={styles.notifBtn} onPress={() => { refreshUnreadCount(); setNotifModalVisible(true); }}>
                 <Bell size={22} color="#282A32" strokeWidth={2.5} />
                 {unreadCount > 0 && (
                   <View style={styles.notifDot}>
@@ -489,19 +475,22 @@ export default function ProfileScreen() {
 
               <View style={styles.menuDivider} />
 
-              <TouchableOpacity style={styles.menuItem} onPress={() => setWalletModalVisible(true)}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => router.push('/wallet' as any)}
+              >
                 <View style={styles.menuLeft}>
                   <View style={styles.menuIconBox}>
                     <WalletIcon size={20} color="#444751" strokeWidth={2.5} />
                   </View>
-                  <Text style={styles.menuText}>Wallet & Payments</Text>
+                  <Text style={styles.menuText}>Payments</Text>
                 </View>
                 <ChevronRight size={20} color="#C2C2C8" strokeWidth={2.5} />
               </TouchableOpacity>
 
               <View style={styles.menuDivider} />
 
-              <TouchableOpacity style={styles.menuItem} onPress={() => setNotifModalVisible(true)}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => { refreshUnreadCount(); setNotifModalVisible(true); }}>
                 <View style={styles.menuLeft}>
                   <View style={styles.menuIconBox}>
                     <Bell size={20} color="#444751" strokeWidth={2.5} />
@@ -854,61 +843,6 @@ export default function ProfileScreen() {
               </TouchableOpacity>
               <View style={{ height: 30 }} />
             </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      {/* WALLET MODAL - REDESIGNED */}
-      <Modal
-        visible={walletModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setWalletModalVisible(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <Pressable style={styles.backdropPress} onPress={() => setWalletModalVisible(false)} />
-          <View style={styles.modalSheet}>
-            <View style={styles.sheetHandle} />
-            
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Wallet</Text>
-              <TouchableOpacity onPress={() => setWalletModalVisible(false)} style={styles.closeBtn}>
-                <X size={24} color="#C2C2C8" strokeWidth={2.5} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.walletHero}>
-              <View style={styles.walletIconCircle}>
-                <WalletIcon size={32} color="#FFFFFF" strokeWidth={2.5} />
-              </View>
-              <Text style={styles.walletLabel}>Available Balance</Text>
-              <Text style={styles.walletAmount}>${balance.toLocaleString()}</Text>
-            </View>
-
-            <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={styles.primaryActionBtn}
-                onPress={() => {
-                  setWalletModalVisible(false);
-                  router.push('../wallet' as any);
-                }}
-              >
-                <HistoryIcon size={20} color="#444751" strokeWidth={2.5} />
-                <Text style={styles.primaryActionText}>History</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.secondaryActionBtn}
-                onPress={() => {
-                  setWalletModalVisible(false);
-                  router.push('../wallet' as any);
-                }}
-              >
-                <Plus size={20} color="#FFFFFF" strokeWidth={2.5} />
-                <Text style={styles.secondaryActionText}>Add Funds</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={{ height: 40 }} />
           </View>
         </View>
       </Modal>

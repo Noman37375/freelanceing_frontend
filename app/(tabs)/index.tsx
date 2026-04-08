@@ -15,7 +15,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, Bell, Filter, MapPin } from 'lucide-react-native';
+import { Search, Bell, Filter, MapPin, Mail } from 'lucide-react-native';
 
 import { storageGet } from '@/utils/storage';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,7 +40,7 @@ const timeAgo = (timestamp?: string) => {
 
 export default function HomeScreen() {
   const { user } = useAuth();
-  const { unreadCount } = useNotifications();
+  const { unreadCount, refreshUnreadCount } = useNotifications();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -190,7 +190,7 @@ export default function HomeScreen() {
           <View style={styles.headerRight}>
             <TouchableOpacity
               style={styles.notificationBtn}
-              onPress={() => router.push('../notifications')}
+              onPress={() => { refreshUnreadCount(); router.push('../notifications'); }}
             >
               <Bell size={22} color="#444751" />
               {unreadCount > 0 && (
@@ -245,6 +245,20 @@ export default function HomeScreen() {
             </Text>
           </View>
         </View>
+
+        <TouchableOpacity
+          style={styles.paymentNotice}
+          onPress={() => router.push('/(tabs)/my-work' as any)}
+          activeOpacity={0.85}
+        >
+          <Mail size={18} color="#4338CA" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.paymentNoticeTitle}>Milestone & payment status</Text>
+            <Text style={styles.paymentNoticeText}>
+              Submit milestones from My Work; the platform owner gets an email when you submit. After the client accepts, the owner pays you outside the app. Tap to open My Work for status and milestones.
+            </Text>
+          </View>
+        </TouchableOpacity>
 
         {/* All Service – horizontal scroll, compact */}
         <View style={styles.allServiceSection}>
@@ -502,6 +516,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     color: '#282A32',
+  },
+
+  paymentNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: '#EEF2FF',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+  },
+  paymentNoticeTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#3730A3',
+    marginBottom: 4,
+  },
+  paymentNoticeText: {
+    fontSize: 12,
+    color: '#4F46E5',
+    lineHeight: 17,
   },
 
   allServiceSection: {

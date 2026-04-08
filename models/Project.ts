@@ -57,6 +57,7 @@ export interface Milestone {
   submittedAt?: string | null;
   reviewDeadline?: string | null;
   approvedAt?: string | null;
+  submissionGithubUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -49,10 +49,16 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Only auto-fetch wallet data when a user is authenticated
-    if (user) {
-      getTransactionHistory();
+    if (!user) return;
+    const role = (user.role || '').toLowerCase();
+    if (role === 'freelancer') {
+      setBalance(0);
+      setEscrowBalance(0);
+      setTransactions([]);
+      setIsLoading(false);
+      return;
     }
+    getTransactionHistory();
   }, [user]);
 
   const value: WalletContextType = {

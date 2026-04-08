@@ -74,11 +74,7 @@ export default function ChatScreen() {
   }
 
   const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(tabs)/messages' as any);
-    }
+    router.push("/(tabs)/messages");
   };
 
   return (

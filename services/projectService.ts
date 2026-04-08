@@ -151,6 +151,19 @@ export const projectService = {
   unsaveProject: async (projectId: string): Promise<void> => {
     await apiCall(`/api/v1/projects/${projectId}/save`, { method: 'DELETE' });
   },
+
+  /** Client: unlock every pending milestone with an amount (off-platform / PayPal), no wallet. */
+  fundAllMilestonesExternal: async (
+    projectId: string
+  ): Promise<{ milestones: Milestone[]; count: number }> => {
+    const response = await apiCall(`/api/v1/projects/${projectId}/milestones/fund-all-external`, {
+      method: 'POST',
+    });
+    return {
+      milestones: response.data.milestones || [],
+      count: response.data.count ?? 0,
+    };
+  },
 };
 
 export const proposalService = {
@@ -331,13 +344,22 @@ export const milestoneService = {
     return response.data.milestone;
   },
 
+  /** Fund milestone without in-app wallet (client already paid platform off-app, e.g. PayPal). */
+  fundMilestoneExternal: async (milestoneId: string): Promise<Milestone> => {
+    const response = await apiCall(`/api/v1/milestones/${milestoneId}/fund-external`, { method: 'PATCH' });
+    return response.data.milestone;
+  },
+
   startMilestone: async (milestoneId: string): Promise<Milestone> => {
     const response = await apiCall(`/api/v1/milestones/${milestoneId}/start`, { method: 'PATCH' });
     return response.data.milestone;
   },
 
-  submitMilestone: async (milestoneId: string): Promise<Milestone> => {
-    const response = await apiCall(`/api/v1/milestones/${milestoneId}/submit`, { method: 'PATCH' });
+  submitMilestone: async (milestoneId: string, githubUrl?: string): Promise<Milestone> => {
+    const response = await apiCall(`/api/v1/milestones/${milestoneId}/submit`, {
+      method: 'PATCH',
+      body: JSON.stringify({ githubUrl: githubUrl?.trim() || undefined }),
+    });
     return response.data.milestone;
   },
 

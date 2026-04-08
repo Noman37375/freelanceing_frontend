@@ -131,7 +131,7 @@ export default function ProjectDetails() {
       <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => router.push("/")} style={styles.backButton}>
             <ArrowLeft size={24} color="#444751" />
           </TouchableOpacity>
           <Text style={styles.headerTitle} numberOfLines={1}>Job Details</Text>

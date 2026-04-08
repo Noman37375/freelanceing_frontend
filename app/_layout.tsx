@@ -1,5 +1,5 @@
-import { StripeProvider } from '@stripe/stripe-react-native';
 import { Slot, usePathname, useRouter } from 'expo-router';
+import NativeStripeProvider from '@/components/NativeStripeProvider';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreenNative from 'expo-splash-screen';
 import { View, Image, StyleSheet, Dimensions } from 'react-native';
@@ -113,7 +113,7 @@ export default function RootLayout() {
   useFrameworkReady();
 
   return (
-    <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ''} urlScheme="myapp">
+    <NativeStripeProvider>
       <AuthProvider>
         <SocketProvider>
           <CallProvider>
@@ -130,6 +130,6 @@ export default function RootLayout() {
           </CallProvider>
         </SocketProvider>
       </AuthProvider>
-    </StripeProvider>
+    </NativeStripeProvider>
   );
 }

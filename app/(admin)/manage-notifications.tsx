@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, ScrollView, Platform, StatusBar } from 'react-native';
-import { Bell, ArrowLeft, Send, X, ChevronRight, Clock, Info, ShieldAlert, Zap, Edit2, Trash2 } from 'lucide-react-native';
+import { Bell, ArrowLeft, Send, X, Clock, Info, ShieldAlert, Zap, Edit2, Trash2 } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';

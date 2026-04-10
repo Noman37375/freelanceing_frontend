@@ -148,6 +148,12 @@ export default function MyWorkScreen() {
             title: m.title,
             status: m.status,
             amount: m.amount ?? null,
+            changeRequestMessage: (m as any).changeRequestMessage ?? null,
+            rejectionReason: (m as any).rejectionReason ?? null,
+            feedback: (m as any).feedback ?? null,
+            clientFeedback: (m as any).clientFeedback ?? null,
+            requestChangesMessage: (m as any).requestChangesMessage ?? null,
+            changesMessage: (m as any).changesMessage ?? null,
           })),
         }));
 

@@ -38,6 +38,7 @@ export default function ProjectDetails() {
   const [loading, setLoading] = useState(true);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [milestonesLoading, setMilestonesLoading] = useState(true);
+  const [myProposalStatus, setMyProposalStatus] = useState<"PENDING" | "ACCEPTED" | "REJECTED" | null>(null);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -49,6 +50,24 @@ export default function ProjectDetails() {
         setLoading(true);
         const fetchedProject = await projectService.getProjectById(id);
         setProject(fetchedProject || null);
+
+        // For freelancers, detect if they already applied and keep status for UI state.
+        if (user?.role === "Freelancer") {
+          const myProposals = await proposalService.getMyProposals().catch(() => []);
+          const forThisProject = (myProposals || []).filter((p: any) => p.projectId === id);
+          if (forThisProject.length > 0) {
+            const latest = [...forThisProject].sort((a: any, b: any) => {
+              const aTime = new Date(a?.updatedAt || a?.createdAt || 0).getTime();
+              const bTime = new Date(b?.updatedAt || b?.createdAt || 0).getTime();
+              return bTime - aTime;
+            })[0];
+            setMyProposalStatus((latest?.status as "PENDING" | "ACCEPTED" | "REJECTED") || null);
+          } else {
+            setMyProposalStatus(null);
+          }
+        } else {
+          setMyProposalStatus(null);
+        }
       } catch (error) {
         console.error("Failed to fetch project:", error);
         setProject(null);
@@ -57,7 +76,7 @@ export default function ProjectDetails() {
       }
     };
     fetchProject();
-  }, [id]);
+  }, [id, user?.role]);
 
   useEffect(() => {
     const fetchMilestones = async () => {
@@ -124,6 +143,16 @@ export default function ProjectDetails() {
 
   const isFreelancer = user?.role === 'Freelancer';
   const showBidButton = isFreelancer && project.status === 'ACTIVE' && project.clientId !== user?.id;
+  const canSubmitProposal = showBidButton && !myProposalStatus;
+
+  const proposalStatusLabel =
+    myProposalStatus === "ACCEPTED"
+      ? "Proposal Accepted"
+      : myProposalStatus === "REJECTED"
+      ? "Proposal Rejected"
+      : myProposalStatus === "PENDING"
+      ? "Proposal Pending"
+      : null;
 
   return (
     <View style={styles.container}>
@@ -278,10 +307,16 @@ export default function ProjectDetails() {
         {showBidButton && (
           <View style={styles.bottomBar}>
             <TouchableOpacity
-              style={styles.bidButton}
-              onPress={() => router.push(`/Bid-now?id=${project.id}` as any)}
+              style={[styles.bidButton, !canSubmitProposal && styles.bidButtonDisabled]}
+              onPress={() => {
+                if (!canSubmitProposal) return;
+                router.push(`/Bid-now?id=${project.id}` as any);
+              }}
+              disabled={!canSubmitProposal}
             >
-              <Text style={styles.bidButtonText}>Submit Proposal</Text>
+              <Text style={styles.bidButtonText}>
+                {proposalStatusLabel || "Submit Proposal"}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -522,6 +557,9 @@ const styles = StyleSheet.create({
         boxShadow: '0px 4px 10px rgba(79, 70, 229, 0.3)',
       },
     }),
+  },
+  bidButtonDisabled: {
+    backgroundColor: '#94A3B8',
   },
   bidButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 

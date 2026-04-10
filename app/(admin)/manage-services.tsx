@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Platform, StatusBar, Image, ScrollView } from 'react-native';
-import { Trash2, Edit2, X, ChevronLeft, Plus, Box, LayoutGrid } from 'lucide-react-native';
+import { Trash2, Edit2, X, ChevronLeft, Plus, LayoutGrid } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';

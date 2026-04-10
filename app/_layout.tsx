@@ -11,12 +11,9 @@ import { SocketProvider } from '@/contexts/SocketContext';
 import { CallProvider } from '@/contexts/CallContext';
 import Toast from 'react-native-toast-message';
 import { CallModal } from '@/components/CallModal';
-import { UpdateBanner } from '@/components/UpdateBanner';
-import { useUpdateCheck } from '@/hooks/useUpdateCheck';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useEffect, useRef, useState } from 'react';
 
-// Keep native splash visible until we're ready, then show welcome.jpeg as initial loading
 SplashScreenNative.preventAutoHideAsync();
 
 const SPLASH_MIN_MS = 2000;
@@ -94,15 +91,9 @@ function RootNavigation() {
 }
 
 const styles = StyleSheet.create({
-  splashWrap: { flex: 1 },
+  splashWrap: { flex: 1, backgroundColor: '#FFFFFF' },
   splashImage: StyleSheet.absoluteFillObject,
 });
-
-function UpdateChecker() {
-  const { updateAvailable, dismissUpdate } = useUpdateCheck();
-  if (!updateAvailable) return null;
-  return <UpdateBanner onDismiss={dismissUpdate} />;
-}
 
 function PushNotificationSetup() {
   usePushNotifications();
@@ -121,7 +112,6 @@ export default function RootLayout() {
               <NotificationProvider>
                 <RootNavigation />
                 <CallModal />
-                <UpdateChecker />
                 <PushNotificationSetup />
                 <Toast />
                 <StatusBar style="auto" />

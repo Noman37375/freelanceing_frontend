@@ -181,8 +181,8 @@ export const adminService = {
 
     // System Notifications
     getSystemNotifications: async (): Promise<any[]> => {
-        const response = await apiCall('/api/v1/notifications');
-        return response?.data?.notifications;
+        const response = await apiCall('/api/v1/notifications/all');
+        return response?.data;
     },
 
     sendSystemNotification: async (data: any): Promise<any> => {
@@ -215,4 +215,5 @@ export interface DashboardStats {
     totalRevenue: number;
     totalServices: number;
     totalDisputes: number;
+    totalNotifications: number;
 }

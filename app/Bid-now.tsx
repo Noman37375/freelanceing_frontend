@@ -88,6 +88,7 @@ export default function BidNow() {
   const [failInfo, setFailInfo]       = useState<FailInfo | null>(null);
   const [showFailModal, setShowFailModal] = useState(false);
   const [retryCountdown, setRetryCountdown] = useState('');
+  const [existingProposalStatus, setExistingProposalStatus] = useState<"PENDING" | "ACCEPTED" | "REJECTED" | null>(null);
 
   // Live countdown for retry timer (block screen + fail modal)
   useEffect(() => {
@@ -112,16 +113,35 @@ export default function BidNow() {
     (async () => {
       try {
         setLoading(true);
-        const data = await projectService.getProjectById(id);
+        const [data, myProposals] = await Promise.all([
+          projectService.getProjectById(id),
+          user?.role === "Freelancer" ? proposalService.getMyProposals().catch(() => []) : Promise.resolve([]),
+        ]);
         setProject(data || null);
         if (data?.budget && data.budget > 0) setBidAmount(String(data.budget));
+
+        if (user?.role === "Freelancer") {
+          const forThisProject = (myProposals as any[]).filter((p) => p.projectId === id);
+          if (forThisProject.length > 0) {
+            const latest = [...forThisProject].sort((a, b) => {
+              const aTime = new Date(a?.updatedAt || a?.createdAt || 0).getTime();
+              const bTime = new Date(b?.updatedAt || b?.createdAt || 0).getTime();
+              return bTime - aTime;
+            })[0];
+            setExistingProposalStatus((latest?.status as "PENDING" | "ACCEPTED" | "REJECTED") || null);
+          } else {
+            setExistingProposalStatus(null);
+          }
+        } else {
+          setExistingProposalStatus(null);
+        }
       } catch (err: any) {
         Alert.alert("Error", err.message || "Failed to load project");
       } finally {
         setLoading(false);
       }
     })();
-  }, [id]);
+  }, [id, user?.role]);
 
   // ── Validate form + start quiz ─────────────────────────────────────────────
 
@@ -130,6 +150,12 @@ export default function BidNow() {
     if (!id) return Alert.alert("Error", "Missing project ID");
     if (!user || user.role !== "Freelancer")
       return Alert.alert("Error", "Only freelancers can submit proposals");
+    if (existingProposalStatus) {
+      return Alert.alert(
+        "Already applied",
+        `Your proposal is ${existingProposalStatus.toLowerCase()}. You cannot submit this project again.`
+      );
+    }
 
     const amount = parseFloat(bidAmount);
     if (isNaN(amount) || amount <= 0)
@@ -537,6 +563,15 @@ export default function BidNow() {
           </Text>
         </View>
 
+        {existingProposalStatus && (
+          <View style={styles.existingProposalBanner}>
+            <Text style={styles.existingProposalTitle}>Application status: {existingProposalStatus}</Text>
+            <Text style={styles.existingProposalText}>
+              You already submitted a proposal for this project. Re-submission is disabled.
+            </Text>
+          </View>
+        )}
+
         {/* Bid Amount */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your Bid</Text>
@@ -598,15 +633,17 @@ export default function BidNow() {
 
         {/* Continue to quiz button */}
         <TouchableOpacity
-          style={[styles.sendBtn, quizLoading && styles.sendBtnDisabled]}
+          style={[styles.sendBtn, (quizLoading || !!existingProposalStatus) && styles.sendBtnDisabled]}
           onPress={handleContinueToQuiz}
-          disabled={quizLoading}
+          disabled={quizLoading || !!existingProposalStatus}
         >
           {quizLoading
             ? <ActivityIndicator color="#fff" />
             : (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={styles.sendBtnText}>Continue to Quiz</Text>
+                <Text style={styles.sendBtnText}>
+                  {existingProposalStatus ? `Proposal ${existingProposalStatus}` : "Continue to Quiz"}
+                </Text>
                 <ChevronRight size={18} color="#FFF" strokeWidth={2.5} />
               </View>
             )}
@@ -821,6 +858,16 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#C7D2FE',
   },
   quizBannerText: { flex: 1, fontSize: 13, color: '#3730A3', lineHeight: 19, fontWeight: '500' },
+  existingProposalBanner: {
+    backgroundColor: '#FEF2F2',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  existingProposalTitle: { fontSize: 13, fontWeight: '800', color: '#991B1B', marginBottom: 4 },
+  existingProposalText: { fontSize: 12, color: '#B91C1C', lineHeight: 18 },
 
   section: { marginBottom: 24 },
   sectionTitle: { fontSize: 16, fontWeight: "800", color: "#1E293B", marginBottom: 6 },

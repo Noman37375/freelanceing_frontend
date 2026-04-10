@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Switch, Platform, StatusBar, Pressable } from 'react-native';
-import { Star, Trash2, Edit2, X, ChevronLeft, MoreVertical, UserX, UserCheck } from 'lucide-react-native';
+import { Star, Trash2, Edit2, X, ChevronLeft, MoreVertical, UserX, UserCheck, Search } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
 import { FreelancerProfile } from '@/models/User';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,6 +35,7 @@ export default function ManageFreelancers() {
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [optionsModalVisible, setOptionsModalVisible] = useState(false);
     const [selectedUser, setSelectedUser] = useState<FreelancerProfile | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const loadFreelancers = useCallback(async () => {
         try {
@@ -161,6 +162,15 @@ export default function ManageFreelancers() {
         }
     };
 
+    const filteredFreelancers = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase();
+        if (!q) return freelancers;
+        return freelancers.filter(f =>
+            f.userName?.toLowerCase().includes(q) ||
+            f.email?.toLowerCase().includes(q)
+        );
+    }, [freelancers, searchQuery]);
+
     const renderItem = ({ item }: { item: FreelancerProfile }) => (
         <View style={styles.card}>
             <View style={styles.cardHeader}>
@@ -225,20 +235,41 @@ export default function ManageFreelancers() {
                 <Text style={styles.headerTitle}>Freelancers</Text>
             </View>
 
+            <View style={styles.searchContainer}>
+                <Search size={16} color="#94A3B8" style={styles.searchIcon} />
+                <TextInput
+                    style={styles.searchInput}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder="Search by name or email..."
+                    placeholderTextColor="#94A3B8"
+                    clearButtonMode="while-editing"
+                    autoCorrect={false}
+                    autoCapitalize="none"
+                />
+                {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.searchClear}>
+                        <X size={14} color="#94A3B8" />
+                    </TouchableOpacity>
+                )}
+            </View>
+
             {isLoading ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#282A32" />
                 </View>
             ) : (
                 <FlatList
-                    data={freelancers}
+                    data={filteredFreelancers}
                     renderItem={renderItem}
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>No freelancers found.</Text>
+                            <Text style={styles.emptyText}>
+                                {searchQuery.trim() ? 'No freelancers match your search.' : 'No freelancers found.'}
+                            </Text>
                         </View>
                     }
                 />
@@ -367,6 +398,37 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
         color: '#444751',
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF',
+        marginHorizontal: 16,
+        marginTop: 12,
+        marginBottom: 4,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        paddingHorizontal: 12,
+        paddingVertical: 2,
+        ...Platform.select({
+            web: { boxShadow: '0px 2px 6px rgba(0,0,0,0.04)' },
+            ios: { shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+            android: { elevation: 2 },
+        }),
+    },
+    searchIcon: {
+        marginRight: 8,
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: 14,
+        color: '#444751',
+        paddingVertical: 10,
+    },
+    searchClear: {
+        padding: 4,
+        marginLeft: 4,
     },
     loadingContainer: {
         flex: 1,

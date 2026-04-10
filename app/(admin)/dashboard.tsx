@@ -1,23 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    ScrollView,
-    RefreshControl,
-    Platform,
-    StatusBar,
-    TextInput,
-    useWindowDimensions
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Platform, StatusBar, TextInput, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import {
     Search,
     Bell,
     Menu,
-    ChevronRight,
     Activity,
     Users,
     UserCheck,
@@ -29,15 +17,11 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { adminService, DashboardStats } from '@/services/adminService';
 import { Project } from '@/models/Project';
-import { formatCurrency } from '@/utils/helpers';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import newly created components
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminAnalyticsOverview from '@/components/admin/AdminAnalyticsOverview';
-import AdminProfileCard from '@/components/admin/AdminProfileCard';
-import AdminApplicationStatus from '@/components/admin/AdminApplicationStatus';
-import AdminActivityTable from '@/components/admin/AdminActivityTable';
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -97,35 +81,16 @@ export default function AdminDashboard() {
         setRefreshing(false);
     };
 
-    const activeProjectsForTable = activeProjects.map((p) => {
-        const client = p.client as { user_name?: string; userName?: string } | undefined;
-        const clientName = client?.userName ?? client?.user_name ?? 'Unknown';
-        return {
-            id: p.id,
-            clientName,
-            projectName: p.title,
-            price: typeof p.budget === 'number' ? formatCurrency(p.budget, p.currency || 'USD') : (p.budget ?? '0'),
-            deliveredIn: p.duration ?? p.deadline ?? '—',
-            progress: p.status === 'COMPLETED' ? 100 : p.freelancerId ? 50 : 0,
-        };
-    });
-
     const handleLogout = async () => {
         await logout();
         router.replace('/login' as any);
     };
 
-    const StatusItems: any[] = [
-        { id: '1', title: 'Chinese Translator', subTitle: 'Tech Troopsy (Jurong East, Singapore)', type: 'Remote', date: 'Applied on Jan 22', status: 'Applied' },
-        { id: '2', title: 'Frontend Developer', subTitle: 'PT Nirala Digital (South Jakarta)', type: 'Freelance', date: 'Applied on Jan 09', status: 'Not selected' },
-        { id: '3', title: 'Website Designer', subTitle: 'Verganis Studio (Sydney, Australia)', type: '3 months contract', date: 'Applied on Dec 29', status: 'Interview' },
-    ];
-
     const ManagementCards = [
         { title: 'Freelancers', icon: Users, color: '#282A32', route: '/(admin)/manage-freelancers', count: stats?.totalFreelancers || 0 },
         { title: 'Clients', icon: UserCheck, color: '#F59E0B', route: '/(admin)/manage-clients', count: stats?.totalClients || 0 },
         { title: 'Services', icon: Layers, color: '#10B981', route: '/(admin)/manage-services', count: stats?.totalServices ?? 0 },
-        { title: 'Notifications', icon: Bell, color: '#444751', route: '/(admin)/manage-notifications', count: 0 },
+        { title: 'Notifications', icon: Bell, color: '#444751', route: '/(admin)/manage-notifications', count: stats?.totalNotifications ?? 0 },
         { title: 'Projects', icon: Briefcase, color: '#444751', route: '/(admin)/manage-projects', count: stats?.activeProjects || 0 },
         { title: 'Disputes', icon: Activity, color: '#444751', route: '/(admin)/manage-disputes', count: stats?.totalDisputes ?? 0 },
         { title: 'Badges', icon: Award, color: '#F59E0B', route: '/(admin)/manage-badges', count: 0 },
@@ -222,10 +187,6 @@ export default function AdminDashboard() {
                                 />
                             </View>
                         )}
-                        <TouchableOpacity style={styles.notificationButton}>
-                            <Bell size={20} color="#444751" />
-                            <View style={styles.notifBadge} />
-                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -280,32 +241,8 @@ export default function AdminDashboard() {
                                 ))}
                             </View>
 
-                            {/* <View style={styles.projectsSection}>
-                                <View style={styles.sectionHeader}>
-                                    <Text style={[styles.sectionTitle, { fontSize: isMobile ? 18 : 22 }]}>
-                                        Active projects <Text style={styles.countText}>({activeProjects.length})</Text>
-                                    </Text>
-                                   
-                                </View>
-
-                                <View style={styles.projectsCard}>
-                                    <AdminActivityTable projects={activeProjectsForTable} />
-                                </View>
-                            </View> */}
-
                         </View>
 
-                        {/* Right Column (Profile & Activity) */}
-                        {/* <View style={isMobile ? {} : styles.rightColumn}>
-                            <AdminProfileCard
-                                name={user?.userName || 'Admin'}
-                                role="System Administrator"
-                                location="Platform Control Center"
-                                avatarUrl={undefined}
-                            />
-                            <View style={{ height: 24 }} />
-                            <AdminApplicationStatus items={StatusItems} />
-                        </View> */}
                     </View>
                 </ScrollView>
 

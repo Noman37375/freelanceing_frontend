@@ -107,6 +107,8 @@ export default function Login() {
             params: { email: email },
           } as any);
         }, 2000);
+      } else if (errorMsg.includes("suspended")) {
+        Toast.show({ type: "error", text1: "Account suspended.", text2: "Your account has been suspended. Please contact support." });
       } else if (errorMsg.includes("not found") || errorMsg.includes("Invalid") || errorMsg.includes("Unauthorized") || errorMsg.includes("password")) {
         setEmailError("Invalid email or password.");
         setPasswordError("Invalid email or password.");

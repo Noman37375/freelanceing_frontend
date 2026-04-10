@@ -15,9 +15,16 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 
-const stripePromise = loadStripe(
-  process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ''
-);
+// Lazily initialised — only call loadStripe (which fires r.stripe.com/b) when
+// the modal actually opens for the first time, not on every page load.
+let stripePromise: ReturnType<typeof loadStripe> | null = null;
+
+function getStripePromise() {
+  if (!stripePromise) {
+    stripePromise = loadStripe(process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '');
+  }
+  return stripePromise;
+}
 
 // ─── Inner form (must live inside <Elements>) ────────────────────────────────
 interface FormProps {
@@ -155,7 +162,7 @@ export default function StripeWebModal({
 
           {/* Elements must receive the clientSecret so Stripe knows which PaymentIntent */}
           <Elements
-            stripe={stripePromise}
+            stripe={getStripePromise()}
             options={{
               clientSecret,
               appearance: {

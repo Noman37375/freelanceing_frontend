@@ -613,14 +613,14 @@ export function ChatRoom({ activeUser, currentUser, onBack, onUnreadUpdate, proj
               </Text>
             </View>
           </TouchableOpacity>
-          <View style={styles.headerRightIcons}>
+          {/* <View style={styles.headerRightIcons}>
             <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7} onPress={handleVideoCall}>
               <Feather name="video" size={22} color={COLORS.white} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerIconBtn} activeOpacity={0.7} onPress={handleVoiceCall}>
               <Feather name="phone" size={20} color={COLORS.white} />
             </TouchableOpacity>
-          </View>
+          </View> */}
         </View>
       )}
 

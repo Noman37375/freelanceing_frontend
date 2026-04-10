@@ -11,6 +11,7 @@ function milestonePhaseLabel(status: string) {
   if (s === "pending") return "Open";
   if (s === "funded") return "Funded";
   if (s === "in_progress") return "In progress";
+  if (s === "changes_requested" || s === "rejected") return "Rejected by client";
   if (s === "in_review" || s === "submitted") return "Submitted · awaiting client";
   if (s === "approved" || s === "released") return "Accepted";
   if (s === "disputed") return "Disputed";
@@ -32,6 +33,18 @@ function milestonePaymentLine(status: string) {
     return "Submit milestone when ready";
   }
   return "—";
+}
+
+function getMilestoneFeedback(m: any): string {
+  const raw =
+    m?.changeRequestMessage ||
+    m?.rejectionReason ||
+    m?.feedback ||
+    m?.clientFeedback ||
+    m?.requestChangesMessage ||
+    m?.changesMessage ||
+    "";
+  return typeof raw === "string" ? raw.trim() : "";
 }
 
 export default function WorkCard({ project, type }: { project: any, type: string }) {
@@ -157,18 +170,37 @@ export default function WorkCard({ project, type }: { project: any, type: string
             <ListChecks size={14} color="#64748B" />
             <Text style={styles.milestoneSectionTitle}>Milestones</Text>
           </View>
-          {project.milestones.slice(0, 6).map((m: { id: string; title: string; status: string; amount?: number | null }) => (
-            <View key={m.id} style={styles.milestoneRow}>
-              <Text style={styles.milestoneTitle} numberOfLines={1}>
-                {m.title}
-              </Text>
-              <Text style={styles.milestonePhase}>{milestonePhaseLabel(m.status)}</Text>
-              <Text style={styles.milestonePayment}>{milestonePaymentLine(m.status)}</Text>
-              {m.amount != null && m.amount > 0 ? (
-                <Text style={styles.milestoneAmount}>${Number(m.amount).toFixed(2)}</Text>
-              ) : null}
-            </View>
-          ))}
+          {project.milestones.slice(0, 6).map((m: any) => {
+            const feedback = getMilestoneFeedback(m);
+            const canResubmit =
+              m.status === "pending" ||
+              m.status === "funded" ||
+              m.status === "in_progress" ||
+              ((m.status === "submitted" || m.status === "in_review") && !!feedback) ||
+              m.status === "changes_requested" ||
+              m.status === "rejected";
+
+            return (
+              <View key={m.id} style={styles.milestoneRow}>
+                <Text style={styles.milestoneTitle} numberOfLines={1}>
+                  {m.title}
+                </Text>
+                <Text style={styles.milestonePhase}>{milestonePhaseLabel(m.status)}</Text>
+                <Text style={styles.milestonePayment}>{milestonePaymentLine(m.status)}</Text>
+                {feedback ? (
+                  <Text style={styles.milestoneRejectedText} numberOfLines={3}>
+                    Rejection: {feedback}
+                  </Text>
+                ) : null}
+                {canResubmit && feedback ? (
+                  <Text style={styles.milestoneResubmitHint}>Open project to resubmit milestone</Text>
+                ) : null}
+                {m.amount != null && m.amount > 0 ? (
+                  <Text style={styles.milestoneAmount}>${Number(m.amount).toFixed(2)}</Text>
+                ) : null}
+              </View>
+            );
+          })}
         </View>
       )}
     </TouchableOpacity>
@@ -312,6 +344,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#64748B",
     lineHeight: 15,
+  },
+  milestoneRejectedText: {
+    marginTop: 4,
+    fontSize: 11,
+    color: "#B91C1C",
+    lineHeight: 15,
+    fontWeight: "700",
+  },
+  milestoneResubmitHint: {
+    marginTop: 3,
+    fontSize: 11,
+    color: "#4F46E5",
+    fontWeight: "700",
   },
   milestoneAmount: {
     marginTop: 4,

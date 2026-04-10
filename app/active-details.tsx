@@ -39,6 +39,7 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { projectService, milestoneService } from "@/services/projectService";
+import { chatService } from "@/services/chatService";
 import { reviewService } from "@/services/reviewService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Project, Milestone } from "@/models/Project";
@@ -53,6 +54,8 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   approved:    { label: "Accepted",            color: "#16A34A", bg: "#F0FDF4", border: "#86EFAC" },
   released:    { label: "Accepted",            color: "#16A34A", bg: "#F0FDF4", border: "#86EFAC" },
   disputed:    { label: "Disputed",            color: "#DC2626", bg: "#FEF2F2", border: "#FCA5A5" },
+  changes_requested: { label: "Changes Requested", color: "#B45309", bg: "#FFFBEB", border: "#F59E0B" },
+  rejected:    { label: "Rejected",            color: "#B91C1C", bg: "#FEF2F2", border: "#FCA5A5" },
 };
 
 // Returns a string like "3d 4h 12m" or "Expired" from a deadline ISO string
@@ -84,6 +87,8 @@ export default function ActiveDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [localRejectionMessages, setLocalRejectionMessages] = useState<Record<string, string>>({});
+  const [chatRejectionMessages, setChatRejectionMessages] = useState<Record<string, string>>({});
 
   // countdown tick (re-renders once per minute for review timers)
   const [tick, setTick] = useState(0);
@@ -136,17 +141,65 @@ export default function ActiveDetailsScreen() {
       ]);
       setProject(projectData);
       setMilestones(milestonesData);
+
+      // Backend currently sends rejection reason in chat, not on milestone payload.
+      // Recover latest "changes requested" messages from project chat for freelancer view.
+      if (isFreelancer && projectData?.client?.id) {
+        try {
+          const chatMessages = await chatService.getMessages(projectData.client.id, projectData.id, 120, 0);
+          const nextMap: Record<string, string> = {};
+          const byTitle = new Map<string, string>();
+
+          chatMessages.forEach((msg) => {
+            const text = String(msg?.message || "");
+            const match = text.match(/changes requested for milestone\s+"([^"]+)"\s*:\s*(.+)$/i);
+            if (match) {
+              const title = match[1]?.trim().toLowerCase();
+              const reason = match[2]?.trim();
+              if (title && reason && !byTitle.has(title)) {
+                byTitle.set(title, reason);
+              }
+            }
+          });
+
+          milestonesData.forEach((m) => {
+            const reason = byTitle.get(String(m.title || "").trim().toLowerCase());
+            if (reason) nextMap[m.id] = reason;
+          });
+
+          setChatRejectionMessages(nextMap);
+        } catch {
+          setChatRejectionMessages({});
+        }
+      } else {
+        setChatRejectionMessages({});
+      }
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to load project");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [id]);
+  }, [id, isFreelancer]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const onRefresh = () => { setRefreshing(true); fetchData(); };
+
+  const getRejectionMessage = (milestone: Milestone): string | undefined => {
+    const fromApi = (
+      milestone.changeRequestMessage ||
+      milestone.rejectionReason ||
+      milestone.feedback ||
+      (milestone as any).requestChangesMessage ||
+      (milestone as any).clientFeedback ||
+      (milestone as any).changesMessage
+    );
+    const normalized = typeof fromApi === "string" ? fromApi.trim() : "";
+    if (normalized) return normalized;
+    if (chatRejectionMessages[milestone.id]) return chatRejectionMessages[milestone.id];
+    return localRejectionMessages[milestone.id];
+  };
 
   // ── Freelancer: Open submit modal ─────────────────────────────
   const handleSubmit = (milestoneId: string) => {
@@ -159,7 +212,12 @@ export default function ActiveDetailsScreen() {
   const handleBeginSubmitWork = (milestoneId: string) => {
     const m = milestones.find((x) => x.id === milestoneId);
     if (!m) return;
+    const rejectedMessage = getRejectionMessage(m);
     if (m.status === "pending" || m.status === "funded" || m.status === "in_progress") {
+      handleSubmit(milestoneId);
+      return;
+    }
+    if ((m.status === "in_review" || m.status === "submitted") && rejectedMessage) {
       handleSubmit(milestoneId);
       return;
     }
@@ -182,6 +240,11 @@ export default function ActiveDetailsScreen() {
       setSubmitting(true);
       const updated = await milestoneService.submitMilestone(submitMilestoneId, url || undefined);
       setMilestones((prev) => prev.map((m) => (m.id === submitMilestoneId ? updated : m)));
+      setLocalRejectionMessages((prev) => {
+        const next = { ...prev };
+        delete next[submitMilestoneId];
+        return next;
+      });
       setShowSubmitModal(false);
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to submit milestone");
@@ -244,6 +307,10 @@ export default function ActiveDetailsScreen() {
       setSendingChanges(true);
       const updated = await milestoneService.requestChanges(selectedMilestoneId, changesMessage.trim());
       setMilestones((prev) => prev.map((m) => (m.id === selectedMilestoneId ? updated : m)));
+      setLocalRejectionMessages((prev) => ({
+        ...prev,
+        [selectedMilestoneId]: changesMessage.trim(),
+      }));
       setShowChangesModal(false);
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to send change request");
@@ -453,6 +520,12 @@ export default function ActiveDetailsScreen() {
           milestones.map((milestone) => {
             const cfg = STATUS_CONFIG[milestone.status] ?? STATUS_CONFIG.pending;
             const isLoadingAction = (key: string) => actionLoading === `${milestone.id}_${key}`;
+            const rejectionMessage = getRejectionMessage(milestone);
+            const canResubmit =
+              milestone.status === "pending" ||
+              milestone.status === "funded" ||
+              milestone.status === "in_progress" ||
+              ((milestone.status === "in_review" || milestone.status === "submitted") && !!rejectionMessage);
 
             return (
               <View
@@ -531,6 +604,17 @@ export default function ActiveDetailsScreen() {
                   </View>
                 )}
 
+                {/* Freelancer-visible rejection feedback */}
+                {isFreelancer && rejectionMessage ? (
+                  <View style={styles.rejectionNoteBadge}>
+                    <AlertCircle size={13} color="#B91C1C" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.rejectionNoteTitle}>Client rejected this submission</Text>
+                      <Text style={styles.rejectionNoteText}>{rejectionMessage}</Text>
+                    </View>
+                  </View>
+                ) : null}
+
                 {/* ── Client: pending but no amount — optional nudge ── */}
                 {isClient && milestone.status === "pending" && (!milestone.amount || milestone.amount <= 0) && (
                   <Text style={styles.noAmountHint}>Optional: set a milestone amount for reference.</Text>
@@ -566,10 +650,7 @@ export default function ActiveDetailsScreen() {
                 )}
 
                 {/* ── Freelancer: submit milestone (client already paid platform) ── */}
-                {isFreelancer &&
-                  (milestone.status === "pending" ||
-                    milestone.status === "funded" ||
-                    milestone.status === "in_progress") && (
+                {isFreelancer && canResubmit && (
                   <TouchableOpacity
                     style={[styles.actionBtn, { backgroundColor: "#4F46E5" }]}
                     onPress={() => handleBeginSubmitWork(milestone.id)}
@@ -583,7 +664,7 @@ export default function ActiveDetailsScreen() {
                 )}
 
                 {/* ── Freelancer: awaiting review ── */}
-                {isFreelancer && isInReview(milestone.status) && (
+                {isFreelancer && isInReview(milestone.status) && !rejectionMessage && (
                   <View style={styles.awaitingBadge}>
                     <Clock size={14} color="#D97706" />
                     <Text style={styles.awaitingText}>Submitted — awaiting client review</Text>
@@ -930,6 +1011,20 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "#FCA5A5",
   },
   disputedText: { color: "#DC2626", fontSize: 12, fontWeight: "600" },
+  rejectionNoteBadge: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#FEF2F2",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+  },
+  rejectionNoteTitle: { color: "#B91C1C", fontSize: 12, fontWeight: "800", marginBottom: 2 },
+  rejectionNoteText: { color: "#991B1B", fontSize: 12, lineHeight: 17 },
 
   // No amount hint
   noAmountHint: { fontSize: 12, color: "#94A3B8", fontStyle: "italic", marginTop: 8 },

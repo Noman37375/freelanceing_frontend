@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Platform, StatusBar } from 'react-native';
-import { Edit2, X, Check, ChevronLeft, Calendar, DollarSign, User, Briefcase, MapPin, Clock } from 'lucide-react-native';
+import { Edit2, X, Check, ChevronLeft, Calendar, DollarSign, User, Briefcase, MapPin, Clock, Search } from 'lucide-react-native';
 import { adminService } from '@/services/adminService';
 import { Project } from '@/models/Project';
 import { formatCurrency } from '@/utils/helpers';
@@ -17,6 +17,7 @@ export default function ManageProjects() {
     const [editBudget, setEditBudget] = useState('');
     const [editStatus, setEditStatus] = useState<'ACTIVE' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'>('ACTIVE');
     const [isActionLoading, setIsActionLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const loadProjects = useCallback(async () => {
         try {
@@ -186,6 +187,16 @@ export default function ManageProjects() {
         );
     };
 
+    const filteredProjects = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase();
+        if (!q) return projects;
+        return projects.filter(p =>
+            p.title?.toLowerCase().includes(q) ||
+            getClientName(p).toLowerCase().includes(q) ||
+            p.category?.toLowerCase().includes(q)
+        );
+    }, [projects, searchQuery]);
+
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" />
@@ -197,20 +208,41 @@ export default function ManageProjects() {
                 <Text style={styles.headerTitle}>Projects</Text>
             </View>
 
+            <View style={styles.searchContainer}>
+                <Search size={16} color="#94A3B8" style={styles.searchIcon} />
+                <TextInput
+                    style={styles.searchInput}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder="Search by title, client or category..."
+                    placeholderTextColor="#94A3B8"
+                    clearButtonMode="while-editing"
+                    autoCorrect={false}
+                    autoCapitalize="none"
+                />
+                {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.searchClear}>
+                        <X size={14} color="#94A3B8" />
+                    </TouchableOpacity>
+                )}
+            </View>
+
             {isLoading ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#282A32" />
                 </View>
             ) : (
                 <FlatList
-                    data={projects}
+                    data={filteredProjects}
                     renderItem={renderItem}
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>No projects found.</Text>
+                            <Text style={styles.emptyText}>
+                                {searchQuery.trim() ? 'No projects match your search.' : 'No projects found.'}
+                            </Text>
                         </View>
                     }
                 />
@@ -330,6 +362,37 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
         color: '#444751',
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF',
+        marginHorizontal: 16,
+        marginTop: 12,
+        marginBottom: 4,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        paddingHorizontal: 12,
+        paddingVertical: 2,
+        ...Platform.select({
+            web: { boxShadow: '0px 2px 6px rgba(0,0,0,0.04)' },
+            ios: { shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+            android: { elevation: 2 },
+        }),
+    },
+    searchIcon: {
+        marginRight: 8,
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: 14,
+        color: '#444751',
+        paddingVertical: 10,
+    },
+    searchClear: {
+        padding: 4,
+        marginLeft: 4,
     },
     loadingContainer: {
         flex: 1,

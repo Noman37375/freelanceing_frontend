@@ -246,7 +246,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.paymentNotice}
           onPress={() => router.push('/(tabs)/my-work' as any)}
           activeOpacity={0.85}
@@ -258,7 +258,7 @@ export default function HomeScreen() {
               Submit milestones from My Work; the platform owner gets an email when you submit. After the client accepts, the owner pays you outside the app. Tap to open My Work for status and milestones.
             </Text>
           </View>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         {/* All Service – horizontal scroll, compact */}
         <View style={styles.allServiceSection}>

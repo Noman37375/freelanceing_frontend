@@ -113,11 +113,19 @@ export const adminService = {
         const params = new URLSearchParams();
         if (filters.status) params.append('status', filters.status);
         if (filters.priority) params.append('priority', filters.priority);
+        if (filters.escalated) params.append('escalated', 'true');
 
         const response = await apiCall(`/api/v1/admin/disputes?${params.toString()}`, {
             method: 'GET',
         });
         return response?.data?.disputes || [];
+    },
+
+    getDisputeById: async (id: string): Promise<any> => {
+        const response = await apiCall(`/api/v1/disputes/${id}`, {
+            method: 'GET',
+        });
+        return response?.data?.dispute;
     },
 
     resolveDispute: async (disputeId: string, resolutionData: any): Promise<any> => {
@@ -132,6 +140,28 @@ export const adminService = {
         const response = await apiCall(`/api/v1/admin/disputes/${disputeId}/priority`, {
             method: 'PUT',
             body: JSON.stringify({ priority }),
+        });
+        return response?.data?.dispute;
+    },
+
+    startDisputeReview: async (disputeId: string): Promise<void> => {
+        await apiCall(`/api/v1/admin/disputes/${disputeId}/start-review`, {
+            method: 'PUT',
+        });
+    },
+
+    askDisputeQuestion: async (disputeId: string, question: string): Promise<any> => {
+        const response = await apiCall(`/api/v1/admin/disputes/${disputeId}/ask`, {
+            method: 'POST',
+            body: JSON.stringify({ question }),
+        });
+        return response?.data?.message;
+    },
+
+    setMediationRecommendation: async (disputeId: string, recommendation: string): Promise<any> => {
+        const response = await apiCall(`/api/v1/admin/disputes/${disputeId}/mediation-recommendation`, {
+            method: 'POST',
+            body: JSON.stringify({ recommendation }),
         });
         return response?.data?.dispute;
     },

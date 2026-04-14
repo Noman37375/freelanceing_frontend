@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { API_BASE_URL } from '@/config';
 import { storageGet } from '@/utils/storage';
 import type { Dispute } from '@/models/Dispute';
@@ -124,34 +125,76 @@ export const disputeService = {
   },
 
   /**
-   * Get evidence for a dispute
+   * Get evidence for a dispute.
+   * Normalizes backend field names (fileName/fileUrl/fileType) to the
+   * DisputeEvidence shape (name/url/type) used by EvidenceUploader.
    */
   getEvidence: async (disputeId: string): Promise<any[]> => {
     const response = await apiCall(`/api/v1/disputes/${disputeId}/evidence`, {
       method: 'GET',
     });
-    return response?.data?.evidence || [];
+    const raw: any[] = response?.data?.evidence || [];
+    return raw.map((ev) => ({
+      id:          ev.id,
+      disputeId:   ev.disputeId,
+      name:        ev.name        || ev.fileName  || '',
+      url:         ev.url         || ev.fileUrl   || '',
+      type:        ev.type        || ev.fileType  || 'document',
+      description: ev.description || '',
+      uploadedBy:  ev.uploadedBy  || '',
+      uploadedAt:  ev.uploadedAt  || ev.createdAt || '',
+    }));
   },
 
   /**
    * Upload evidence for a dispute.
-   * fileData must be a { uri, name, type } object from expo-image-picker or expo-document-picker.
+   * Sends the actual file binary to the backend via FormData. The backend uploads
+   * it to Supabase Storage and stores the public URL so the admin can open the file.
+   *
+   * fileData.uri  — local file URI from expo-image-picker / expo-document-picker
+   * fileData.name — file name (e.g. "photo.jpg")
+   * fileData.mimeType — MIME type (e.g. "image/jpeg", "application/pdf")
    */
-  uploadEvidence: async (disputeId: string, fileData: { uri: string; name: string; type: string }): Promise<any> => {
+  uploadEvidence: async (
+    disputeId: string,
+    fileData: { uri: string; name: string; mimeType: string; description?: string }
+  ): Promise<any> => {
     const token = await getAuthToken();
 
     const form = new FormData();
-    form.append('file', {
-      uri: fileData.uri,
-      name: fileData.name,
-      type: fileData.type,
-    } as any);
+
+    if (Platform.OS === 'web') {
+      // On Expo Web, imagePickerResult.uri is a blob: or data: URL.
+      // FormData requires a real File/Blob — { uri, name, type } only works on native.
+      let fileBlob: Blob;
+      if (fileData.uri.startsWith('blob:')) {
+        const res = await fetch(fileData.uri);
+        fileBlob = await res.blob();
+      } else if (fileData.uri.startsWith('data:')) {
+        const [header, b64] = fileData.uri.split(',');
+        const mime = header.match(/:(.*?);/)?.[1] || fileData.mimeType;
+        const binary = atob(b64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        fileBlob = new Blob([bytes], { type: mime });
+      } else {
+        const res = await fetch(fileData.uri);
+        fileBlob = await res.blob();
+      }
+      form.append('file', new File([fileBlob], fileData.name, { type: fileData.mimeType }));
+    } else {
+      // React Native native: { uri, name, type } is the correct pattern
+      form.append('file', { uri: fileData.uri, name: fileData.name, type: fileData.mimeType } as any);
+    }
+
+    form.append('fileName', fileData.name);
+    form.append('fileType', fileData.mimeType);
+    form.append('description', fileData.description || '');
 
     const response = await fetch(`${API_BASE_URL}/api/v1/disputes/${disputeId}/evidence`, {
       method: 'POST',
       headers: {
-        // Do NOT set Content-Type here — the browser/RN sets it automatically
-        // with the correct multipart boundary when using FormData.
+        // Do NOT set Content-Type — fetch sets it automatically with the correct boundary
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       credentials: 'include',
@@ -163,11 +206,8 @@ export const disputeService = {
       const text = await response.text();
       throw new Error(`Server returned non-JSON response: ${text}`);
     }
-
     const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || data.error || `Upload failed: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(data.message || data.error || `Upload failed: ${response.status}`);
     return data?.data?.evidence;
   },
 
@@ -184,11 +224,42 @@ export const disputeService = {
   /**
    * Escalate dispute to support
    */
-  escalateToSupport: async (disputeId: string, reason: string): Promise<Dispute> => {
+  escalateToSupport: async (disputeId: string, reason?: string): Promise<Dispute> => {
     const response = await apiCall(`/api/v1/disputes/${disputeId}/escalate`, {
       method: 'PUT',
-      body: JSON.stringify({ reason }),
+      body: JSON.stringify({ reason: reason || '' }),
     });
     return response?.data?.dispute;
+  },
+
+  /**
+   * Respondent submits their initial response: 'accepted' | 'rejected' | 'counter'
+   */
+  respondToDispute: async (disputeId: string, response: 'accepted' | 'rejected' | 'counter'): Promise<Dispute> => {
+    const res = await apiCall(`/api/v1/disputes/${disputeId}/respond`, {
+      method: 'PUT',
+      body: JSON.stringify({ response }),
+    });
+    return res?.data?.dispute;
+  },
+
+  /**
+   * Accept the mediation recommendation issued by admin
+   */
+  acceptMediationProposal: async (disputeId: string): Promise<Dispute> => {
+    const res = await apiCall(`/api/v1/disputes/${disputeId}/mediation-accept`, {
+      method: 'PUT',
+    });
+    return res?.data?.dispute;
+  },
+
+  /**
+   * Reject the mediation recommendation — escalates to arbitration
+   */
+  rejectMediationProposal: async (disputeId: string): Promise<Dispute> => {
+    const res = await apiCall(`/api/v1/disputes/${disputeId}/mediation-reject`, {
+      method: 'PUT',
+    });
+    return res?.data?.dispute;
   },
 };

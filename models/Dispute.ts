@@ -47,6 +47,21 @@ export interface Dispute {
     userName?: string;
     user_name?: string;
   };
+  // Extended fields
+  clientId?: string;
+  freelancerId?: string;
+  subcategory?: string;
+  stageDeadline?: string;
+  responseDeadline?: string;
+  mediationRecommendation?: string;
+  clientAccepted?: boolean | null;
+  freelancerAccepted?: boolean | null;
+  respondentResponse?: 'accepted' | 'rejected' | 'counter' | null;
+  isEscalated?: boolean;
+  escalationReason?: string;
+  escalatedAt?: string;
+  resolutionType?: string;
+  resolutionDescription?: string;
 }
 
 export type DisputeReason = 

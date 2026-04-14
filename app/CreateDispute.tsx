@@ -15,13 +15,13 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Send, AlertCircle, DollarSign, Briefcase, ChevronDown, X } from 'lucide-react-native';
+import { ArrowLeft, Send, AlertCircle, DollarSign, Briefcase, ChevronDown, X, Flag } from 'lucide-react-native';
 import { disputeService } from '@/services/disputeService';
-import { projectService } from '@/services/projectService';
+import { projectService, milestoneService } from '@/services/projectService';
 import { useAuth } from '@/contexts/AuthContext';
 import EvidenceUploader from '@/components/dispute/EvidenceUploader';
 import type { DisputeEvidence, DisputeReason } from '@/models/Dispute';
-import type { Project } from '@/models/Project';
+import type { Project, Milestone } from '@/models/Project';
 import { formatCurrency } from '@/utils/helpers';
 
 export default function CreateDispute() {
@@ -33,6 +33,11 @@ export default function CreateDispute() {
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [showProjectPicker, setShowProjectPicker] = useState(false);
     const [loadingProjects, setLoadingProjects] = useState(true);
+
+    const [milestones, setMilestones] = useState<Milestone[]>([]);
+    const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
+    const [showMilestonePicker, setShowMilestonePicker] = useState(false);
+    const [loadingMilestones, setLoadingMilestones] = useState(false);
 
     const [title, setTitle] = useState(initialProjectTitle || '');
     const [description, setDescription] = useState('');
@@ -71,6 +76,33 @@ export default function CreateDispute() {
         fetchProjects();
     }, [user?.id, initialProjectId]);
 
+    // Fetch milestones when project changes
+    useEffect(() => {
+        if (!selectedProject) {
+            setMilestones([]);
+            setSelectedMilestone(null);
+            return;
+        }
+        const fetchMilestones = async () => {
+            try {
+                setLoadingMilestones(true);
+                const data = await milestoneService.getMilestonesByProjectId(selectedProject.id);
+                setMilestones(data);
+                // If a milestone was pre-selected via route params, auto-select it
+                if (initialMilestoneId) {
+                    const found = data.find((m) => m.id === initialMilestoneId);
+                    if (found) setSelectedMilestone(found);
+                }
+            } catch (err) {
+                console.error('Failed to load milestones:', err);
+                setMilestones([]);
+            } finally {
+                setLoadingMilestones(false);
+            }
+        };
+        fetchMilestones();
+    }, [selectedProject?.id]);
+
     const disputeReasons: Array<{ label: string; value: DisputeReason }> = [
         { label: 'Quality Issues', value: 'quality_issues' },
         { label: 'Missed Deadline', value: 'missed_deadline' },
@@ -99,13 +131,36 @@ export default function CreateDispute() {
         try {
             setIsSubmitting(true);
 
-            await disputeService.createDispute({
+            const createdDispute = await disputeService.createDispute({
                 projectId: selectedProject.id,
                 reason,
                 description,
                 amount: parseFloat(amount),
-                milestoneId: initialMilestoneId || undefined,
+                milestoneId: selectedMilestone?.id || initialMilestoneId || undefined,
             });
+
+            // Upload any locally-staged evidence now that we have a real dispute ID
+            if (createdDispute?.id && evidence.length > 0) {
+                const mimeFor = (type: string, name: string) => {
+                    if (type === 'image') return 'image/jpeg';
+                    if (type === 'document') return 'application/pdf';
+                    const ext = name.split('.').pop()?.toLowerCase();
+                    if (ext === 'pdf') return 'application/pdf';
+                    if (['jpg', 'jpeg'].includes(ext || '')) return 'image/jpeg';
+                    if (ext === 'png') return 'image/png';
+                    return 'application/octet-stream';
+                };
+                await Promise.allSettled(
+                    evidence.map((ev) =>
+                        disputeService.uploadEvidence(createdDispute.id, {
+                            uri: ev.url,
+                            name: ev.name,
+                            mimeType: mimeFor(ev.type, ev.name),
+                            description: '',
+                        })
+                    )
+                );
+            }
 
             Alert.alert('Success', 'Dispute created successfully. You can now chat with the other party in the Resolution Center.', [
                 { text: 'OK', onPress: () => router.replace('/(tabs)' as any) }
@@ -157,6 +212,28 @@ export default function CreateDispute() {
                             )}
                         </TouchableOpacity>
                     </View>
+
+                    {/* Milestone Picker — shown only after a project is selected */}
+                    {selectedProject && (
+                        <View style={styles.formSection}>
+                            <Text style={styles.label}>Milestone (Optional)</Text>
+                            <TouchableOpacity
+                                style={styles.projectSelector}
+                                onPress={() => setShowMilestonePicker(true)}
+                                activeOpacity={0.8}
+                            >
+                                <Flag size={18} color="#444751" />
+                                <Text style={[styles.projectTitle, !selectedMilestone && styles.placeholderText]} numberOfLines={1}>
+                                    {selectedMilestone?.title || 'Select Milestone (optional)'}
+                                </Text>
+                                {loadingMilestones ? (
+                                    <ActivityIndicator size="small" color="#444751" />
+                                ) : (
+                                    <ChevronDown size={20} color="#64748B" />
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    )}
 
                     <View style={styles.formSection}>
                         <Text style={styles.label}>Reason for Dispute</Text>
@@ -277,6 +354,72 @@ export default function CreateDispute() {
                                             </Text>
                                         </View>
                                         {selectedProject?.id === item.id && (
+                                            <View style={styles.projectItemCheck} />
+                                        )}
+                                    </TouchableOpacity>
+                                )}
+                            />
+                        )}
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </Modal>
+            {/* Milestone Picker Modal */}
+            <Modal
+                visible={showMilestonePicker}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowMilestonePicker(false)}
+            >
+                <TouchableOpacity
+                    activeOpacity={1}
+                    style={styles.pickerOverlay}
+                    onPress={() => setShowMilestonePicker(false)}
+                >
+                    <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()} style={styles.pickerContainer}>
+                        <View style={styles.pickerHeader}>
+                            <Text style={styles.pickerTitle}>Select Milestone</Text>
+                            <TouchableOpacity onPress={() => setShowMilestonePicker(false)} style={styles.pickerCloseBtn}>
+                                <X size={22} color="#282A32" />
+                            </TouchableOpacity>
+                        </View>
+                        {/* Clear selection option */}
+                        <TouchableOpacity
+                            style={styles.projectItem}
+                            onPress={() => { setSelectedMilestone(null); setShowMilestonePicker(false); }}
+                        >
+                            <View style={styles.projectItemContent}>
+                                <Text style={[styles.projectItemTitle, { color: '#94A3B8' }]}>No specific milestone</Text>
+                            </View>
+                        </TouchableOpacity>
+                        {milestones.length === 0 ? (
+                            <View style={styles.emptyProjects}>
+                                <Flag size={40} color="#C2C2C8" />
+                                <Text style={styles.emptyProjectsText}>No milestones found</Text>
+                            </View>
+                        ) : (
+                            <FlatList
+                                data={milestones}
+                                keyExtractor={(item) => item.id}
+                                showsVerticalScrollIndicator={false}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.projectItem,
+                                            selectedMilestone?.id === item.id && styles.projectItemSelected,
+                                        ]}
+                                        onPress={() => {
+                                            setSelectedMilestone(item);
+                                            setShowMilestonePicker(false);
+                                        }}
+                                        activeOpacity={0.8}
+                                    >
+                                        <View style={styles.projectItemContent}>
+                                            <Text style={styles.projectItemTitle} numberOfLines={1}>{item.title}</Text>
+                                            <Text style={styles.projectItemMeta}>
+                                                {item.amount != null ? `$${item.amount.toFixed(2)}` : ''}{item.amount != null && item.status ? ' • ' : ''}{item.status}
+                                            </Text>
+                                        </View>
+                                        {selectedMilestone?.id === item.id && (
                                             <View style={styles.projectItemCheck} />
                                         )}
                                     </TouchableOpacity>

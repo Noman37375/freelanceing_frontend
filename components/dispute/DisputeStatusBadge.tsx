@@ -61,7 +61,7 @@ export default function DisputeStatusBadge({ status, size = 'medium' }: DisputeS
   const currentSize = sizeStyles[size];
 
   return (
-    <View style={[styles.container, currentSize.container, { backgroundColor: config.bg }]}>
+    <View style={[styles.container, currentSize.container, { backgroundColor: config.bg, borderColor: `${config.color}30`, borderWidth: 1 }]}>
       <Icon size={currentSize.icon} color={config.color} />
       <Text style={[styles.text, currentSize.text, { color: config.color }]}>
         {config.label}

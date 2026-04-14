@@ -16,15 +16,45 @@ import {
   Briefcase,
   ShieldCheck,
   Circle,
+  AlertTriangle,
 } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { notificationService, Notification } from "@/services/notificationService";
 import { useNotifications } from "@/contexts/NotificationContext";
+import { useAuth } from "@/contexts/AuthContext";
+
+// Returns the route to push based on notification type + user role
+function getNavigationTarget(notification: Notification, role?: string): { pathname: string; params?: Record<string, string> } | null {
+  const { type, relatedId } = notification;
+
+  if (!relatedId) return null;
+
+  const isDispute = type.startsWith('dispute_');
+  if (isDispute) {
+    // resolution-center works for both Client and Freelancer
+    // Admin should go to the admin dispute detail
+    if (role === 'Admin') {
+      return { pathname: '/(admin)/dispute-detail/[id]', params: { id: relatedId } };
+    }
+    return { pathname: '/resolution-center', params: { disputeId: relatedId } };
+  }
+
+  if (type.startsWith('project_') || type.startsWith('proposal_') || type.startsWith('bid_')) {
+    return { pathname: '/project-details', params: { id: relatedId } };
+  }
+
+  if (type.startsWith('payment_') || type.startsWith('milestone_')) {
+    return { pathname: '/wallet', params: {} };
+  }
+
+  return null;
+}
 
 export default function NotificationsScreen() {
   const router = useRouter();
   const { clearUnreadCount } = useNotifications();
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -75,7 +105,10 @@ export default function NotificationsScreen() {
   };
 
   const getIcon = (type: string) => {
-    if (type.toLowerCase().includes('payment') || type.toLowerCase().includes('payment')) {
+    if (type.startsWith('dispute_')) {
+      return <View style={[styles.iconBox, { backgroundColor: "#EFF6FF" }]}><AlertTriangle size={20} color="#1D4ED8" /></View>;
+    }
+    if (type.toLowerCase().includes('payment') || type.toLowerCase().includes('milestone')) {
       return <View style={[styles.iconBox, { backgroundColor: "#ECFDF5" }]}><CreditCard size={20} color="#10B981" /></View>;
     }
     if (type.toLowerCase().includes('project') || type.toLowerCase().includes('proposal')) {
@@ -88,35 +121,65 @@ export default function NotificationsScreen() {
   };
 
   const handleNotificationPress = async (notification: Notification) => {
+    // Mark as read (fire-and-forget — don't block navigation on this)
     if (!notification.isRead) {
-      try {
-        await notificationService.markAsRead(notification.id);
-        setNotifications(notifications.map(n =>
-          n.id === notification.id ? { ...n, isRead: true } : n
-        ));
-      } catch (error) {
-        console.error('Failed to mark notification as read:', error);
-      }
+      notificationService.markAsRead(notification.id).catch(() => {});
+      setNotifications(prev =>
+        prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
+      );
+    }
+
+    // Navigate immediately — never block on the network call above
+    const target = getNavigationTarget(notification, user?.role);
+    if (target) {
+      router.push(target as any);
     }
   };
 
-  const renderItem = ({ item }: { item: Notification }) => (
-    <TouchableOpacity
-      style={[styles.notificationCard, !item.isRead && styles.unreadCard]}
-      activeOpacity={0.7}
-      onPress={() => handleNotificationPress(item)}
-    >
-      {getIcon(item.type)}
-      <View style={styles.textDetails}>
-        <View style={styles.titleRow}>
-          <Text style={[styles.notifTitle, !item.isRead && styles.unreadTitle]}>{item.title}</Text>
-          {!item.isRead && <Circle size={8} color="#444751" fill="#444751" />}
+  const markOneRead = async (id: string) => {
+    notificationService.markAsRead(id).catch(() => {});
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const renderItem = ({ item }: { item: Notification }) => {
+    const isNavigable = !!getNavigationTarget(item, user?.role);
+    return (
+      <TouchableOpacity
+        style={[styles.notificationCard, !item.isRead && styles.unreadCard]}
+        activeOpacity={0.7}
+        onPress={() => handleNotificationPress(item)}
+      >
+        {getIcon(item.type)}
+        <View style={styles.textDetails}>
+          <View style={styles.titleRow}>
+            <Text style={[styles.notifTitle, !item.isRead && styles.unreadTitle]} numberOfLines={1}>
+              {item.title}
+            </Text>
+            {/* Unread dot OR per-notification complete button */}
+            {!item.isRead ? (
+              <TouchableOpacity
+                style={styles.markDoneBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  markOneRead(item.id);
+                }}
+              >
+                <Check size={13} color="#444751" strokeWidth={2.5} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          <Text style={styles.notifMessage} numberOfLines={2}>{item.message}</Text>
+          <View style={styles.notifFooter}>
+            <Text style={styles.notifTime}>{formatTime(item.createdAt)}</Text>
+            {isNavigable && (
+              <Text style={styles.notifTapHint}>Tap to view →</Text>
+            )}
+          </View>
         </View>
-        <Text style={styles.notifMessage} numberOfLines={2}>{item.message}</Text>
-        <Text style={styles.notifTime}>{formatTime(item.createdAt)}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -220,10 +283,31 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 6,
   },
+  notifFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 2,
+  },
   notifTime: {
     fontSize: 12,
     color: "#94A3B8",
     fontWeight: "600",
+  },
+  notifTapHint: {
+    fontSize: 11,
+    color: "#444751",
+    fontWeight: "700",
+  },
+  markDoneBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#F1F5F9",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    justifyContent: "center",
+    alignItems: "center",
   },
   emptyState: {
     alignItems: "center",

@@ -14,18 +14,20 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     Search,
-    Filter,
     ChevronRight,
     ChevronLeft,
     AlertTriangle,
     TrendingUp,
     Clock,
     CheckCircle,
+    ShieldAlert,
 } from 'lucide-react-native';
 import DisputeStatusBadge from '@/components/dispute/DisputeStatusBadge';
 import { disputeService } from '@/services/disputeService';
 import { adminService } from '@/services/adminService';
 import type { Dispute, DisputeStatus } from '@/models/Dispute';
+import { normalizeDisputeStatus } from '@/utils/statusHelper';
+import { DISPUTE_STATUSES } from '@/utils/constants';
 
 export default function ManageDisputes() {
     const router = useRouter();
@@ -34,13 +36,16 @@ export default function ManageDisputes() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState<DisputeStatus | 'all'>('all');
+    const [statusFilter, setStatusFilter] = useState<DisputeStatus | 'all' | 'escalated_flag'>('all');
 
     // Statistics
     const [stats, setStats] = useState({
         total: 0,
         open: 0,
         resolved: 0,
+        escalated: 0,
+        escalationRate: 0,
+        slaBreachCount: 0,
         avgResolutionTime: 0,
     });
 
@@ -60,17 +65,35 @@ export default function ManageDisputes() {
                 adminService.getAllDisputes(),
                 adminService.getDisputeStats().catch(() => null),
             ]);
-            setDisputes(data);
+
+            const PRIORITY_RANK: Record<string, number> = { urgent: 1, high: 2, medium: 3, low: 4 };
+            const sorted = [...data].sort((a, b) => {
+                // Escalated disputes (flag) always sort to top
+                const aEscalated = a.isEscalated ? 0 : 1;
+                const bEscalated = b.isEscalated ? 0 : 1;
+                if (aEscalated !== bEscalated) return aEscalated - bEscalated;
+
+                const aPriority = PRIORITY_RANK[a.priority] ?? 5;
+                const bPriority = PRIORITY_RANK[b.priority] ?? 5;
+                if (aPriority !== bPriority) return aPriority - bPriority;
+
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            });
+            setDisputes(sorted);
 
             if (statsData) {
                 setStats({
                     total: statsData.total ?? data.length,
                     open: statsData.open ?? 0,
                     resolved: statsData.resolved ?? 0,
+                    escalated: statsData.escalated ?? data.filter((d: any) => d.isEscalated).length,
+                    escalationRate: statsData.escalationRate ?? 0,
+                    slaBreachCount: statsData.slaBreachCount ?? 0,
                     avgResolutionTime: statsData.avgResolutionDays ?? 0,
                 });
             } else {
-                calculateStats(data);
+                const escalatedCount = data.filter((d: any) => d.isEscalated).length;
+                calculateStats(data, escalatedCount);
             }
         } catch (error: any) {
             console.error('Failed to load disputes:', error);
@@ -85,16 +108,17 @@ export default function ManageDisputes() {
         setRefreshing(false);
     }, []);
 
-    const calculateStats = (data: any[]) => {
-        const openStatuses = ['open', 'under_review', 'awaiting_response', 'mediation', 'escalated', 'Pending', 'Under Review'];
-        const resolvedStatuses = ['resolved', 'Resolved'];
+    const calculateStats = (data: any[], escalatedCount?: number) => {
+        const openStatuses = [DISPUTE_STATUSES.OPEN, DISPUTE_STATUSES.UNDER_REVIEW, DISPUTE_STATUSES.MEDIATION];
+        const resolvedStatuses = [DISPUTE_STATUSES.RESOLVED];
 
         const total = data.length;
-        const open = data.filter((d) => openStatuses.includes(d.status)).length;
-        const resolved = data.filter((d) => resolvedStatuses.includes(d.status)).length;
+        const open = data.filter((d) => openStatuses.includes(normalizeDisputeStatus(d.status))).length;
+        const resolved = data.filter((d) => resolvedStatuses.includes(normalizeDisputeStatus(d.status))).length;
+        const escalated = escalatedCount ?? data.filter((d: any) => d.isEscalated).length;
 
         const resolvedWithDates = data.filter(
-            (d) => resolvedStatuses.includes(d.status) && d.resolvedAt && d.createdAt
+            (d) => resolvedStatuses.includes(normalizeDisputeStatus(d.status)) && d.resolvedAt && d.createdAt
         );
         const avgMs =
             resolvedWithDates.length > 0
@@ -104,11 +128,16 @@ export default function ManageDisputes() {
                 : 0;
         const avgResolutionTime = parseFloat((avgMs / (1000 * 60 * 60 * 24)).toFixed(1));
 
-        setStats({ total, open, resolved, avgResolutionTime });
+        const escalationRate = total > 0 ? parseFloat(((escalated / total) * 100).toFixed(1)) : 0;
+        const cutoff48h = Date.now() - 48 * 60 * 60 * 1000;
+        const slaBreachCount = data.filter((d: any) =>
+            normalizeDisputeStatus(d.status) === 'open' && new Date(d.createdAt).getTime() < cutoff48h
+        ).length;
+        setStats({ total, open, resolved, escalated, escalationRate, slaBreachCount, avgResolutionTime });
     };
 
     // Map DB statuses (both legacy PascalCase and new snake_case) to filter values
-    const normalizeStatus = (status: string): string => {
+    /*const normalizeStatus = (status: string): string => {
         const map: Record<string, string> = {
             Pending: 'open',
             'Under Review': 'under_review',
@@ -117,14 +146,15 @@ export default function ManageDisputes() {
             Closed: 'closed',
         };
         return map[status] || status;
-    };
+    };*/
 
     const filterDisputes = () => {
         let filtered = [...disputes];
 
-        // Filter by status using normalized comparison
-        if (statusFilter !== 'all') {
-            filtered = filtered.filter((d) => normalizeStatus(d.status) === statusFilter);
+        if (statusFilter === 'escalated_flag') {
+            filtered = filtered.filter((d) => d.isEscalated);
+        } else if (statusFilter !== 'all') {
+            filtered = filtered.filter((d) => normalizeDisputeStatus(d.status) === statusFilter);
         }
 
         // Filter by search query
@@ -166,8 +196,9 @@ export default function ManageDisputes() {
 
     const StatCard = ({ title, value, icon: Icon, color, trend }: any) => (
         <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: `${color}15` }]}>
-                <Icon size={20} color={color} />
+            <View style={[styles.statCardAccent, { backgroundColor: color }]} />
+            <View style={[styles.statIcon, { backgroundColor: `${color}18` }]}>
+                <Icon size={18} color={color} />
             </View>
             <Text style={styles.statValue}>{value}</Text>
             <Text style={styles.statLabel}>{title}</Text>
@@ -180,13 +211,14 @@ export default function ManageDisputes() {
         </View>
     );
 
-    const statusFilters: Array<{ label: string; value: DisputeStatus | 'all' }> = [
-        { label: 'All', value: 'all' },
-        { label: 'Open', value: 'open' },
-        { label: 'Under Review', value: 'under_review' },
-        { label: 'Mediation', value: 'mediation' },
-        { label: 'Resolved', value: 'resolved' },
-        // { label: 'Escalated', value: 'escalated' },
+    // Lifecycle: Open → Under Review → Mediation → Resolved
+    const statusFilters: Array<{ label: string; value: DisputeStatus | 'all' | 'escalated_flag'; hint: string; urgent?: boolean }> = [
+        { label: 'All', value: 'all', hint: 'All disputes' },
+        { label: '🚨 Escalated', value: 'escalated_flag', hint: 'Flagged as urgent', urgent: true },
+        { label: 'Open', value: 'open', hint: 'New — awaiting admin' },
+        { label: 'Under Review', value: 'under_review', hint: 'Admin investigating' },
+        { label: 'Mediation', value: 'mediation', hint: 'Awaiting party responses' },
+        { label: 'Resolved', value: 'resolved', hint: 'Decision made' },
     ];
 
     return (
@@ -217,7 +249,12 @@ export default function ManageDisputes() {
                         value={stats.open}
                         icon={Clock}
                         color="#F59E0B"
-                        trend="+5%"
+                    />
+                    <StatCard
+                        title="Escalated"
+                        value={stats.escalated}
+                        icon={ShieldAlert}
+                        color="#EF4444"
                     />
                     <StatCard
                         title="Resolved"
@@ -226,10 +263,16 @@ export default function ManageDisputes() {
                         color="#10B981"
                     />
                     <StatCard
-                        title="Avg. Resolution"
-                        value={`${stats.avgResolutionTime}d`}
+                        title="Escalation Rate"
+                        value={`${stats.escalationRate}%`}
                         icon={TrendingUp}
-                        color="#282A32"
+                        color="#8B5CF6"
+                    />
+                    <StatCard
+                        title="SLA Breaches"
+                        value={stats.slaBreachCount}
+                        icon={AlertTriangle}
+                        color="#F59E0B"
                     />
                 </View>
 
@@ -258,18 +301,23 @@ export default function ManageDisputes() {
                             key={filter.value}
                             style={[
                                 styles.filterChip,
-                                statusFilter === filter.value && styles.filterChipActive,
+                                filter.urgent && styles.filterChipUrgent,
+                                statusFilter === filter.value && (filter.urgent ? styles.filterChipUrgentActive : styles.filterChipActive),
                             ]}
                             onPress={() => setStatusFilter(filter.value)}
                         >
                             <Text
                                 style={[
                                     styles.filterChipText,
+                                    filter.urgent && styles.filterChipTextUrgent,
                                     statusFilter === filter.value && styles.filterChipTextActive,
                                 ]}
                             >
                                 {filter.label}
                             </Text>
+                            {statusFilter === filter.value && (
+                                <Text style={styles.filterChipHint}>{filter.hint}</Text>
+                            )}
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
@@ -298,64 +346,90 @@ export default function ManageDisputes() {
                         filteredDisputes.map((dispute) => (
                             <TouchableOpacity
                                 key={dispute.id}
-                                style={styles.disputeCard}
+                                style={[styles.disputeCard, dispute.isEscalated && styles.disputeCardEscalated]}
                                 onPress={() =>
                                     router.push({
                                         pathname: '/(admin)/dispute-detail/[id]' as any,
                                         params: { id: dispute.id },
                                     })
                                 }
+                                activeOpacity={0.75}
                             >
-                                <View style={styles.disputeHeader}>
-                                    <View style={styles.disputeHeaderLeft}>
-                                        <Text style={styles.disputeId}>#{dispute.id.slice(0, 8)}</Text>
-                                        {dispute.priority && (
-                                            <View
-                                                style={[
-                                                    styles.priorityBadge,
-                                                    { backgroundColor: `${getPriorityColor(dispute.priority)}15` },
-                                                ]}
-                                            >
-                                                <Text
+                                {/* Priority/escalation left accent strip */}
+                                <View
+                                    style={[
+                                        styles.disputeCardStrip,
+                                        {
+                                            backgroundColor: dispute.isEscalated
+                                                ? '#EF4444'
+                                                : getPriorityColor(dispute.priority),
+                                        },
+                                    ]}
+                                />
+
+                                <View style={styles.disputeCardInner}>
+                                    <View style={styles.disputeHeader}>
+                                        <View style={styles.disputeHeaderLeft}>
+                                            <Text style={styles.disputeId}>#{dispute.id.slice(0, 8)}</Text>
+                                            {dispute.isEscalated && (
+                                                <View style={styles.escalatedBadge}>
+                                                    <ShieldAlert size={10} color="#EF4444" />
+                                                    <Text style={styles.escalatedBadgeText}>ESCALATED</Text>
+                                                </View>
+                                            )}
+                                            {dispute.priority && !dispute.isEscalated && (
+                                                <View
                                                     style={[
-                                                        styles.priorityText,
-                                                        { color: getPriorityColor(dispute.priority) },
+                                                        styles.priorityBadge,
+                                                        { backgroundColor: `${getPriorityColor(dispute.priority)}15` },
                                                     ]}
                                                 >
-                                                    {dispute.priority.toUpperCase()}
-                                                </Text>
-                                            </View>
-                                        )}
+                                                    <Text
+                                                        style={[
+                                                            styles.priorityText,
+                                                            { color: getPriorityColor(dispute.priority) },
+                                                        ]}
+                                                    >
+                                                        {dispute.priority.toUpperCase()}
+                                                    </Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                        <DisputeStatusBadge status={dispute.status} size="small" />
                                     </View>
-                                    <DisputeStatusBadge status={dispute.status} size="small" />
-                                </View>
 
-                                <Text style={styles.disputeTitle} numberOfLines={1}>
-                                    {dispute.project?.title || 'Untitled Dispute'}
-                                </Text>
-
-                                <View style={styles.disputeDetails}>
-                                    <View style={styles.disputeDetail}>
-                                        <Text style={styles.disputeDetailLabel}>Amount:</Text>
-                                        <Text style={styles.disputeDetailValue}>
-                                            ${dispute.amount?.toFixed(2) || '0.00'}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.disputeDetail}>
-                                        <Text style={styles.disputeDetailLabel}>Created:</Text>
-                                        <Text style={styles.disputeDetailValue}>{formatDate(dispute.createdAt)}</Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.disputeParties}>
-                                    <Text style={styles.partyText}>
-                                        {dispute.client?.user_name || 'Client'} vs {dispute.freelancer?.user_name || 'Freelancer'}
+                                    <Text style={styles.disputeTitle} numberOfLines={1}>
+                                        {dispute.project?.title || 'Untitled Dispute'}
                                     </Text>
-                                </View>
 
-                                <View style={styles.disputeFooter}>
-                                    <Text style={styles.viewDetails}>View Details</Text>
-                                    <ChevronRight size={16} color="#444751" />
+                                    <View style={styles.disputeDetails}>
+                                        <View style={styles.amountPill}>
+                                            <Text style={styles.amountPillText}>
+                                                ${dispute.amount?.toFixed(2) || '0.00'}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.disputeDetail}>
+                                            <Text style={styles.disputeDetailLabel}>Created:</Text>
+                                            <Text style={styles.disputeDetailValue}>{formatDate(dispute.createdAt)}</Text>
+                                        </View>
+                                    </View>
+
+                                    <View style={styles.disputeParties}>
+                                        <View style={styles.partyChip}>
+                                            <Text style={styles.partyChipRole}>Client</Text>
+                                            <Text style={styles.partyChipName}>{dispute.client?.user_name || '—'}</Text>
+                                        </View>
+                                        <Text style={styles.partyVs}>vs</Text>
+                                        <View style={styles.partyChip}>
+                                            <Text style={styles.partyChipRole}>Freelancer</Text>
+                                            <Text style={styles.partyChipName}>{dispute.freelancer?.user_name || '—'}</Text>
+                                        </View>
+                                    </View>
+
+                                    <View style={styles.disputeFooter}>
+                                        <Text style={styles.viewDetails}>View Details</Text>
+                                        <ChevronRight size={16} color="#444751" />
+                                    </View>
                                 </View>
                             </TouchableOpacity>
                         ))
@@ -412,6 +486,21 @@ const styles = StyleSheet.create({
         padding: 16,
         borderWidth: 1,
         borderColor: '#F1F5F9',
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+        elevation: 2,
+    },
+    statCardAccent: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 3,
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
     },
     statIcon: {
         width: 36,
@@ -419,7 +508,8 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 10,
+        marginTop: 8,
     },
     statValue: {
         fontSize: 24,
@@ -457,6 +547,11 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderWidth: 1,
         borderColor: '#E2E8F0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     searchInput: {
         flex: 1,
@@ -487,6 +582,23 @@ const styles = StyleSheet.create({
     },
     filterChipTextActive: {
         color: '#FFFFFF',
+    },
+    filterChipHint: {
+        fontSize: 10,
+        color: 'rgba(255,255,255,0.75)',
+        fontWeight: '600',
+        marginTop: 2,
+    },
+    filterChipUrgent: {
+        borderColor: '#FECACA',
+        backgroundColor: '#FEF2F2',
+    },
+    filterChipUrgentActive: {
+        backgroundColor: '#EF4444',
+        borderColor: '#EF4444',
+    },
+    filterChipTextUrgent: {
+        color: '#EF4444',
     },
     disputesList: {
         paddingHorizontal: 20,
@@ -521,10 +633,45 @@ const styles = StyleSheet.create({
     disputeCard: {
         backgroundColor: '#FFFFFF',
         borderRadius: 16,
-        padding: 16,
         marginBottom: 12,
         borderWidth: 1,
         borderColor: '#F1F5F9',
+        overflow: 'hidden',
+        flexDirection: 'row',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.07,
+        shadowRadius: 6,
+        elevation: 3,
+    },
+    disputeCardEscalated: {
+        borderColor: '#FBBF24',
+        borderWidth: 1.5,
+        backgroundColor: '#FFFBEB',
+    },
+    disputeCardStrip: {
+        width: 4,
+        borderTopLeftRadius: 16,
+        borderBottomLeftRadius: 16,
+    },
+    disputeCardInner: {
+        flex: 1,
+        padding: 16,
+    },
+    escalatedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
+        backgroundColor: '#FEE2E2',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
+    },
+    escalatedBadgeText: {
+        fontSize: 9,
+        fontWeight: '800',
+        color: '#EF4444',
+        letterSpacing: 0.4,
     },
     disputeHeader: {
         flexDirection: 'row',
@@ -560,31 +707,72 @@ const styles = StyleSheet.create({
     },
     disputeDetails: {
         flexDirection: 'row',
-        gap: 20,
+        alignItems: 'center',
+        gap: 12,
         marginBottom: 12,
+    },
+    amountPill: {
+        backgroundColor: '#ECFDF5',
+        borderRadius: 20,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderWidth: 1,
+        borderColor: '#A7F3D0',
+    },
+    amountPillText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#059669',
     },
     disputeDetail: {
         flexDirection: 'row',
-        gap: 6,
+        gap: 4,
+        alignItems: 'center',
     },
     disputeDetailLabel: {
-        fontSize: 13,
-        color: '#64748B',
+        fontSize: 12,
+        color: '#94A3B8',
     },
     disputeDetailValue: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '700',
-        color: '#282A32',
+        color: '#475569',
     },
     disputeParties: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
         paddingTop: 12,
         borderTopWidth: 1,
         borderTopColor: '#F1F5F9',
         marginBottom: 12,
     },
-    partyText: {
+    partyChip: {
+        backgroundColor: '#F8FAFC',
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        flex: 1,
+    },
+    partyChipRole: {
+        fontSize: 9,
+        fontWeight: '800',
+        color: '#94A3B8',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 2,
+    },
+    partyChipName: {
         fontSize: 13,
-        color: '#64748B',
+        fontWeight: '700',
+        color: '#282A32',
+    },
+    partyVs: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#94A3B8',
     },
     disputeFooter: {
         flexDirection: 'row',

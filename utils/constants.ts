@@ -314,3 +314,20 @@ export const SUCCESS_MESSAGES = {
   PAYMENT_COMPLETED: 'Payment completed successfully!',
   MESSAGE_SENT: 'Message sent successfully!',
 };
+// Add this to the end of src/utils/constants.ts
+
+export const DISPUTE_STATUSES = {
+  OPEN: 'open',
+  UNDER_REVIEW: 'under_review',
+  MEDIATION: 'mediation',
+  ESCALATED: 'escalated',
+  RESOLVED: 'resolved',
+  CLOSED: 'closed',
+} as const;
+
+export const DISPUTE_PRIORITIES = {
+  URGENT: 'urgent',
+  HIGH: 'high',
+  MEDIUM: 'medium',
+  LOW: 'low',
+} as const;

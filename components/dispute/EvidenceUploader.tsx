@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, Platform, ActivityIndicator } from 'react-native';
-import { File, Image as ImageIcon, Video, X, Check } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, Platform, ActivityIndicator, Linking } from 'react-native';
+import { File, Image as ImageIcon, Video, X, Check, ExternalLink } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { disputeService } from '@/services/disputeService';
@@ -9,8 +9,11 @@ import type { DisputeEvidence } from '@/models/Dispute';
 interface EvidenceUploaderProps {
     disputeId: string;
     existingEvidence: DisputeEvidence[];
-    onUploadComplete: (evidence: DisputeEvidence) => void;
+    onUploadComplete?: (evidence: DisputeEvidence) => void;
     onDeleteEvidence?: (evidenceId: string) => void;
+    readOnly?: boolean;
+    clientId?: string;
+    freelancerId?: string;
 }
 
 export default function EvidenceUploader({
@@ -18,6 +21,9 @@ export default function EvidenceUploader({
     existingEvidence,
     onUploadComplete,
     onDeleteEvidence,
+    readOnly = false,
+    clientId,
+    freelancerId,
 }: EvidenceUploaderProps) {
     const [uploading, setUploading] = useState(false);
     const [selectedFile, setSelectedFile] = useState<any>(null);
@@ -89,7 +95,7 @@ export default function EvidenceUploader({
                 uploadedBy: 'pending',
                 uploadedAt: new Date().toISOString(),
             };
-            onUploadComplete(staged);
+            onUploadComplete?.(staged);
             setSelectedFile(null);
             return;
         }
@@ -97,9 +103,9 @@ export default function EvidenceUploader({
         setUploading(true);
         try {
             const uploaded = await disputeService.uploadEvidence(disputeId, {
-                fileName: selectedFile.name,
-                fileType: selectedFile.mimeType || selectedFile.type,
-                fileUrl: selectedFile.uri,
+                uri: selectedFile.uri,
+                name: selectedFile.name,
+                mimeType: selectedFile.mimeType || (selectedFile.type === 'image' ? 'image/jpeg' : 'application/pdf'),
                 description: '',
             });
 
@@ -113,7 +119,7 @@ export default function EvidenceUploader({
                 uploadedAt: uploaded?.createdAt || new Date().toISOString(),
             };
 
-            onUploadComplete(newEvidence);
+            onUploadComplete?.(newEvidence);
             setSelectedFile(null);
             Alert.alert('Success', 'Evidence uploaded successfully');
         } catch (error) {
@@ -140,21 +146,23 @@ export default function EvidenceUploader({
         <View style={styles.container}>
             <Text style={styles.title}>Evidence & Attachments</Text>
 
-            {/* Upload Buttons */}
-            <View style={styles.uploadButtons}>
-                <TouchableOpacity style={styles.uploadButton} onPress={pickImage} disabled={uploading}>
-                    <ImageIcon size={20} color="#444751" />
-                    <Text style={styles.uploadButtonText}>Upload Image</Text>
-                </TouchableOpacity>
+            {/* Upload Buttons — hidden in read-only mode */}
+            {!readOnly && (
+                <View style={styles.uploadButtons}>
+                    <TouchableOpacity style={styles.uploadButton} onPress={pickImage} disabled={uploading}>
+                        <ImageIcon size={20} color="#444751" />
+                        <Text style={styles.uploadButtonText}>Upload Image</Text>
+                    </TouchableOpacity>
 
-                <TouchableOpacity style={styles.uploadButton} onPress={pickDocument} disabled={uploading}>
-                    <File size={20} color="#444751" />
-                    <Text style={styles.uploadButtonText}>Upload PDF</Text>
-                </TouchableOpacity>
-            </View>
+                    <TouchableOpacity style={styles.uploadButton} onPress={pickDocument} disabled={uploading}>
+                        <File size={20} color="#444751" />
+                        <Text style={styles.uploadButtonText}>Upload PDF</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
             {/* Selected File Preview */}
-            {selectedFile && (
+            {!readOnly && selectedFile && (
                 <View style={styles.selectedFileContainer}>
                     <View style={styles.selectedFileHeader}>
                         <Text style={styles.selectedFileTitle}>Selected File</Text>
@@ -195,8 +203,20 @@ export default function EvidenceUploader({
                     <Text style={styles.evidenceListTitle}>Uploaded Evidence ({existingEvidence.length})</Text>
                     {existingEvidence.map((evidence) => {
                         const Icon = getFileIcon(evidence.type);
+                        const isRemoteUrl = evidence.url && (evidence.url.startsWith('http://') || evidence.url.startsWith('https://'));
+
+                        const handleOpen = () => {
+                            if (!isRemoteUrl) {
+                                Alert.alert('Not available', 'This file was uploaded before remote storage was configured and cannot be opened remotely.');
+                                return;
+                            }
+                            Linking.openURL(evidence.url).catch(() => {
+                                Alert.alert('Error', 'Could not open the file. Please try again.');
+                            });
+                        };
+
                         return (
-                            <View key={evidence.id} style={styles.evidenceItem}>
+                            <TouchableOpacity key={evidence.id} style={styles.evidenceItem} onPress={handleOpen} activeOpacity={0.7}>
                                 <View style={styles.evidenceIcon}>
                                     <Icon size={18} color="#444751" />
                                 </View>
@@ -204,13 +224,26 @@ export default function EvidenceUploader({
                                     <Text style={styles.evidenceName} numberOfLines={1}>
                                         {evidence.name}
                                     </Text>
-                                    <Text style={styles.evidenceDate}>
-                                        {new Date(evidence.uploadedAt).toLocaleDateString()}
-                                    </Text>
+                                    <View style={styles.evidenceMeta}>
+                                        {(clientId || freelancerId) && evidence.uploadedBy && (
+                                            <Text style={[
+                                                styles.evidencePartyLabel,
+                                                evidence.uploadedBy === clientId && styles.evidencePartyClient,
+                                                evidence.uploadedBy === freelancerId && styles.evidencePartyFreelancer,
+                                            ]}>
+                                                {evidence.uploadedBy === clientId ? 'CLIENT' :
+                                                 evidence.uploadedBy === freelancerId ? 'FREELANCER' : 'PARTY'}
+                                            </Text>
+                                        )}
+                                        <Text style={styles.evidenceDate}>
+                                            {new Date(evidence.uploadedAt).toLocaleDateString()}
+                                        </Text>
+                                    </View>
                                 </View>
-                                {onDeleteEvidence && (
+                                {onDeleteEvidence ? (
                                     <TouchableOpacity
-                                        onPress={() => {
+                                        onPress={(e) => {
+                                            e.stopPropagation?.();
                                             Alert.alert(
                                                 'Delete Evidence',
                                                 'Are you sure you want to delete this evidence?',
@@ -227,8 +260,10 @@ export default function EvidenceUploader({
                                     >
                                         <X size={18} color="#EF4444" />
                                     </TouchableOpacity>
+                                ) : (
+                                    <ExternalLink size={16} color={isRemoteUrl ? '#444751' : '#CBD5E1'} />
                                 )}
-                            </View>
+                            </TouchableOpacity>
                         );
                     })}
                 </View>
@@ -363,5 +398,29 @@ const styles = StyleSheet.create({
     evidenceDate: {
         fontSize: 12,
         color: '#94A3B8',
+    },
+    evidenceMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        flexWrap: 'wrap',
+    },
+    evidencePartyLabel: {
+        fontSize: 10,
+        fontWeight: '800',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        overflow: 'hidden',
+        backgroundColor: '#F1F5F9',
+        color: '#64748B',
+    },
+    evidencePartyClient: {
+        backgroundColor: '#EFF6FF',
+        color: '#1D4ED8',
+    },
+    evidencePartyFreelancer: {
+        backgroundColor: '#F0FDF4',
+        color: '#15803D',
     },
 });

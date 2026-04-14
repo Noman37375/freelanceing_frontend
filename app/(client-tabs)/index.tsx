@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Platform, StatusBar, Image } from 'react-native';
-import { Briefcase, DollarSign, MessageSquare, AlertCircle, Plus, Search, ArrowRight, Wallet, UserCheck, TrendingUp, Clock, CheckCircle2, Sparkles } from 'lucide-react-native';
+import { Briefcase, DollarSign, MessageSquare, AlertCircle, Plus, Search, ArrowRight, Wallet, UserCheck, TrendingUp, Clock, CheckCircle2, Sparkles, Bell } from 'lucide-react-native';
 import ProjectCard from '@/components/ClientProjectCard';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotifications } from '@/contexts/NotificationContext';
 import { projectService } from '@/services/projectService';
 import { Project, getProjectDisplayStatus } from '@/models/Project';
 import { formatCurrency } from '@/utils/helpers';
@@ -13,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function ClientHome() {
   const router = useRouter();
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -103,12 +105,18 @@ export default function ClientHome() {
               <Text style={styles.userName}>{user?.userName || 'Client'}</Text>
             </View>
           </View>
-          {/* <TouchableOpacity 
+          <TouchableOpacity
             style={styles.notifBtn}
-            onPress={() => router.push('/(client-tabs)/profile' as any)}
+            onPress={() => router.push('/notifications' as any)}
+            activeOpacity={0.7}
           >
-            <UserCheck size={22} color="#282A32" strokeWidth={2.5} />
-          </TouchableOpacity> */}
+            <Bell size={22} color="#444751" strokeWidth={2} />
+            {unreadCount > 0 && (
+              <View style={styles.notifBadge}>
+                <Text style={styles.notifBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -323,6 +331,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4F4F8',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  notifBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: '#F4F4F8',
+  },
+  notifBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
   },
 
   // ========== SCROLL CONTENT ==========

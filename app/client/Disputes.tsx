@@ -83,7 +83,7 @@ export default function Disputes() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#1F2937" strokeWidth={2} />
+          <ArrowLeft size={24} color="#FFFFFF" strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Disputes</Text>
         <TouchableOpacity
@@ -121,7 +121,7 @@ export default function Disputes() {
             filteredDisputes.map((dispute) => (
               <TouchableOpacity
                 key={dispute.id}
-                style={styles.disputeCard}
+                style={[styles.disputeCard, { borderLeftColor: getStatusColor(dispute.status) }]}
                 onPress={() => router.push({
                   pathname: '/resolution-center' as any,
                   params: { disputeId: dispute.id },
@@ -161,32 +161,101 @@ export default function Disputes() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, backgroundColor: '#FFFFFF', borderBottomLeftRadius: 24, borderBottomRightRadius: 24, elevation: 3 },
-  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: '#1F2937', textAlign: 'center', flex: 1 },
-  newDisputeButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#282A32', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  newDisputeText: { color: '#FFFFFF', fontWeight: '600', marginLeft: 6 },
-  tabs: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 16 },
-  tabButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: '#E5E7EB' },
-  tabButtonActive: { backgroundColor: '#282A32' },
-  tabText: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
-  tabTextActive: { color: '#FFFFFF' },
+  container: { flex: 1, backgroundColor: '#F0F2FB' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    backgroundColor: '#1C1F2E',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#FFFFFF', textAlign: 'center', flex: 1, letterSpacing: 0.2 },
+  newDisputeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#5B5FEF',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 12,
+    shadowColor: '#5B5FEF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  newDisputeText: { color: '#FFFFFF', fontWeight: '700', marginLeft: 6, fontSize: 13 },
+  tabs: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 4,
+    shadowColor: '#1C1F2E',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  tabButtonActive: {
+    backgroundColor: '#1C1F2E',
+    shadowColor: '#1C1F2E',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  tabText: { fontSize: 13, fontWeight: '600', color: '#9CA3AF' },
+  tabTextActive: { color: '#FFFFFF', fontWeight: '700' },
   disputesList: { flex: 1, paddingHorizontal: 20 },
-  disputesContent: { gap: 12 },
-  disputeCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, elevation: 3 },
-  disputeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  disputeLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconContainer: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
-  disputeInfo: {},
-  projectTitle: { fontSize: 16, fontWeight: '600', color: '#1F2937' },
-  clientName: { fontSize: 13, color: '#6B7280' },
-  reason: { fontSize: 14, color: '#6B7280', marginBottom: 8 },
-  statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, alignSelf: 'flex-start' },
-  statusText: { fontSize: 12, fontWeight: '600' },
-  noDisputeText: { textAlign: 'center', marginTop: 40, fontSize: 16, color: '#6B7280' },
-  loadingContainer: { padding: 40, alignItems: 'center', justifyContent: 'center' },
+  disputesContent: { gap: 12, paddingBottom: 28 },
+  disputeCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#1C1F2E',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    borderLeftWidth: 4,
+  },
+  disputeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  disputeLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#F5F6FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  disputeInfo: { flex: 1 },
+  projectTitle: { fontSize: 15, fontWeight: '700', color: '#1C1F2E' },
+  clientName: { fontSize: 12, color: '#94A3B8', marginTop: 2, fontWeight: '500' },
+  reason: { fontSize: 13, color: '#64748B', marginBottom: 8, lineHeight: 19 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  statusText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+  noDisputeText: { textAlign: 'center', marginTop: 60, fontSize: 15, color: '#94A3B8', fontWeight: '500' },
+  loadingContainer: { padding: 60, alignItems: 'center', justifyContent: 'center' },
   disputeFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-  amountText: { fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 },
-  dateText: { fontSize: 12, color: '#6B7280' },
+  amountText: { fontSize: 14, fontWeight: '700', color: '#1C1F2E', marginBottom: 6 },
+  dateText: { fontSize: 11, color: '#94A3B8', fontWeight: '500' },
 });
